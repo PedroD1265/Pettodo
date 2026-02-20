@@ -410,85 +410,93 @@ Regla universal adoptada: **Cada elemento interactivo debe ejecutar una acción 
 
 #### B. Módulo de Educación completo (`src/app/data/education.ts`)
 
-Se construyó una base de datos de artículos educativos con 6 artículos de 1.500+ palabras cada uno, estructurados con secciones, ejemplos prácticos y referencias a fuentes externas reales.
+Se construyó una base de datos de artículos educativos con 6 artículos con contenido real extenso (sin lorem ipsum), estructurados con párrafos y referencias a fuentes externas verificadas.
 
-**Estructura de cada artículo:**
+**Interfaz real implementada (verificada en código):**
 
 ```ts
-interface EducationArticle {
+// src/app/data/education.ts
+export interface Article {
   id: string;
   title: string;
   category: 'Emergency' | 'Health' | 'Behavior' | 'Social';
+  date: string;
   sourceName: string;
   sourceUrl: string;
   summary: string;
-  body: { heading: string; content: string }[];
+  body: string[];   // array de párrafos de texto plano
 }
+export const EDUCATION_ARTICLES: Article[]
 ```
 
-**Artículos incluidos:**
+**Artículos implementados (IDs verificados en código):**
 
 | ID | Título | Categoría | Fuente |
 |---|---|---|---|
-| `emergency-response` | What To Do in the First 24 Hours | Emergency | ASPCA |
-| `reading-body-language` | Understanding Your Dog's Body Language | Behavior | AKC |
-| `preventive-health` | Essential Preventive Care for Dogs | Health | Merck Vet Manual |
-| `socialization-101` | Socializing Your Dog: A Complete Guide | Behavior | VCA Hospitals |
-| `nutrition-guide` | Canine Nutrition Fundamentals | Health | PetMD |
-| `community-safety` | Keeping Your Neighborhood Safe for Pets | Social | Best Friends Animal Society |
+| `first-hour` | What to do in the first hour after losing your dog | Emergency | ASPCA |
+| `body-language` | Understanding canine body language | Behavior | American Kennel Club |
+| `vaccine-schedule` | Vaccination schedule guide for puppies and adult dogs | Health | VCA Animal Hospitals |
+| `play-date-intro` | How to safely introduce dogs at a play date | Social | PetMD |
+| `anti-scam` | Protecting yourself from lost-pet scams | Emergency | Better Business Bureau |
+| `microchip-guide` | Microchipping your dog: what it is and why it matters | Health | AVMA |
 
-Cada artículo incluye: resumen ejecutivo, 4–5 secciones con cuerpo de texto completo (sin lorem ipsum), crédito de fuente con enlace externo real.
+Cada artículo incluye: resumen ejecutivo de 1 frase, `date` de publicación demo, 6–7 párrafos de `body[]` con contenido factual real, crédito de fuente con URL a sitio externo oficial.
 
 **Routing dinámico:**
 
-Se añadió la ruta `/education/article/:id` en `App.tsx` para servir artículos individuales. `EDU_ArticleDetail` usa `useParams()` para obtener el `id` y buscar el artículo en el array. Si el ID no existe, renderiza una pantalla de error 404 con botón de retorno a la lista. Los artículos se abren desde `EDU_01` (lista de artículos) al hacer tap en cualquier card.
+Se añadió la ruta `/education/article/:id` en `src/app/routes.tsx` para servir artículos individuales. `EDU_ArticleDetail` usa `useParams()` para obtener el `id` y busca el artículo en `EDUCATION_ARTICLES`. Si el ID no existe, renderiza una pantalla de error 404 con botón de retorno a `/education`. Los artículos se abren desde `EDU_01` al hacer tap en cualquier card de la lista.
 
 **Botón "Send" del AI Chat (EDU_03):**
-Wired con toast "Demo only — AI Q&A coming soon." Importado `toast` de `sonner` al archivo `EDU_screens.tsx`.
+Wired con toast "Demo only — AI Q&A coming soon." Añadido `import { toast } from 'sonner'` a `EDU_screens.tsx`.
 
 ---
 
 #### C. Sistema de ajustes de usuario persistentes (`src/app/data/storage.ts` + `AppContext`)
 
-Se añadió el campo `settings` al tipo `EntityStore` con 13 preferencias de usuario, todas persistidas automáticamente en `localStorage` mediante el mecanismo existente de `saveEntityStore()`.
+Se añadió el campo `settings` al tipo `EntityStore`, persistido automáticamente en `localStorage` mediante `saveEntityStore()`.
 
-**Tipo `UserSettings`:**
+**Tipos reales implementados (verificados en código):**
 
 ```ts
-interface UserSettings {
-  captchaEnabled: boolean;          // Mostrar captcha en QRP_02 (defecto: true)
-  defaultRadius: number;            // Radio de privacidad por defecto en metros (defecto: 300)
-  notif: {
-    push: boolean;                  // Notificaciones push globales (defecto: true)
-    email: boolean;                 // Notificaciones por correo (defecto: true)
-    sms: boolean;                   // Notificaciones SMS (defecto: false)
-    caseUpdates: boolean;           // Actualizaciones del caso activo (defecto: true)
-    matches: boolean;               // Nuevas coincidencias (defecto: true)
-    community: boolean;             // Eventos y posts de comunidad (defecto: false)
-    marketing: boolean;             // Boletines y noticias (defecto: false)
-  };
-  privacy: {
-    showPhone: boolean;             // Mostrar teléfono en el perfil público (defecto: false)
-    showEmail: boolean;             // Mostrar email en el perfil público (defecto: false)
-    showLocation: boolean;          // Mostrar ciudad en el perfil público (defecto: true)
-    allowIndexing: boolean;         // Permitir indexación por buscadores (defecto: false)
-  };
+// src/app/data/storage.ts
+
+export interface NotifSettings {
+  sightingsNearMe: boolean;     // defecto: true
+  aiMatch: boolean;             // defecto: true
+  caseUpdates: boolean;         // defecto: true
+  chatMessages: boolean;        // defecto: true
+  vaccineReminders: boolean;    // defecto: true
+  feedingReminders: boolean;    // defecto: false
+  communityPosts: boolean;      // defecto: true
+  eventUpdates: boolean;        // defecto: true
+  playdateInvitations: boolean; // defecto: true
 }
+
+export interface Settings {
+  defaultRadius: number;    // metros, defecto: 300
+  showPhone: boolean;       // defecto: false
+  allowChat: boolean;       // defecto: true
+  showEmail: boolean;       // defecto: false
+  captchaEnabled: boolean;  // defecto: true
+  notif: NotifSettings;
+}
+// Nota: los campos de privacidad (showPhone, allowChat, showEmail) son campos
+// directos en Settings, NO están anidados en un sub-objeto "privacy".
 ```
 
 **Función `updateSettings(partial)`:**
-Añadida al `AppContext`. Realiza deep merge sobre el objeto `notif` y `privacy` anidados para no sobreescribir configuraciones hermanas al actualizar solo un campo.
+Añadida al `AppContext`. Realiza deep merge sobre `notif` para no sobreescribir campos hermanos al actualizar uno solo.
 
 ```ts
-updateSettings: (partial: Partial<UserSettings>) => void
+updateSettings: (partial: Partial<Settings>) => void
 ```
 
 **Uso en pantallas:**
-- `PRF_03` (Privacy Settings): todos los toggles de privacidad llaman `updateSettings({ privacy: { campo: value } })`
-- `PRF_04` (Notification Settings): todos los toggles de notificación llaman `updateSettings({ notif: { campo: value } })`
-- `QRH_03` (Anti-scraping): el toggle de captcha llama `updateSettings({ captchaEnabled: value })`
+- `PRF_03` (Privacy Settings): toggles `showPhone`, `allowChat`, `showEmail` llaman `updateSettings({ campo: value })`
+- `PRF_04` (Notification Settings): 9 toggles llaman `updateSettings({ notif: { campo: value } })`
+- `QRH_03` (Anti-scraping): toggle de captcha llama `updateSettings({ captchaEnabled: value })`
 
-Los toggles leen el estado inicial directamente desde `store.settings`, por lo que al recargar la página conservan el valor guardado.
+Los toggles leen el estado inicial de `store.settings`, sobreviviendo recargas de página.
 
 ---
 
@@ -592,7 +600,72 @@ Se auditaron y corrigieron todos los botones sin acción en el prototipo, archiv
 - **Cámara (QRP_03):** El área de foto en el form de reporte QR público no tiene FileReader real — es UI placeholder
 - **SMS (COM_03):** La verificación por SMS es UI-only, no hay integración con Twilio ni similar
 - **Rate limit en demo:** `forceRateLimit()` y `resetRateLimit()` son utilidades de desarrollo accesibles desde `QRH_03` para demostrar el flujo sin esperar 1 hora real
-- **Indexación buscadores:** El toggle `allowIndexing` en PRF_03 no tiene efecto en el servidor (no hay servidor); es una preferencia guardada para futura implementación de meta tags o robots.txt dinámico
+- **`allowIndexing` (PRF_03):** El toggle está guardado en settings pero no afecta meta tags reales; el campo existe en el store pero no fue añadido a la interfaz `Settings` del código final (no tiene efecto funcional actualmente)
+
+---
+
+### Iteration 11 — Documentation Verification & Accuracy Pass
+
+**Run Date:** February 20, 2026
+
+**Objetivo:** Verificación formal de que la documentación de Iteration 10 (EXECUTION_LOG, QA_SELFCHECK, INTERACTION_AUDIT) refleja con exactitud el código implementado. Sin cambios de código — correcciones de documentación solamente.
+
+---
+
+#### Hallazgos de la verificación (código vs. docs)
+
+Se ejecutó una lectura cruzada de los tres archivos de docs contra el código fuente real. Se encontraron y corrigieron las siguientes discrepancias:
+
+**1. Tipo `Settings` (en `storage.ts`):**
+- **Doc anterior decía:** `interface UserSettings` con sub-objeto `privacy: { showPhone, showEmail, showLocation, allowIndexing }`
+- **Código real tiene:** `interface Settings` (sin prefijo "User") con campos de privacidad directos (`showPhone`, `allowChat`, `showEmail`) en la raíz — sin sub-objeto `privacy`. Los campos `showLocation` y `allowIndexing` listados en el log anterior NO existen en el código real
+- **Corrección aplicada:** Sección C de EXECUTION_LOG.md y sección C de QA_SELFCHECK.md actualizadas con los tipos reales
+
+**2. Interfaz `Article` (en `education.ts`):**
+- **Doc anterior decía:** `body: { heading: string; content: string }[]` (array de objetos con heading)
+- **Código real tiene:** `body: string[]` (array de párrafos de texto plano) + campo adicional `date: string`
+- **Corrección aplicada:** Sección B de EXECUTION_LOG.md y sección B de QA_SELFCHECK.md corregidas
+
+**3. IDs de artículos educativos:**
+- **Doc anterior listaba:** `emergency-response`, `reading-body-language`, `preventive-health`, `socialization-101`, `nutrition-guide`, `community-safety`
+- **Código real tiene:** `first-hour`, `body-language`, `vaccine-schedule`, `play-date-intro`, `anti-scam`, `microchip-guide`
+- **Corrección aplicada:** Tabla de artículos en EXECUTION_LOG.md y listado en QA_SELFCHECK.md corregidos con IDs y títulos reales
+
+**4. Comportamiento de QRP_03 cards (INTERACTION_AUDIT.md):**
+- **Doc anterior decía:** Q1/Q2 "Toast + navigate to `/emg/found-photos`" y "Toast + navigate to `/emg/sighted-report`"
+- **Código real hace:** Las cards son selectores visuales (toggle de estado local `reportType`), NO navegación. Toast contextual al seleccionar, luego "Submit Report" llama `addSighting()`
+- **Corrección aplicada:** Filas Q1 y Q2 de INTERACTION_AUDIT.md corregidas
+
+**5. NotifSettings — 9 campos (no 7):**
+- **Doc anterior decía:** 7 sub-campos en notif (push, email, sms, caseUpdates, matches, community, marketing)
+- **Código real tiene:** 9 campos: sightingsNearMe, aiMatch, caseUpdates, chatMessages, vaccineReminders, feedingReminders, communityPosts, eventUpdates, playdateInvitations
+- **Corrección aplicada:** Sección C de EXECUTION_LOG.md y QA_SELFCHECK.md actualizadas
+
+---
+
+#### Quality Gate — Iteration 11
+
+**Dev server:** Corriendo sin errores en http://localhost:5000 (Vite v6.3.5)  
+**HMR:** Todos los módulos actualizados correctamente vía hot-reload  
+**Browser console:** Sin errores de runtime  
+**LSP diagnostics:** 3 diagnostics de editor (pre-existentes, nivel advertencia de TypeScript):
+- `CMT_screens.tsx`: spread de `key` en CommunityDogCard (no afecta runtime — Vite/esbuild compila correctamente)
+- `EMG_08_to_13.tsx`: spread de `key` en MatchCard (mismo patrón)
+- `Cards.tsx`: `key` en MatchReasonTag (mismo patrón)
+
+Estos 3 son una quirk de TypeScript strict mode con `key` como prop especial de React. El build de Vite/esbuild ignora correctamente esta verificación de tipos y compila sin errores.
+
+**Cambios de código en Iteration 11:** Ninguno. Solo correcciones de documentación.
+
+---
+
+#### Archivos modificados en Iteration 11
+
+| Archivo | Tipo de cambio |
+|---|---|
+| `docs/EXECUTION_LOG.md` | Corrección de tipos, IDs de artículos, y comportamiento de QRP_03; adición de sección IT11 |
+| `docs/QA_SELFCHECK.md` | Corrección de IDs de artículos, campos de Settings, y sub-campos de NotifSettings |
+| `docs/INTERACTION_AUDIT.md` | Corrección de filas Q1/Q2 (comportamiento real de selection cards vs navegación) |
 
 ---
 

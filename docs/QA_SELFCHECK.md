@@ -187,14 +187,18 @@
 - [x] Cada artículo muestra enlace a fuente externa real (ASPCA, AKC, Merck, etc.) con `ExternalLink` icon
 - [x] URL no reconocida muestra pantalla 404 con botón de retorno a `/education`
 - [x] `EDU_03` (AI Chat): botón "Send" dispara toast descriptivo
-- [x] 6 artículos en total: emergency-response, reading-body-language, preventive-health, socialization-101, nutrition-guide, community-safety
+- [x] 6 artículos en total (IDs verificados en código): `first-hour`, `body-language`, `vaccine-schedule`, `play-date-intro`, `anti-scam`, `microchip-guide`
+- [x] `body[]` de cada artículo es `string[]` (párrafos planos), no objetos `{ heading, content }`
+- [x] Los artículos tienen campo `date` (fecha de publicación demo) además de sourceName/sourceUrl
 
 ### C. Configuración de usuario persistente
-- [x] `EntityStore.settings` contiene `captchaEnabled`, `defaultRadius`, `notif{}` (7 sub-campos), `privacy{}` (4 sub-campos)
-- [x] `updateSettings(partial)` disponible en `useApp()` en cualquier pantalla
-- [x] `updateSettings` hace deep merge en `notif` y `privacy` (no sobreescribe campos hermanos)
-- [x] `PRF_03` (Privacy Settings): toggles showPhone, showEmail, showLocation, allowIndexing persisten en store
-- [x] `PRF_04` (Notification Settings): toggles push, email, sms, caseUpdates, matches, community, marketing persisten en store
+- [x] `EntityStore.settings` es de tipo `Settings` (no `UserSettings`) con campos: `captchaEnabled`, `defaultRadius`, `showPhone`, `allowChat`, `showEmail`, y `notif: NotifSettings`
+- [x] No existe sub-objeto `privacy{}` — los campos de privacidad (`showPhone`, `allowChat`, `showEmail`) son campos directos en `Settings`
+- [x] `NotifSettings` tiene 9 sub-campos: `sightingsNearMe`, `aiMatch`, `caseUpdates`, `chatMessages`, `vaccineReminders`, `feedingReminders`, `communityPosts`, `eventUpdates`, `playdateInvitations`
+- [x] `updateSettings(partial: Partial<Settings>)` disponible en `useApp()` en cualquier pantalla
+- [x] `updateSettings` hace deep merge sobre `notif` (no sobreescribe campos hermanos)
+- [x] `PRF_03` (Privacy Settings): toggles `showPhone`, `allowChat`, `showEmail` persisten en `store.settings`
+- [x] `PRF_04` (Notification Settings): 9 toggles de `NotifSettings` persisten en `store.settings.notif`
 - [x] Los toggles leen el estado inicial de `store.settings` (sobreviven recarga de página)
 - [x] `QRH_03` (Anti-scraping): toggle de captcha llama `updateSettings({ captchaEnabled: value })`
 

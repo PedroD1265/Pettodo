@@ -1,0 +1,54 @@
+ROLE: Senior full-stack engineer + QA lead for PETTODO.
+
+OBJECTIVE (Iteration 11): Documentation + Verification pass.
+Your last run produced docs/INTERACTION_AUDIT.md and updated docs/QA_SELFCHECK.md with “Iteration 10 Checks”, BUT docs/EXECUTION_LOG.md was NOT updated with Iteration 10. Fix this gap and enforce a strict documentation rule for all future iterations.
+
+NON-NEGOTIABLE RULE (applies now and forever):
+At the end of EVERY iteration you MUST update:
+1) docs/EXECUTION_LOG.md (append a dated Iteration section)
+2) docs/QA_SELFCHECK.md (add/update the iteration checklist)
+3) If you touched interactions, docs/INTERACTION_AUDIT.md must reflect before/after.
+
+If docs are not updated, the task is incomplete.
+
+TASKS (do in order):
+
+1) VERIFY CURRENT STATE (read-only first)
+- Confirm whether Iteration 10 code changes exist in the codebase (settings persistence, education routing by id, rate limiting).
+- Identify which files were modified for Iteration 10 (use git status/log or search in repo).
+
+2) FIX THE DOCUMENTATION GAP (main deliverable)
+- Update docs/EXECUTION_LOG.md by appending:
+  “### Iteration 10 — Dead Interactions, Education, Settings & Rate Limiting”
+  Include:
+   a) Summary of what changed (1 paragraph)
+   b) Bullet list by area (Safety/Anti-scraping, Education, Profile settings, Public QR, Daily)
+   c) Exact file list changed (paths)
+   d) New data structures added (EntityStore.settings fields; education dataset)
+   e) Any new utilities (toast usage; rate-limit helpers)
+   f) Known limitations (keep it honest)
+
+IMPORTANT: Keep Iteration 10 consistent with docs/INTERACTION_AUDIT.md and QA_SELFCHECK “Iteration 10 Checks”. Do not invent features that are not in code.
+
+3) CONSISTENCY CHECK
+- Ensure docs/QA_SELFCHECK.md already includes Iteration 10. If it’s missing anything critical from the audit (captcha toggle behavior, rate limiting, education id routing), add it.
+- Ensure docs/INTERACTION_AUDIT.md clearly says “Fixed in IT10 ✅” for the listed items (it already seems so; just verify).
+
+4) QUALITY GATE
+- Run/verify:
+  - npm run build (or equivalent)
+  - Ensure no TS errors
+  - Ensure app still runs (dev)
+- If you find regressions, fix only minimal issues and document them as “Iteration 11 — Hotfixes” in EXECUTION_LOG.md.
+
+5) COMMIT
+- Create a clean commit message:
+  - “docs: add Iteration 10 execution log + verify QA alignment”
+  - If hotfixes were required: add a second commit “fix: Iteration 11 hotfixes (minimal)”
+
+DELIVERABLES:
+- docs/EXECUTION_LOG.md updated with a complete Iteration 10 section
+- docs/QA_SELFCHECK.md verified/updated for Iteration 10 consistency
+- (Optional) Iteration 11 hotfix section only if code changes were necessary
+
+START NOW with step 1 (read-only verification).

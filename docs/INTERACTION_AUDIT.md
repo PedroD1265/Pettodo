@@ -52,9 +52,9 @@
 
 | # | Screen | Route | Control | Type | Expected | Current | Fixed in IT10 |
 |---|---|---|---|---|---|---|---|
-| Q1 | QRP_03 | `/public/qr-report` | "I have this dog" button | Navigate | Navigate to FOUND flow or show confirmation | Dead (no onClick) | ✅ Toast + navigate to `/emg/found-photos` |
-| Q2 | QRP_03 | `/public/qr-report` | "I spotted this dog" button | Navigate | Navigate to SIGHTED flow or show confirmation | Dead (no onClick) | ✅ Toast + navigate to `/emg/sighted-report` |
-| Q3 | QRP_03 | `/public/qr-report` | "Submit Report" button | Action | Add sighting to store + show success | Only navigates back, no store update | ✅ Adds sighting to store, then navigates |
+| Q1 | QRP_03 | `/public/qr-report` | "I have this dog" card | Select | Seleccionar tipo de reporte (estado visual: borde verde + fondo) + toast contextual | Dead (no onClick) | ✅ Selecciona tipo `found`, toast "Great — you have the dog!" |
+| Q2 | QRP_03 | `/public/qr-report` | "I spotted this dog" card | Select | Seleccionar tipo de reporte (estado visual: borde naranja + fondo) + toast contextual | Dead (no onClick) | ✅ Selecciona tipo `sighted`, toast "Thanks for the sighting!" |
+| Q3 | QRP_03 | `/public/qr-report` | "Submit Report" button | Action | Validar selección + `addSighting()` + pantalla de confirmación + redirect | Solo navega, sin store update | ✅ Valida tipo seleccionado, llama `addSighting()`, muestra confirmación, redirige a `/public/qr-landing` |
 
 ---
 
