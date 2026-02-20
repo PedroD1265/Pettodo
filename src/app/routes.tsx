@@ -1,6 +1,17 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Outlet } from 'react-router';
 import { AppShell } from './layout/AppShell';
 import { PublicShell } from './layout/PublicShell';
+import { AppProvider } from './context/AppContext';
+import { Toaster } from 'sonner';
+
+function GlobalLayout() {
+  return (
+    <AppProvider>
+      <Outlet />
+      <Toaster position="top-center" richColors />
+    </AppProvider>
+  );
+}
 
 // Sitemap
 import SMP_01 from './screens/sitemap/SMP_01';
@@ -58,144 +69,149 @@ import DS_01 from './screens/design-system/DS_01';
 import { ExecutionLog, QASelfCheck } from './screens/docs/DocsScreens';
 
 export const router = createBrowserRouter([
-  // === IN-APP ROUTES (with AppShell) ===
   {
-    Component: AppShell,
+    Component: GlobalLayout,
     children: [
-      // Home
-      { path: '/', Component: HOM_01 },
-      { path: '/home-daily', Component: HOM_01 },
-      { path: '/home-emergency', Component: HOM_02 },
-      { path: '/home-mode-switch', Component: HOM_03 },
-      { path: '/home-notifications', Component: HOM_04 },
+      // === IN-APP ROUTES (with AppShell) ===
+      {
+        Component: AppShell,
+        children: [
+          // Home
+          { path: '/', Component: HOM_01 },
+          { path: '/home-daily', Component: HOM_01 },
+          { path: '/home-emergency', Component: HOM_02 },
+          { path: '/home-mode-switch', Component: HOM_03 },
+          { path: '/home-notifications', Component: HOM_04 },
 
-      // Emergency
-      { path: '/emg/entry', Component: EMG_01 },
-      { path: '/emg/lost-photos', Component: EMG_02 },
-      { path: '/emg/lost-location', Component: EMG_03 },
-      { path: '/emg/lost-time', Component: EMG_04 },
-      { path: '/emg/lost-traits', Component: EMG_05 },
-      { path: '/emg/lost-published', Component: EMG_06 },
-      { path: '/emg/share-flyer', Component: EMG_07 },
-      { path: '/emg/found-photos', Component: EMG_08 },
-      { path: '/emg/found-radius', Component: EMG_09 },
-      { path: '/emg/found-qr-scan', Component: EMG_10 },
-      { path: '/emg/found-published', Component: EMG_11 },
-      { path: '/emg/sighted-report', Component: EMG_12 },
-      { path: '/emg/sighted-success', Component: EMG_13 },
-      { path: '/emg/map-layers', Component: EMG_14 },
-      { path: '/emg/map-pin-detail', Component: EMG_15 },
-      { path: '/emg/matching-top10', Component: EMG_16 },
-      { path: '/emg/matching-compare', Component: EMG_17 },
-      { path: '/emg/case-detail-lost', Component: EMG_18 },
-      { path: '/emg/case-detail-found', Component: EMG_19 },
-      { path: '/emg/case-detail-sighted', Component: EMG_20 },
-      { path: '/emg/heatmap', Component: EMG_21 },
-      { path: '/emg/quadrants', Component: EMG_22 },
-      { path: '/emg/chat', Component: EMG_23 },
-      { path: '/emg/proof-modal', Component: EMG_24 },
-      { path: '/emg/proof-capture', Component: EMG_25 },
-      { path: '/emg/safe-point-select', Component: EMG_26 },
-      { path: '/emg/safe-delivery-schedule', Component: EMG_27 },
-      { path: '/emg/safe-delivery-rules', Component: EMG_28 },
-      { path: '/emg/safe-delivery-checkin', Component: EMG_29 },
-      { path: '/emg/case-resolved', Component: EMG_30 },
-      { path: '/emg/case-lifecycle', Component: EMG_31 },
+          // Emergency
+          { path: '/emg/entry', Component: EMG_01 },
+          { path: '/emg/lost-photos', Component: EMG_02 },
+          { path: '/emg/lost-location', Component: EMG_03 },
+          { path: '/emg/lost-time', Component: EMG_04 },
+          { path: '/emg/lost-traits', Component: EMG_05 },
+          { path: '/emg/lost-published', Component: EMG_06 },
+          { path: '/emg/share-flyer', Component: EMG_07 },
+          { path: '/emg/found-photos', Component: EMG_08 },
+          { path: '/emg/found-radius', Component: EMG_09 },
+          { path: '/emg/found-qr-scan', Component: EMG_10 },
+          { path: '/emg/found-published', Component: EMG_11 },
+          { path: '/emg/sighted-report', Component: EMG_12 },
+          { path: '/emg/sighted-success', Component: EMG_13 },
+          { path: '/emg/map-layers', Component: EMG_14 },
+          { path: '/emg/map-pin-detail', Component: EMG_15 },
+          { path: '/emg/matching-top10', Component: EMG_16 },
+          { path: '/emg/matching-compare', Component: EMG_17 },
+          { path: '/emg/case-detail-lost', Component: EMG_18 },
+          { path: '/emg/case-detail-found', Component: EMG_19 },
+          { path: '/emg/case-detail-sighted', Component: EMG_20 },
+          { path: '/emg/heatmap', Component: EMG_21 },
+          { path: '/emg/quadrants', Component: EMG_22 },
+          { path: '/emg/chat', Component: EMG_23 },
+          { path: '/emg/proof-modal', Component: EMG_24 },
+          { path: '/emg/proof-capture', Component: EMG_25 },
+          { path: '/emg/safe-point-select', Component: EMG_26 },
+          { path: '/emg/safe-delivery-schedule', Component: EMG_27 },
+          { path: '/emg/safe-delivery-rules', Component: EMG_28 },
+          { path: '/emg/safe-delivery-checkin', Component: EMG_29 },
+          { path: '/emg/case-resolved', Component: EMG_30 },
+          { path: '/emg/case-lifecycle', Component: EMG_31 },
 
-      // QR Hub
-      { path: '/qr/hub', Component: QRH_01 },
-      { path: '/qr/config', Component: QRH_02 },
-      { path: '/qr/anti-scraping', Component: QRH_03 },
-      { path: '/qr/share-download', Component: QRH_04 },
-      { path: '/qr/preview', Component: QRH_05 },
+          // QR Hub
+          { path: '/qr/hub', Component: QRH_01 },
+          { path: '/qr/config', Component: QRH_02 },
+          { path: '/qr/anti-scraping', Component: QRH_03 },
+          { path: '/qr/share-download', Component: QRH_04 },
+          { path: '/qr/preview', Component: QRH_05 },
 
-      // Daily
-      { path: '/daily/home', Component: DLY_01 },
-      { path: '/daily/pet-list', Component: DLY_02 },
-      { path: '/daily/pet-profile', Component: DLY_03 },
-      { path: '/daily/documents', Component: DLY_04 },
-      { path: '/daily/feeding', Component: DLY_05 },
-      { path: '/daily/vaccines', Component: DLY_06 },
-      { path: '/daily/calendar', Component: DLY_07 },
-      { path: '/daily/report-lost', Component: DLY_08 },
+          // Daily
+          { path: '/daily/home', Component: DLY_01 },
+          { path: '/daily/pet-list', Component: DLY_02 },
+          { path: '/daily/pet-profile', Component: DLY_03 },
+          { path: '/daily/documents', Component: DLY_04 },
+          { path: '/daily/feeding', Component: DLY_05 },
+          { path: '/daily/vaccines', Component: DLY_06 },
+          { path: '/daily/calendar', Component: DLY_07 },
+          { path: '/daily/report-lost', Component: DLY_08 },
 
-      // Education
-      { path: '/education/library', Component: EDU_01 },
-      { path: '/education/article', Component: EDU_02 },
-      { path: '/education/ai-assistant', Component: EDU_03 },
-      { path: '/education/guide', Component: EDU_04 },
+          // Education
+          { path: '/education/library', Component: EDU_01 },
+          { path: '/education/article', Component: EDU_02 },
+          { path: '/education/ai-assistant', Component: EDU_03 },
+          { path: '/education/guide', Component: EDU_04 },
 
-      // Communities
-      { path: '/communities/home', Component: COM_01 },
-      { path: '/communities/create', Component: COM_02 },
-      { path: '/communities/detail', Component: COM_03 },
-      { path: '/communities/create-post', Component: COM_04 },
-      { path: '/communities/moderation', Component: COM_05 },
+          // Communities
+          { path: '/communities/home', Component: COM_01 },
+          { path: '/communities/create', Component: COM_02 },
+          { path: '/communities/detail', Component: COM_03 },
+          { path: '/communities/create-post', Component: COM_04 },
+          { path: '/communities/moderation', Component: COM_05 },
 
-      // Events
-      { path: '/events/list', Component: EVT_01 },
-      { path: '/events/detail', Component: EVT_02 },
-      { path: '/events/create', Component: EVT_03 },
-      { path: '/events/ia-verification', Component: EVT_04 },
-      { path: '/events/community-confirmation', Component: EVT_05 },
-      { path: '/events/official-organizer', Component: EVT_06 },
+          // Events
+          { path: '/events/list', Component: EVT_01 },
+          { path: '/events/detail', Component: EVT_02 },
+          { path: '/events/create', Component: EVT_03 },
+          { path: '/events/ia-verification', Component: EVT_04 },
+          { path: '/events/community-confirmation', Component: EVT_05 },
+          { path: '/events/official-organizer', Component: EVT_06 },
 
-      // Community Dogs
-      { path: '/community-dogs/map-list', Component: CMT_01 },
-      { path: '/community-dogs/create', Component: CMT_02 },
-      { path: '/community-dogs/detail', Component: CMT_03 },
-      { path: '/community-dogs/dedup', Component: CMT_04 },
-      { path: '/community-dogs/found-warning', Component: CMT_05 },
-      { path: '/community-dogs/dispute-start', Component: CMT_06 },
-      { path: '/community-dogs/dispute-evidence', Component: CMT_07 },
-      { path: '/community-dogs/dispute-resolution', Component: CMT_08 },
+          // Community Dogs
+          { path: '/community-dogs/map-list', Component: CMT_01 },
+          { path: '/community-dogs/create', Component: CMT_02 },
+          { path: '/community-dogs/detail', Component: CMT_03 },
+          { path: '/community-dogs/dedup', Component: CMT_04 },
+          { path: '/community-dogs/found-warning', Component: CMT_05 },
+          { path: '/community-dogs/dispute-start', Component: CMT_06 },
+          { path: '/community-dogs/dispute-evidence', Component: CMT_07 },
+          { path: '/community-dogs/dispute-resolution', Component: CMT_08 },
 
-      // Walkers
-      { path: '/walkers/marketplace', Component: SRV_01 },
-      { path: '/walkers/profile', Component: SRV_02 },
-      { path: '/walkers/request', Component: SRV_03 },
-      { path: '/walkers/confirmation', Component: SRV_04 },
-      { path: '/walkers/chat', Component: SRV_05 },
-      { path: '/walkers/first-meet', Component: SRV_06 },
-      { path: '/walkers/walk-session', Component: SRV_07 },
-      { path: '/walkers/post-session', Component: SRV_08 },
-      { path: '/walkers/incident-report', Component: SRV_09 },
-      { path: '/walkers/verification', Component: SRV_10 },
+          // Walkers
+          { path: '/walkers/marketplace', Component: SRV_01 },
+          { path: '/walkers/profile', Component: SRV_02 },
+          { path: '/walkers/request', Component: SRV_03 },
+          { path: '/walkers/confirmation', Component: SRV_04 },
+          { path: '/walkers/chat', Component: SRV_05 },
+          { path: '/walkers/first-meet', Component: SRV_06 },
+          { path: '/walkers/walk-session', Component: SRV_07 },
+          { path: '/walkers/post-session', Component: SRV_08 },
+          { path: '/walkers/incident-report', Component: SRV_09 },
+          { path: '/walkers/verification', Component: SRV_10 },
 
-      // Play Dates
-      { path: '/playdates/home', Component: PD_01 },
-      { path: '/playdates/compatibility', Component: PD_02 },
-      { path: '/playdates/create', Component: PD_03 },
-      { path: '/playdates/approval', Component: PD_04 },
-      { path: '/playdates/detail', Component: PD_05 },
-      { path: '/playdates/chat', Component: PD_06 },
-      { path: '/playdates/incident', Component: PD_07 },
-      { path: '/playdates/participation', Component: PD_08 },
+          // Play Dates
+          { path: '/playdates/home', Component: PD_01 },
+          { path: '/playdates/compatibility', Component: PD_02 },
+          { path: '/playdates/create', Component: PD_03 },
+          { path: '/playdates/approval', Component: PD_04 },
+          { path: '/playdates/detail', Component: PD_05 },
+          { path: '/playdates/chat', Component: PD_06 },
+          { path: '/playdates/incident', Component: PD_07 },
+          { path: '/playdates/participation', Component: PD_08 },
 
-      // Profile
-      { path: '/profile/user', Component: PRF_01 },
-      { path: '/profile/verification', Component: PRF_02 },
-      { path: '/profile/privacy', Component: PRF_03 },
-      { path: '/profile/notifications', Component: PRF_04 },
-      { path: '/profile/safety', Component: PRF_05 },
-    ],
-  },
+          // Profile
+          { path: '/profile/user', Component: PRF_01 },
+          { path: '/profile/verification', Component: PRF_02 },
+          { path: '/profile/privacy', Component: PRF_03 },
+          { path: '/profile/notifications', Component: PRF_04 },
+          { path: '/profile/safety', Component: PRF_05 },
+        ],
+      },
 
-  // === PUBLIC QR ROUTES (no app chrome) ===
-  {
-    Component: PublicShell,
-    children: [
-      { path: '/public/qr-landing', Component: QRP_01 },
-      { path: '/public/qr-captcha', Component: QRP_02 },
-      { path: '/public/qr-report', Component: QRP_03 },
-    ],
-  },
+      // === PUBLIC QR ROUTES (no app chrome) ===
+      {
+        Component: PublicShell,
+        children: [
+          { path: '/public/qr-landing', Component: QRP_01 },
+          { path: '/public/qr-captcha', Component: QRP_02 },
+          { path: '/public/qr-report', Component: QRP_03 },
+        ],
+      },
 
-  // === STANDALONE ROUTES (no shell) ===
-  { path: '/sitemap', Component: SMP_01 },
-  { path: '/sitemap/bipolar', Component: SMP_02 },
-  { path: '/sitemap/flows', Component: SMP_03 },
-  { path: '/design-system', Component: DS_01 },
-  { path: '/execution-log', Component: ExecutionLog },
-  { path: '/qa-selfcheck', Component: QASelfCheck },
+      // === STANDALONE ROUTES (no shell) ===
+      { path: '/sitemap', Component: SMP_01 },
+      { path: '/sitemap/bipolar', Component: SMP_02 },
+      { path: '/sitemap/flows', Component: SMP_03 },
+      { path: '/design-system', Component: DS_01 },
+      { path: '/execution-log', Component: ExecutionLog },
+      { path: '/qa-selfcheck', Component: QASelfCheck },
+    ]
+  }
 ]);

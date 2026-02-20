@@ -114,10 +114,19 @@ export function EMG_16() {
           ))}
         </div>
 
-        <div className="mt-4 pb-4">
+        <div className="mt-4 pb-4 flex flex-col gap-3">
           <Btn variant="primary" fullWidth onClick={() => nav('/emg/matching-compare')}>
             Compare Side by Side
           </Btn>
+          
+          {/* Case Actions (Task 2) */}
+          <div className="pt-2 border-t border-gray-200">
+            <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
+            <div className="flex gap-2">
+              <Btn variant="secondary" className="flex-1" onClick={() => nav('/emg/share-flyer')}>Share Flyer</Btn>
+              <Btn variant="secondary" className="flex-1" onClick={() => nav('/emg/lost-published')}>Report Published</Btn>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -131,7 +140,7 @@ export function EMG_17() {
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_17_Matching_CompareSideBySide" />
-      <AppBar title="Compare Match" showBack backTo="/emg/matching-top10" />
+      <AppBar title="Compare Match" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
         <Banner type="warning" text="Possible match (AI doesn't confirm)" />
 
@@ -171,6 +180,15 @@ export function EMG_17() {
             <MessageSquare size={16} /> Contact Finder
           </Btn>
           <Btn variant="secondary" fullWidth onClick={() => nav('/emg/matching-top10')}>Back to All Matches</Btn>
+
+          {/* Case Actions (Task 2) */}
+          <div className="pt-3 mt-1 border-t border-gray-200">
+            <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
+            <div className="flex gap-2">
+              <Btn variant="ghost" className="flex-1" onClick={() => nav('/emg/share-flyer')}>Share Flyer</Btn>
+              <Btn variant="ghost" className="flex-1" onClick={() => nav('/emg/lost-published')}>Report Published</Btn>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -297,7 +315,7 @@ export function EMG_20() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#FFFBEB' }}>
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--warning-bg)' }}>
             <Eye size={28} style={{ color: 'var(--warning)' }} />
           </div>
           <div>

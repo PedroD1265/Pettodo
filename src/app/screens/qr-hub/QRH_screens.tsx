@@ -5,7 +5,8 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate } from 'react-router';
 import { LUNA } from '../../data/demoData';
-import { QrCode, Download, Share2, Printer, Shield, Eye, Lock, AlertTriangle } from 'lucide-react';
+import { QrCode, Download, Share2, Printer, Shield, Eye, Lock, AlertTriangle, Copy, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 // QRH_01
 export function QRH_01() {
@@ -23,7 +24,7 @@ export function QRH_01() {
         </div>
 
         <div className="flex gap-2 w-full">
-          <Btn variant="secondary" className="flex-1" icon={<Download size={16} />}>Download</Btn>
+          <Btn variant="secondary" className="flex-1" icon={<Download size={16} />}></Btn>
           <Btn variant="secondary" className="flex-1" icon={<Share2 size={16} />}>Share</Btn>
           <Btn variant="secondary" className="flex-1" icon={<Printer size={16} />}>Print</Btn>
         </div>
@@ -127,25 +128,55 @@ export function QRH_03() {
 
 // QRH_04
 export function QRH_04() {
+  const handleCopy = (text: string) => {
+    // navigator.clipboard.writeText(text); // In some environments this fails without permission, but for simulation we just toast
+    toast.success('Copied text. Sharing is simulated in this prototype.');
+  };
+
+  const shareText = `Help Luna get home!
+Breed: Medium mixed-breed
+Last seen: Central Park
+Contact info is protected. Use the in-app flow:
+https://pettodo.app/qr/LUNA123`;
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="QRH_04_QR_ShareDownloadPrint" />
       <AppBar title="Share & Download" showBack backTo="/qr/hub" />
-      <div className="flex-1 p-4 flex flex-col gap-4 items-center">
-        <div className="w-40 h-40 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gray-100)' }}>
-          <QrCode size={80} style={{ color: 'var(--gray-900)' }} />
+      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+        <div className="flex flex-col items-center gap-2">
+           <div className="w-40 h-40 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gray-100)' }}>
+             <QrCode size={80} style={{ color: 'var(--gray-900)' }} />
+           </div>
+           <p className="text-[11px] text-center px-3 py-1.5 rounded-lg" style={{ background: 'var(--gray-100)', color: 'var(--gray-500)' }}>
+             Anti-scrape note: Contact info requires captcha verification
+           </p>
         </div>
-        <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>
-          Download or share Luna's QR code. Print it for her collar tag.
-        </p>
-        <p className="text-[11px] text-center px-3 py-1.5 rounded-lg" style={{ background: 'var(--gray-100)', color: 'var(--gray-500)' }}>
-          Anti-scrape note: Contact info requires captcha verification
-        </p>
+
+        {/* Share Text Panel */}
+        <div className="p-3 rounded-xl border" style={{ borderColor: 'var(--gray-200)', background: 'var(--gray-50)' }}>
+          <p className="text-[13px] font-mono whitespace-pre-wrap" style={{ color: 'var(--gray-700)' }}>
+            {shareText}
+          </p>
+          <button 
+            onClick={() => handleCopy(shareText)}
+            className="mt-2 flex items-center gap-2 text-[12px] font-medium" 
+            style={{ color: 'var(--green-primary)' }}
+          >
+            <Copy size={14} /> Copy Share Text
+          </button>
+        </div>
+
+        {/* Action Buttons */}
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth icon={<Download size={16} />}>Download QR Image (PNG)</Btn>
-          <Btn variant="secondary" fullWidth icon={<Download size={16} />}>Download for Print (PDF)</Btn>
-          <Btn variant="secondary" fullWidth icon={<Share2 size={16} />}>Share via Message</Btn>
-          <Btn variant="secondary" fullWidth icon={<Share2 size={16} />}>Share via Social Media</Btn>
+          <Btn variant="primary" fullWidth icon={<MessageCircle size={16} />} onClick={() => handleCopy(shareText)}>Share to WhatsApp</Btn>
+          <Btn variant="secondary" fullWidth icon={<Instagram size={16} />} onClick={() => handleCopy(shareText)}>Share to Instagram</Btn>
+          <Btn variant="secondary" fullWidth icon={<Facebook size={16} />} onClick={() => handleCopy(shareText)}>Share to Facebook</Btn>
+          
+          <div className="h-px w-full my-2" style={{ background: 'var(--gray-200)' }} />
+          
+          <Btn variant="ghost" fullWidth icon={<Download size={16} />} onClick={() => toast.success('Download simulated')}>Download QR Image (PNG)</Btn>
+          <Btn variant="ghost" fullWidth icon={<Printer size={16} />} onClick={() => toast.success('Print simulated')}>Download for Print (PDF)</Btn>
         </div>
       </div>
     </div>

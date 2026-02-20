@@ -43,7 +43,8 @@ export function EMG_08() {
 // EMG_09
 export function EMG_09() {
   const nav = useNavigate();
-  const [radius, setRadius] = useState(500);
+  const [radius, setRadius] = useState(300);
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_09_Found_PrivacyRadius" />
@@ -52,14 +53,74 @@ export function EMG_09() {
       <div className="flex-1 p-4 flex flex-col gap-4">
         <div>
           <h3 className="text-[17px] mb-1" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Set privacy area</h3>
-          <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Only an approximate area is shown — not your exact address.</p>
+          <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>
+            Only an approximate area is shown — not your exact address.
+          </p>
         </div>
-        <MapPlaceholder height={180} />
-        <RadiusSelector value={radius} onChange={setRadius} />
-        <Banner type="privacy" text="Your exact location is protected" />
-        <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Approximate area only — exact address is hidden.</p>
+
+        {/* Map Preview with Dynamic Radius */}
+        <div 
+          className="relative rounded-xl overflow-hidden flex items-center justify-center w-full" 
+          style={{ background: 'var(--gray-100)', height: 200, border: '1px solid var(--gray-200)' }}
+        >
+          {/* Map Texture Simulation */}
+          <div className="absolute inset-0 opacity-10" style={{ 
+            backgroundImage: 'radial-gradient(var(--gray-400) 1px, transparent 1px)', 
+            backgroundSize: '20px 20px' 
+          }} />
+          <MapPin size={48} className="absolute opacity-20" style={{ color: 'var(--gray-400)' }} />
+
+          {/* Privacy Circle Overlay */}
+          <div 
+            className="absolute rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-300"
+            style={{
+              width: radius === 300 ? '120px' : radius === 500 ? '160px' : '220px',
+              height: radius === 300 ? '120px' : radius === 500 ? '160px' : '220px',
+              borderColor: 'var(--green-primary)',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)', // green-500 equivalent opacity
+            }}
+          >
+             {/* Center indicator (hidden for privacy or generic dot) */}
+             <div className="w-2 h-2 rounded-full" style={{ background: 'var(--green-primary)' }} />
+          </div>
+        </div>
+
+        {/* Segmented Control */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Privacy radius</span>
+          <div className="flex gap-2">
+            {[300, 500, 1000].map((r) => {
+              const isSelected = radius === r;
+              const label = r === 1000 ? '1km' : `${r}m`;
+              return (
+                <button
+                  key={r}
+                  onClick={() => setRadius(r)}
+                  className="flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all border"
+                  style={{
+                    background: isSelected ? 'var(--green-soft)' : 'var(--white)',
+                    borderColor: isSelected ? 'var(--green-primary)' : 'var(--gray-200)',
+                    minHeight: 56
+                  }}
+                >
+                  <span className="text-[14px]" style={{ fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--green-dark)' : 'var(--gray-900)' }}>
+                    {label}
+                  </span>
+                  {r === 300 && (
+                    <span className="text-[10px]" style={{ color: isSelected ? 'var(--green-dark)' : 'var(--gray-500)' }}>
+                      (recommended)
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <Banner type="privacy" text="Your exact location is protected. Only an approximate area is shown to protect your privacy." />
+        
         <div className="mt-auto">
-          <Btn variant="daily" fullWidth onClick={() => nav('/emg/found-qr-scan')}>Next: QR Scan</Btn>
+          <Btn variant="daily" fullWidth onClick={() => nav('/emg/found-qr-scan')}>Continue</Btn>
         </div>
       </div>
     </div>
@@ -111,7 +172,7 @@ export function EMG_11() {
 
         <div>
           <h3 className="text-[15px] mb-1" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Suggested matches</h3>
-          <p className="text-[12px] mb-2 px-2 py-1 rounded-lg inline-block" style={{ background: '#FFFBEB', color: 'var(--warning)', fontWeight: 500 }}>
+          <p className="text-[12px] mb-2 px-2 py-1 rounded-lg inline-block" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', fontWeight: 500 }}>
             Possible match (AI doesn't confirm)
           </p>
         </div>

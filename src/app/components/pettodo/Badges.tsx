@@ -18,8 +18,8 @@ export function VerificationBadge({ level }: { level: 'sms' | 'strict' }) {
 
 export function ConfidenceBadge({ value }: { value: number }) {
   const level = value >= 75 ? 'High' : value >= 50 ? 'Medium' : 'Low';
-  const bg = value >= 75 ? 'var(--green-soft)' : value >= 50 ? '#FEF3C7' : 'var(--red-soft)';
-  const color = value >= 75 ? 'var(--green-dark)' : value >= 50 ? 'var(--warning)' : 'var(--red-dark)';
+  const bg = value >= 75 ? 'var(--green-soft)' : value >= 50 ? 'var(--warning-bg)' : 'var(--red-soft)';
+  const color = value >= 75 ? 'var(--green-dark)' : value >= 50 ? 'var(--warning-dark)' : 'var(--red-dark)';
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]" style={{ background: bg, color, fontWeight: 600 }}>
       {level} {value}%
@@ -39,7 +39,7 @@ export function StatusChip({ status }: { status: 'lost' | 'found' | 'sighted' | 
   const styles: Record<string, { bg: string; color: string; label: string }> = {
     lost: { bg: 'var(--red-soft)', color: 'var(--red-dark)', label: 'Lost' },
     found: { bg: 'var(--green-soft)', color: 'var(--green-dark)', label: 'Found' },
-    sighted: { bg: '#FEF3C7', color: 'var(--warning)', label: 'Sighted' },
+    sighted: { bg: 'var(--warning-bg)', color: 'var(--warning-dark)', label: 'Sighted' },
     resolved: { bg: 'var(--gray-200)', color: 'var(--gray-700)', label: 'Resolved' },
     active: { bg: 'var(--red-soft)', color: 'var(--red-dark)', label: 'Active' },
   };
@@ -62,7 +62,7 @@ export function MatchReasonTag({ reason }: { reason: string }) {
 export function EventTrustBadge({ type }: { type: 'ai' | 'community' }) {
   if (type === 'ai') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]" style={{ background: '#DBEAFE', color: 'var(--info)', fontWeight: 600 }}>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px]" style={{ background: 'var(--info-bg)', color: 'var(--info)', fontWeight: 600 }}>
         <CheckCircle size={12} /> AI Verified
       </span>
     );
@@ -77,7 +77,7 @@ export function EventTrustBadge({ type }: { type: 'ai' | 'community' }) {
 export function PhotoQualityBadge({ quality }: { quality: 'good' | 'ok' | 'poor' }) {
   const cfg = {
     good: { bg: 'var(--green-soft)', color: 'var(--green-dark)', label: 'Good quality', tip: '' },
-    ok: { bg: '#FEF3C7', color: 'var(--warning)', label: 'Acceptable', tip: 'Better photos improve match accuracy' },
+    ok: { bg: 'var(--warning-bg)', color: 'var(--warning)', label: 'Acceptable', tip: 'Better photos improve match accuracy' },
     poor: { bg: 'var(--red-soft)', color: 'var(--red-dark)', label: 'Poor quality', tip: 'Face not visible. Matches may be less accurate.' },
   };
   const c = cfg[quality];
@@ -101,7 +101,7 @@ export function DirectionChip({ direction }: { direction: string }) {
 
 export function NewAccountBadge() {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]" style={{ background: '#FEF3C7', color: 'var(--warning)', fontWeight: 600 }}>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]" style={{ background: 'var(--warning-bg)', color: 'var(--warning-dark)', fontWeight: 600 }}>
       <AlertTriangle size={10} /> New account — limited features
     </span>
   );

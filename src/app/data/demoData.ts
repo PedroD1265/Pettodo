@@ -106,3 +106,103 @@ export const ARTICLES = [
   { id: 3, title: 'Vaccination schedule guide for puppies and adults', source: 'VCA Hospitals', date: 'Feb 1, 2026', category: 'Health' },
   { id: 4, title: 'How to safely introduce dogs at a play date', source: 'PetMD', date: 'Jan 15, 2026', category: 'Social' },
 ];
+
+export const COMMUNITY_DOGS = [
+  { id: 'cd1', name: 'Buddy (street)', lastSeen: '2 hours ago', location: 'Central Park, East side', image: 'figma:asset/cd1' },
+  { id: 'cd2', name: 'Lady (community)', lastSeen: 'Yesterday', location: 'Riverside Park entrance', image: 'figma:asset/cd2' },
+  { id: 'cd3', name: 'Rex (street)', lastSeen: '3 days ago', location: 'West 72nd St area', image: 'figma:asset/cd3' },
+];
+
+export const INITIAL_COMMUNITY_DOG_SIGHTINGS = [
+  { id: 1, dogId: 'cd1', date: 'Today at 4:30 PM', location: 'Central Park, near Boat Pond', note: 'Sleeping on the bench', author: 'Maria G.' },
+  { id: 2, dogId: 'cd1', date: 'Today at 12:15 PM', location: '5th Ave & 79th St', note: 'Walking north', author: 'Doorman' },
+  { id: 3, dogId: 'cd1', date: 'Yesterday', location: 'Central Park, East side', note: 'Playing with another dog', author: 'James T.' },
+];
+
+export const INITIAL_COMMUNITY_DOG_CARE_RECORDS = [
+  { id: 1, dogId: 'cd1', type: 'feeding', date: 'Today at 8:00 AM', detail: 'Dry kibble + water', author: 'Maria G.' },
+  { id: 2, dogId: 'cd1', type: 'vaccine', date: 'Jan 15, 2026', detail: 'Rabies booster', author: 'Dr. Smith (Verified)' },
+  { id: 3, dogId: 'cd1', type: 'note', date: 'Yesterday', detail: 'Seemed limping slightly on left paw', author: 'James T.' },
+];
+
+// ========== PHOTO QUALITY SCORING (Task 3) ==========
+
+export type PhotoQuality = 'good' | 'ok' | 'poor';
+
+export interface PhotoScore {
+  quality: PhotoQuality;
+  reasons: string[];
+  tips: string[];
+}
+
+const QUALITY_PROFILES: PhotoScore[] = [
+  { quality: 'good', reasons: ['Face visible', 'Good lighting', 'Clear focus'], tips: [] },
+  { quality: 'ok', reasons: ['Body visible', 'Slightly dark'], tips: ['Try better lighting', 'Get a front face shot'] },
+  { quality: 'poor', reasons: ['Blurry', 'Dog too far', 'Face not visible'], tips: ['Move closer', 'Hold camera steady', 'Photograph from the front'] },
+];
+
+let photoCallCount = 0;
+export function scorePhoto(): PhotoScore {
+  // Cycle through profiles to simulate variety
+  const profile = QUALITY_PROFILES[photoCallCount % QUALITY_PROFILES.length];
+  photoCallCount++;
+  return profile;
+}
+
+export function getConfidenceModifier(qualities: PhotoQuality[]): number {
+  const poorCount = qualities.filter(q => q === 'poor').length;
+  const okCount = qualities.filter(q => q === 'ok').length;
+  return -(poorCount * 15) - (okCount * 5);
+}
+
+// ========== PHOTO GUIDANCE ==========
+
+export const PHOTO_GUIDANCE = [
+  { label: 'Front face', desc: 'Clear view of the face', icon: '📸' },
+  { label: 'Full body', desc: 'Head to tail, side view', icon: '🐕' },
+  { label: 'Good lighting', desc: 'Natural light, no harsh shadows', icon: '☀️' },
+];
+
+// ========== FLYER / SHARE KIT (Task 4) ==========
+
+export const FLYER_SHARE_TEXT = `🚨 LOST DOG — ${LUNA.name}
+${LUNA.breed} · ${LUNA.description}
+Last seen: ${LOST_CASE.location}
+${LOST_CASE.time}
+If found, please report via PETTODO app.
+Do NOT approach if the dog seems scared.
+pettodo.app/case/${LOST_CASE.id}`;
+
+export const FLYER_SAFETY_REMINDER =
+  'Never share your home address. Meet only at safe points. Report suspicious behavior.';
+
+// ========== LIFECYCLE HELPERS (Task 5) ==========
+
+export function getCaseAge(demoTimeOffset: number): number {
+  return demoTimeOffset; // days since case created
+}
+
+export function getMatchAge(demoTimeOffset: number): number {
+  // Match found on day 0, so age = offset
+  return demoTimeOffset;
+}
+
+export function getCaseStatusFromAge(age: number): string {
+  if (age >= 30) return 'Expired';
+  if (age >= 25) return 'Expiring soon';
+  return 'Active';
+}
+
+export function getMatchStatusFromAge(age: number): string {
+  if (age >= 10) return 'Expired';
+  if (age >= 9) return 'Last day';
+  if (age >= 7) return 'Expiring soon';
+  return 'Active';
+}
+
+export function formatDaysRemaining(current: number, total: number): string {
+  const remaining = total - current;
+  if (remaining <= 0) return 'Expired';
+  if (remaining === 1) return '1 day remaining';
+  return `${remaining} days remaining`;
+}

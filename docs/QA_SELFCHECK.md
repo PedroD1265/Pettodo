@@ -96,8 +96,20 @@
 | "Report suspicious behavior" | EMG_23, SRV_05, PD_06 |
 | "Approximate area only — exact address is hidden." | EMG_15, EMG_19, QRP_03 |
 | "This action requires Strict verification (ID + Selfie)." | EVT_06, SRV_10, PD_08 |
-| "Too many attempts. Try again in 60 minutes." | QRP_02, QRH_03 |
+| "Too many attempts. Try again in 60 minutes." | QRP_02, QRH_03, VerificationFlows (rate_limit) |
 | "Last updated 12 min ago" | EMG_15, EMG_18, EMG_21 |
+
+## Components Checklist (Iteration 2)
+- [x] OTPFlow (phone → OTP → success/error/rate_limit)
+- [x] StrictVerificationFlow (start → ID front → ID back → selfie → submitted)
+- [x] VerificationGate (basic / strict gating wrapper)
+- [x] PhotoUploadGrid (3-slot grid, quality scoring, tips)
+- [x] FlyerPreview (LOST/FOUND flyer with QR placeholder)
+- [x] ShareKitActions (download PNG/PDF, copy text, share link, safety reminder)
+- [x] CaseLifecycleBar (30-day progress, status chip, days remaining)
+- [x] MatchLifecycleBar (10-day bar, day 7 / day 9 markers)
+- [x] DemoControlsFab (gear icon FAB)
+- [x] DemoControlsPanel (full state control: mode, case, verification, time offset)
 
 ## Accessibility Checklist
 - [x] All interactive targets >= 44x44 px
@@ -106,3 +118,41 @@
 - [x] Public QR screens: no app chrome
 - [x] System font fallback configured
 - [x] Semantic color usage (red=emergency, green=daily, blue=info, amber=warning)
+- [x] CSS variable tokens only — no hardcoded hex values in components
+- [x] React.Fragment avoided in mapped loops — div.contents used instead
+
+## Token Coverage Checklist
+- [x] --red-primary, --red-dark, --red-soft, --red-bg
+- [x] --green-primary, --green-dark, --green-soft, --green-bg
+- [x] --info, --info-bg, --info-soft, --info-dark
+- [x] --warning, --warning-bg, --warning-soft, --warning-dark
+- [x] --gray-100 through --gray-900, --white
+- [x] --sp-1 through --sp-8 (spacing)
+- [x] --r-sm through --r-xl (radius)
+- [x] --shadow-sm, --shadow-md, --shadow-lg (elevation)
+
+## Iteration 4 & 5 Checks
+- [x] Panic Mode claim gate is explicitly represented in EMG_06 and triggers OTP when unverified (Iteration 4)
+- [x] Found privacy radius picker exists in EMG_09 with 300m/500m/1km options (Iteration 5)
+
+## Iteration 6 Checks
+- [x] HOM_01 shows "Services & Trust" section (Walkers + Community Dogs)
+- [x] Walkers module (SRV_01) shows "PETTODO does not process payments"
+- [x] Community Dog Detail (CMT_03) shows "Sightings Timeline"
+- [x] "I saw this dog today" action updates the timeline in CMT_03
+- [x] Walker Profile (SRV_02) has persistent Availability UI stub
+- [x] "Become a Walker" link exists and references strict verification
+
+## Iteration 7 Checks
+- [x] HOM_01 section labels updated to "Community" and "Services"
+- [x] CMT_03 includes Care & Records with 3 actions and demo persistence
+- [x] QRH_04 includes share text + platform buttons that copy text
+- [x] Events (EVT_02) + Play Dates (PD_05) include Add to Calendar modal
+
+## Iteration 8 Checks
+- [x] EMG_17 can return to EMG_07 via "Share Flyer"
+- [x] EMG_17 can return to EMG_06 via "Report Published"
+- [x] Back chevron uses navigate(-1) and falls back to /home-emergency
+- [x] HOM_02 has Quick actions to EMG_07 and EMG_16
+- [x] EMG_07 has "Back to Report Published" link
+

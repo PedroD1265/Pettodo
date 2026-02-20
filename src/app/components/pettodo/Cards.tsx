@@ -15,13 +15,14 @@ function CardShell({ children, onClick, className = '' }: { children: ReactNode;
   );
 }
 
-export function CaseCard({ type, name, location, time, matchCount, onClick }: {
+export function CaseCard({ type, name, location, time, matchCount, onClick, children }: {
   type: 'lost' | 'found' | 'sighted';
   name: string;
   location: string;
   time: string;
   matchCount?: number;
   onClick?: () => void;
+  children?: ReactNode;
 }) {
   return (
     <CardShell onClick={onClick}>
@@ -50,6 +51,11 @@ export function CaseCard({ type, name, location, time, matchCount, onClick }: {
           )}
         </div>
       </div>
+      {children && (
+        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+          {children}
+        </div>
+      )}
     </CardShell>
   );
 }
@@ -187,7 +193,7 @@ export function CommunityDogCard({ name, lastSeen, location, onClick }: {
   return (
     <CardShell onClick={onClick} className="opacity-80">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: '#FFF7ED' }}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--warning-bg)' }}>
           <span className="text-lg">🐕‍🦺</span>
         </div>
         <div className="flex-1">

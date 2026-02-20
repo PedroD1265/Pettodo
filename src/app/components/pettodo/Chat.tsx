@@ -11,9 +11,9 @@ export function ChatBubble({ msg }: { msg: Message }) {
   if (msg.sender === 'system') {
     return (
       <div className="flex justify-center my-2">
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl max-w-[90%]" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl max-w-[90%]" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <Shield size={13} style={{ color: 'var(--warning)' }} />
-          <span className="text-[12px]" style={{ color: 'var(--warning)', fontWeight: 500 }}>{msg.text}</span>
+          <span className="text-[12px]" style={{ color: 'var(--warning-dark)', fontWeight: 500 }}>{msg.text}</span>
         </div>
       </div>
     );

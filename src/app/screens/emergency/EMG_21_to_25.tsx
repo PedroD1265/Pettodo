@@ -75,8 +75,8 @@ export function EMG_22() {
     { id: 'Q4', area: 'SW — Strawberry Fields', person: 'Emily K.', status: 'Completed' },
   ];
   const statusColors: Record<string, { bg: string; color: string }> = {
-    Searching: { bg: '#FFFBEB', color: 'var(--warning)' },
-    Assigned: { bg: '#EFF6FF', color: 'var(--info)' },
+    Searching: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
+    Assigned: { bg: 'var(--info-bg)', color: 'var(--info)' },
     Unassigned: { bg: 'var(--gray-100)', color: 'var(--gray-500)' },
     Completed: { bg: 'var(--green-bg)', color: 'var(--green-primary)' },
   };
@@ -209,7 +209,7 @@ export function EMG_25() {
       <AppBar title="Live Capture" showBack backTo="/emg/proof-modal" />
       <div className="flex-1 flex flex-col">
         {/* Simulated camera view */}
-        <div className="flex-1 flex items-center justify-center relative" style={{ background: '#1a1a1a' }}>
+        <div className="flex-1 flex items-center justify-center relative" style={{ background: 'var(--gray-950)' }}>
           <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full" style={{ background: 'rgba(220,38,38,0.9)' }}>
             <span className="text-[12px]" style={{ color: 'var(--white)', fontWeight: 600 }}>● LIVE</span>
           </div>

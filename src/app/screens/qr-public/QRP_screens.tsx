@@ -190,13 +190,13 @@ export function QRP_03() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 p-4 rounded-xl text-left" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', minHeight: 64 }}>
+          <button className="flex items-start gap-3 p-4 rounded-xl text-left" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)', minHeight: 64 }}>
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--warning)' }}>
               <Eye size={20} style={{ color: 'var(--white)' }} />
             </div>
             <div>
               <p className="text-[14px]" style={{ fontWeight: 600, color: 'var(--warning)' }}>I spotted this dog</p>
-              <p className="text-[12px]" style={{ color: '#92400E' }}>I saw this dog nearby but didn't take it.</p>
+              <p className="text-[12px]" style={{ color: 'var(--warning-dark)' }}>I saw this dog nearby but didn't take it.</p>
             </div>
           </button>
         </div>

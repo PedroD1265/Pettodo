@@ -9,6 +9,7 @@ import { ReportSuspiciousModal } from '../../components/pettodo/Modals';
 import { useNavigate } from 'react-router';
 import { LUNA } from '../../data/demoData';
 import { Filter, Plus, Shield, MapPin, Calendar, Clock, CheckCircle, AlertTriangle, Flag, Send, Star, Phone } from 'lucide-react';
+import { toast } from 'sonner';
 
 // PD_01
 export function PD_01() {
@@ -168,8 +169,19 @@ export function PD_04() {
 // PD_05
 export function PD_05() {
   const nav = useNavigate();
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+
+  const handleCalendar = (type: 'google' | 'ics') => {
+    if (type === 'google') {
+      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Park play session') + '&location=' + encodeURIComponent('Central Park Dog Run'), '_blank');
+    } else {
+      toast.success('Downloaded .ics file (simulated)');
+    }
+    setShowCalendarModal(false);
+  };
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full relative">
       <ScreenLabel name="PD_05_PlayDateDetail_RulesChecklist" />
       <AppBar title="Play Date Detail" showBack />
       <div className="flex-1 p-4 flex flex-col gap-3">
@@ -207,8 +219,23 @@ export function PD_05() {
           </div>
         ))}
 
-        <Btn variant="daily" fullWidth onClick={() => nav('/playdates/chat')}>Group Chat</Btn>
+        <div className="flex gap-2 mt-auto">
+          <Btn variant="daily" className="flex-1" onClick={() => nav('/playdates/chat')}>Group Chat</Btn>
+          <Btn variant="secondary" icon={<Calendar size={16} />} onClick={() => setShowCalendarModal(true)}>Calendar</Btn>
+        </div>
       </div>
+
+      {showCalendarModal && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full bg-white rounded-t-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+             <h3 className="text-[17px] font-semibold text-center">Add to Calendar</h3>
+             <Btn variant="secondary" fullWidth onClick={() => handleCalendar('google')}>Google Calendar</Btn>
+             <Btn variant="secondary" fullWidth onClick={() => handleCalendar('ics')}>Download .ics File</Btn>
+             <Btn variant="ghost" fullWidth onClick={() => setShowCalendarModal(false)}>Cancel</Btn>
+             <p className="text-[11px] text-center text-gray-400">Calendar integration is simulated in this prototype.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -306,7 +333,7 @@ export function PD_08() {
           <Btn variant="primary" fullWidth className="mt-2">Verify via SMS</Btn>
         </div>
 
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <div className="flex items-center gap-2">
             <Shield size={16} style={{ color: 'var(--warning)' }} />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Strict Verification (Recommended)</span>

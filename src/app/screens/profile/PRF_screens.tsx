@@ -5,12 +5,18 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { VerificationBadge } from '../../components/pettodo/Badges';
 import { RadiusSelector } from '../../components/pettodo/MapComponents';
+import { OTPFlow, StrictVerificationFlow } from '../../components/pettodo/VerificationFlows';
 import { useNavigate } from 'react-router';
-import { Shield, Star, CheckCircle, AlertTriangle, Bell, Lock, MapPin, Eye, Phone, FileText } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { Shield, Star, CheckCircle, AlertTriangle, Bell, Lock, MapPin, Eye, Phone, FileText, Clock, ShieldCheck } from 'lucide-react';
 
 // PRF_01
 export function PRF_01() {
   const nav = useNavigate();
+  const { verificationLevel, strictStatus } = useApp();
+  const badgeLevel = strictStatus === 'approved' ? 'strict' : verificationLevel === 'basic' ? 'sms' : 'sms';
+  const showBadge = verificationLevel !== 'none' || strictStatus === 'approved';
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="PRF_01_UserProfile_BadgesActivityReputation" />
@@ -22,7 +28,12 @@ export function PRF_01() {
           </div>
           <div>
             <h3 className="text-[20px]" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Alex Johnson</h3>
-            <VerificationBadge level="strict" />
+            {showBadge && <VerificationBadge level={badgeLevel} />}
+            {!showBadge && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--warning-bg)', color: 'var(--warning-dark)', fontWeight: 500 }}>
+                Not verified
+              </span>
+            )}
             <p className="text-[12px] mt-1" style={{ color: 'var(--gray-500)' }}>Member since 2024</p>
           </div>
         </div>
@@ -64,28 +75,92 @@ export function PRF_01() {
 
 // PRF_02
 export function PRF_02() {
+  const { verificationLevel, strictStatus } = useApp();
+  const [showOTP, setShowOTP] = useState(false);
+  const [showStrict, setShowStrict] = useState(false);
+
+  const isBasicDone = verificationLevel === 'basic' || verificationLevel === 'strict' as string;
+  const isStrictDone = strictStatus === 'approved';
+  const isStrictPending = strictStatus === 'pending';
+  const isStrictRejected = strictStatus === 'rejected';
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="PRF_02_VerificationCenter_L1_L2" />
       <AppBar title="Verification Center" showBack backTo="/profile/user" />
-      <div className="flex-1 p-4 flex flex-col gap-4">
+      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
         <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Your verification level</h3>
 
-        <div className="p-4 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle size={20} style={{ color: 'var(--green-primary)' }} />
-            <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Level 1 — SMS Verified</span>
+        {/* Level 1 — SMS */}
+        {isBasicDone ? (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={20} style={{ color: 'var(--green-primary)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Level 1 — SMS Verified</span>
+            </div>
+            <p className="text-[12px]" style={{ color: 'var(--green-dark)' }}>Phone number confirmed via SMS.</p>
           </div>
-          <p className="text-[12px]" style={{ color: 'var(--green-dark)' }}>Phone number confirmed via SMS.</p>
-        </div>
+        ) : showOTP ? (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--gray-100)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Phone size={18} style={{ color: 'var(--info)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Level 1 — SMS Verification</span>
+            </div>
+            <OTPFlow onComplete={() => setShowOTP(false)} onDismiss={() => setShowOTP(false)} inline />
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Phone size={20} style={{ color: 'var(--gray-400)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Level 1 — SMS</span>
+            </div>
+            <p className="text-[12px] mb-3" style={{ color: 'var(--gray-500)' }}>Verify your phone to edit cases, enter chat, and more.</p>
+            <Btn variant="primary" fullWidth onClick={() => setShowOTP(true)}>Verify Phone</Btn>
+          </div>
+        )}
 
-        <div className="p-4 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle size={20} style={{ color: 'var(--green-primary)' }} />
-            <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Level 2 — Strict Verified</span>
+        {/* Level 2 — Strict */}
+        {isStrictDone ? (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck size={20} style={{ color: 'var(--green-primary)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Level 2 — Strict Verified</span>
+            </div>
+            <p className="text-[12px]" style={{ color: 'var(--green-dark)' }}>ID + Selfie verification complete.</p>
           </div>
-          <p className="text-[12px]" style={{ color: 'var(--green-dark)' }}>ID + Selfie verification complete.</p>
-        </div>
+        ) : isStrictPending ? (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--info-bg)', border: '1px solid var(--info-soft)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <Clock size={20} style={{ color: 'var(--info)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--info-dark)' }}>Level 2 — Pending Review</span>
+            </div>
+            <p className="text-[12px]" style={{ color: 'var(--info-dark)' }}>Your ID and selfie are being reviewed. Usually under 24 hours.</p>
+          </div>
+        ) : isStrictRejected ? (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--red-bg)', border: '1px solid var(--red-soft)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle size={20} style={{ color: 'var(--red-primary)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--red-dark)' }}>Level 2 — Rejected</span>
+            </div>
+            <p className="text-[12px] mb-3" style={{ color: 'var(--red-dark)' }}>
+              Reason: blurry photo or face mismatch. Please resubmit.
+            </p>
+            <Btn variant="primary" fullWidth onClick={() => setShowStrict(true)}>Resubmit Verification</Btn>
+          </div>
+        ) : showStrict ? (
+          <StrictVerificationFlow onComplete={() => setShowStrict(false)} onDismiss={() => setShowStrict(false)} />
+        ) : (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldCheck size={20} style={{ color: 'var(--gray-400)' }} />
+              <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Level 2 — Strict (ID + Selfie)</span>
+            </div>
+            <p className="text-[12px] mb-3" style={{ color: 'var(--gray-500)' }}>
+              Required for walkers, official organizers, and ownership disputes.
+            </p>
+            <Btn variant="primary" fullWidth onClick={() => setShowStrict(true)} icon={<ShieldCheck size={16} />}>Start Strict Verification</Btn>
+          </div>
+        )}
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
           <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Escalation triggers</h4>
@@ -209,9 +284,9 @@ export function PRF_05() {
           </ul>
         </div>
 
-        <div className="p-3 rounded-xl" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-          <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--info)' }}>Proof of life</h4>
-          <p className="text-[12px] mt-1" style={{ color: 'var(--info)' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--info-bg)', border: '1px solid var(--info-soft)' }}>
+          <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--info-dark)' }}>Proof of life</h4>
+          <p className="text-[12px] mt-1" style={{ color: 'var(--info-dark)' }}>
             Request proof of life before arranging any meeting. Only live captures are accepted.
           </p>
         </div>
@@ -223,9 +298,9 @@ export function PRF_05() {
           </p>
         </div>
 
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-          <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--warning)' }}>Report suspicious behavior</h4>
-          <p className="text-[12px] mt-1" style={{ color: '#92400E' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
+          <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--warning-dark)' }}>Report suspicious behavior</h4>
+          <p className="text-[12px] mt-1" style={{ color: 'var(--warning-dark)' }}>
             Available in all chats, case details, and walker interactions. Reports are reviewed promptly.
           </p>
         </div>

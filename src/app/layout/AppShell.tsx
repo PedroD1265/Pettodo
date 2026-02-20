@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router';
 import { BottomNav } from '../components/pettodo/BottomNav';
+import { DemoControlsFab, DemoControlsPanel } from '../components/pettodo/DemoControls';
 
 export function AppShell() {
   return (
@@ -9,6 +10,8 @@ export function AppShell() {
         <Outlet />
       </div>
       <BottomNav />
+      <DemoControlsFab />
+      <DemoControlsPanel />
     </div>
   );
 }

@@ -18,6 +18,19 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
   const bg = isEmg ? 'var(--red-bg)' : 'var(--green-bg)';
   const accent = isEmg ? 'var(--red-primary)' : 'var(--green-primary)';
 
+  const handleBack = () => {
+    if (backTo) {
+      navigate(backTo);
+    } else {
+      // Prefer history back, but fallback to home if no history (e.g. direct load)
+      if (window.history.state && window.history.state.idx === 0) {
+        navigate(mode === 'emergency' ? '/home-emergency' : '/home-daily');
+      } else {
+        navigate(-1);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col" style={{ background: bg }}>
       {/* Mode switch row */}
@@ -28,7 +41,7 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
       <div className="flex items-center px-4 pb-2" style={{ minHeight: 44 }}>
         {showBack && (
           <button
-            onClick={() => backTo ? navigate(backTo) : navigate(-1)}
+            onClick={handleBack}
             className="flex items-center justify-center mr-2"
             style={{ minWidth: 44, minHeight: 44, color: accent }}
           >

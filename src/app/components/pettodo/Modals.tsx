@@ -64,7 +64,7 @@ export function VerificationEscalationModal({ open, onClose }: { open: boolean; 
   return (
     <Modal open={open} onClose={onClose} title="Verification Required">
       <div className="flex flex-col gap-4 items-center text-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#FFFBEB' }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--warning-bg)' }}>
           <AlertTriangle size={28} style={{ color: 'var(--warning)' }} />
         </div>
         <p className="text-[14px]" style={{ color: 'var(--gray-700)' }}>
@@ -87,7 +87,7 @@ export function ProofOfLifeModal({ open, onClose }: { open: boolean; onClose: ()
         <p className="text-[14px]" style={{ color: 'var(--gray-700)' }}>
           Ask the finder to take a <strong>live photo or video</strong> of the dog. This helps verify the dog is safe before arranging a meeting.
         </p>
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <p className="text-[12px]" style={{ color: 'var(--warning)', fontWeight: 500 }}>
             Only live captures are accepted — gallery photos are not allowed for proof of life.
           </p>
@@ -114,7 +114,7 @@ export function RewardRulesModal({ open, onClose }: { open: boolean; onClose: ()
           <span className="text-[14px]">3.</span>
           <p className="text-[14px]" style={{ color: 'var(--gray-700)' }}>Handoff only at a safe point</p>
         </div>
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <p className="text-[13px]" style={{ color: 'var(--warning)', fontWeight: 500 }}>
             PETTODO does not process payments
           </p>

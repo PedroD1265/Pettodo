@@ -15,7 +15,7 @@ export function ExecutionLog() {
         <h1 className="text-[22px]" style={{ fontWeight: 700 }}>Execution Log</h1>
 
         <section>
-          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>What was implemented</h2>
+          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Iteration 1 — Foundation</h2>
           <ul className="flex flex-col gap-1.5">
             {[
               'Complete PETTODO design system tokens (CSS variables)',
@@ -26,14 +26,32 @@ export function ExecutionLog() {
               'Public QR shell without app chrome',
               'All 10 end-to-end flows wired via React Router',
               'Complete demo data centered on Luna',
-              'All required UI copy phrases placed in context',
+              'All 19 required UI copy phrases placed in context',
               'iPhone 13 viewport (390x844) phone frame wrapper',
-              'Design system living styleguide route',
-              'QA Self-Check and Execution Log in-app routes',
             ].map((item, i) => (
               <li key={i} className="text-[13px] pl-4" style={{ color: 'var(--gray-700)', listStyleType: 'disc' }}>{item}</li>
             ))}
           </ul>
+        </section>
+
+        <section>
+          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Iteration 2 — Critical Spec Gaps</h2>
+          <div className="flex flex-col gap-2">
+            {[
+              { tag: 'Task 1 — Panic Mode', desc: 'calm Banner on EMG_02, minimal-field note, Stepper active step' },
+              { tag: 'Task 2 — Verification Levels', desc: 'OTPFlow, StrictVerificationFlow, VerificationGate, AppContext extended' },
+              { tag: 'Task 3 — Photo Quality', desc: 'PhotoUploadGrid with good/ok/poor scoring, tips, "Better photos" warning' },
+              { tag: 'Task 4 — Flyer + Share Kit', desc: 'FlyerPreview, ShareKitActions, FLYER_SHARE_TEXT, safety reminder' },
+              { tag: 'Task 5 — Lifecycle Timers', desc: 'CaseLifecycleBar (30d), MatchLifecycleBar (10d), demoTimeOffset control' },
+              { tag: 'Quick Fixes', desc: 'warning tokens in theme.css, HOM_01 h3 fix, hasActiveCase=false, Modals token cleanup' },
+              { tag: 'DemoControls', desc: 'Gear FAB + panel: mode, case, verification level, strict status, time offset' },
+            ].map((item, i) => (
+              <div key={i} className="p-2.5 rounded-lg" style={{ background: 'var(--gray-100)' }}>
+                <p className="text-[12px]" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{item.tag}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--gray-500)' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section>
@@ -47,6 +65,7 @@ export function ExecutionLog() {
               'Inter font loaded via Google Fonts with system fallback',
               'All interactive targets meet 44px minimum',
               'English only, light mode only',
+              'React.Fragment avoided in loops — div.contents used instead',
             ].map((item, i) => (
               <li key={i} className="text-[13px] pl-4" style={{ color: 'var(--gray-700)', listStyleType: 'disc' }}>{item}</li>
             ))}
@@ -77,14 +96,23 @@ export function ExecutionLog() {
         </section>
 
         <section>
+          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Iteration 4 — Panic Mode Claim Gate UX</h2>
+          <div className="p-2.5 rounded-lg" style={{ background: 'var(--gray-100)' }}>
+             <p className="text-[12px]" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>EMG_06 Claim Gate</p>
+             <p className="text-[11px] mt-0.5" style={{ color: 'var(--gray-500)' }}>Added info section, wrapped Edit/Chat buttons with VerificationGate, synced claim state.</p>
+          </div>
+        </section>
+
+        <section>
           <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Known gaps</h2>
           <ul className="flex flex-col gap-1.5">
             {[
               'Map views are placeholder (no Mapbox/Google Maps integration)',
-              'Camera/photo upload is UI-only simulation',
+              'Camera/photo upload is UI-only simulation (no FileReader/MediaDevices)',
               'Real-time chat is simulated with static messages',
               'No actual SMS or captcha verification',
               'AI matching is simulated with demo data',
+              'Flyer PNG/PDF download is simulated (toast only)',
               'Calendar integration buttons are non-functional',
             ].map((item, i) => (
               <li key={i} className="text-[13px] pl-4" style={{ color: 'var(--gray-500)', listStyleType: 'disc' }}>{item}</li>
@@ -131,13 +159,26 @@ export function QASelfCheck() {
     { phrase: 'AI Verified', screen: 'EVT_02, EVT_04' },
     { phrase: 'Community Verified (weighted)', screen: 'EVT_02, EVT_05' },
     { phrase: 'PETTODO does not process payments', screen: 'EMG_28, SRV_03, SRV_05, PRF_05' },
-    { phrase: 'Better photos improve match accuracy', screen: 'EMG_02, EMG_08' },
+    { phrase: 'Better photos improve match accuracy', screen: 'EMG_02, EMG_08 (PhotoUploadGrid)' },
     { phrase: 'This dog has an owner. Help them get home.', screen: 'QRP_01, CMT_05' },
     { phrase: 'Report suspicious behavior', screen: 'EMG_23, SRV_05, PD_06' },
     { phrase: 'Approximate area only — exact address is hidden.', screen: 'EMG_15, EMG_19, QRP_03' },
-    { phrase: 'This action requires Strict verification (ID + Selfie).', screen: 'EVT_06, SRV_10, PD_08' },
-    { phrase: 'Too many attempts. Try again in 60 minutes.', screen: 'QRP_02, QRH_03' },
+    { phrase: 'This action requires Strict verification (ID + Selfie).', screen: 'EVT_06, SRV_10, PD_08, VerificationGate' },
+    { phrase: 'Too many attempts. Try again in 60 minutes.', screen: 'QRP_02, QRH_03, OTPFlow rate_limit' },
     { phrase: 'Last updated 12 min ago', screen: 'EMG_15, EMG_18, EMG_21' },
+  ];
+
+  const iter2Components = [
+    'OTPFlow — phone → OTP → success / error / rate_limit',
+    'StrictVerificationFlow — start → ID front → ID back → selfie → submitted',
+    'VerificationGate — basic / strict gating wrapper',
+    'PhotoUploadGrid — 3 slots, quality scoring, inline tips',
+    'FlyerPreview — LOST/FOUND flyer with QR placeholder',
+    'ShareKitActions — download PNG/PDF, copy text, share link',
+    'CaseLifecycleBar — 30-day progress, status chip',
+    'MatchLifecycleBar — 10-day bar, day 7 / day 9 markers',
+    'DemoControlsFab — gear icon FAB (bottom-right)',
+    'DemoControlsPanel — full state control overlay',
   ];
 
   return (
@@ -209,6 +250,28 @@ export function QASelfCheck() {
         </section>
 
         <section>
+          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Iteration 2 Components ✅</h2>
+          <div className="flex flex-col gap-1">
+            {iter2Components.map((c) => (
+              <div key={c} className="flex items-start gap-2 py-0.5">
+                <span className="text-[12px] shrink-0" style={{ color: 'var(--green-primary)' }}>✅</span>
+                <span className="text-[12px]" style={{ color: 'var(--gray-700)' }}>{c}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Iteration 4 Checks ✅</h2>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 py-0.5">
+              <span className="text-[12px]" style={{ color: 'var(--green-primary)' }}>✅</span>
+              <span className="text-[12px]" style={{ color: 'var(--gray-700)' }}>Panic Mode claim gate is explicitly represented in EMG_06 and triggers OTP when unverified.</span>
+            </div>
+          </div>
+        </section>
+
+        <section>
           <h2 className="text-[17px] mb-2" style={{ fontWeight: 600 }}>Accessibility ✅</h2>
           <div className="flex flex-col gap-1">
             {[
@@ -217,6 +280,8 @@ export function QASelfCheck() {
               'English only — no lorem ipsum',
               'Public QR screens: no app chrome',
               'Semantic color contrast maintained',
+              'CSS variable tokens only — no hardcoded hex values',
+              'React.Fragment avoided in loops (div.contents)',
             ].map((a) => (
               <div key={a} className="flex items-center gap-2 py-0.5">
                 <span className="text-[12px]" style={{ color: 'var(--green-primary)' }}>✅</span>

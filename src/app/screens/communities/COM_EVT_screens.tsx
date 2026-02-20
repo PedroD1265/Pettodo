@@ -5,9 +5,11 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { EventCard } from '../../components/pettodo/Cards';
 import { EventTrustBadge, VerificationBadge } from '../../components/pettodo/Badges';
+import { VerificationGate } from '../../components/pettodo/VerificationFlows';
 import { useNavigate } from 'react-router';
 import { COMMUNITY, EVENT } from '../../data/demoData';
-import { Users, Plus, MessageSquare, Shield, Phone, Flag, AlertTriangle, CheckCircle, Star, MapPin, Calendar, ExternalLink } from 'lucide-react';
+import { Users, Plus, MessageSquare, Shield, Phone, Flag, AlertTriangle, CheckCircle, Star, MapPin, Calendar, ExternalLink, Download } from 'lucide-react';
+import { toast } from 'sonner';
 
 // COM_01
 export function COM_01() {
@@ -28,7 +30,7 @@ export function COM_01() {
           </div>
         </button>
         <button className="flex items-center gap-3 p-3 rounded-xl text-left" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: '#DBEAFE' }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--info-soft)' }}>
             <Users size={20} style={{ color: 'var(--info)' }} />
           </div>
           <div className="flex-1">
@@ -233,8 +235,21 @@ export function EVT_01() {
 // EVT_02
 export function EVT_02() {
   const nav = useNavigate();
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+
+  const handleCalendar = (type: 'google' | 'ics') => {
+    if (type === 'google') {
+      // transform date string to ISO-like for google
+      // Demo: just open google calendar create link
+      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(EVENT.name) + '&location=' + encodeURIComponent(EVENT.location), '_blank');
+    } else {
+      toast.success('Downloaded .ics file (simulated)');
+    }
+    setShowCalendarModal(false);
+  };
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full relative">
       <ScreenLabel name="EVT_02_EventDetail_SourceMapTicks" />
       <AppBar title="Event Detail" showBack backTo="/events/list" />
       <div className="flex-1 p-4 flex flex-col gap-3">
@@ -273,9 +288,21 @@ export function EVT_02() {
 
         <div className="flex gap-2 mt-auto pb-4">
           <Btn variant="daily" className="flex-1" onClick={() => nav('/events/ia-verification')}>Attend</Btn>
-          <Btn variant="secondary" className="flex-1">Share</Btn>
+          <Btn variant="secondary" className="flex-1" icon={<Calendar size={16} />} onClick={() => setShowCalendarModal(true)}>Calendar</Btn>
         </div>
       </div>
+
+      {showCalendarModal && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full bg-white rounded-t-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+             <h3 className="text-[17px] font-semibold text-center">Add to Calendar</h3>
+             <Btn variant="secondary" fullWidth onClick={() => handleCalendar('google')}>Google Calendar</Btn>
+             <Btn variant="secondary" fullWidth onClick={() => handleCalendar('ics')}>Download .ics File</Btn>
+             <Btn variant="ghost" fullWidth onClick={() => setShowCalendarModal(false)}>Cancel</Btn>
+             <p className="text-[11px] text-center text-gray-400">Calendar integration is simulated in this prototype.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -323,7 +350,7 @@ export function EVT_04() {
       <ScreenLabel name="EVT_04_IA_VerificationResult" />
       <AppBar title="AI Verification" showBack backTo="/events/detail" />
       <div className="flex-1 p-4 flex flex-col gap-4 items-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#DBEAFE' }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--info-soft)' }}>
           <CheckCircle size={32} style={{ color: 'var(--info)' }} />
         </div>
         <h3 className="text-[17px] text-center" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>AI Verified</h3>
@@ -388,7 +415,7 @@ export function EVT_05() {
               <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{m.name}</span>
               <div className="flex items-center gap-2">
                 <span className="text-[11px]" style={{ color: 'var(--gray-400)' }}>★ {m.reputation}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: m.weight === 'High' ? 'var(--green-soft)' : '#FFFBEB', color: m.weight === 'High' ? 'var(--green-dark)' : 'var(--warning)', fontWeight: 600 }}>
+                <span className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: m.weight === 'High' ? 'var(--green-soft)' : 'var(--warning-bg)', color: m.weight === 'High' ? 'var(--green-dark)' : 'var(--warning)', fontWeight: 600 }}>
                   {m.weight} weight
                 </span>
               </div>
@@ -406,12 +433,12 @@ export function EVT_06() {
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EVT_06_OfficialOrganizer_StrictVerification" />
       <AppBar title="Official Organizer" showBack />
-      <div className="flex-1 p-4 flex flex-col gap-4">
-        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: '#DBEAFE', border: '1px solid #93C5FD' }}>
+      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+        <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--info-bg)', border: '1px solid var(--info-soft)' }}>
           <Shield size={24} style={{ color: 'var(--info)' }} />
           <div>
             <p className="text-[14px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Official Organizer</p>
-            <p className="text-[12px]" style={{ color: 'var(--info)' }}>This action requires Strict verification (ID + Selfie).</p>
+            <p className="text-[12px]" style={{ color: 'var(--info-dark)' }}>This action requires Strict verification (ID + Selfie).</p>
           </div>
         </div>
 
@@ -419,18 +446,20 @@ export function EVT_06() {
           To become an official event organizer, you must complete Strict verification. This adds a verified badge to all your events.
         </p>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
-            <CheckCircle size={14} style={{ color: 'var(--green-primary)' }} />
-            <span className="text-[13px]" style={{ color: 'var(--gray-700)' }}>SMS verification complete</span>
+        <VerificationGate requiredLevel="strict" actionLabel="Becoming an official organizer">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'var(--green-bg)' }}>
+              <CheckCircle size={14} style={{ color: 'var(--green-primary)' }} />
+              <span className="text-[13px]" style={{ color: 'var(--green-dark)' }}>SMS verification complete</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'var(--green-bg)' }}>
+              <CheckCircle size={14} style={{ color: 'var(--green-primary)' }} />
+              <span className="text-[13px]" style={{ color: 'var(--green-dark)' }}>ID + Selfie verification complete</span>
+            </div>
+            <Banner type="success" text="You are now eligible to be an official organizer!" />
+            <Btn variant="daily" fullWidth>Apply as Official Organizer</Btn>
           </div>
-          <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: '#FFFBEB' }}>
-            <AlertTriangle size={14} style={{ color: 'var(--warning)' }} />
-            <span className="text-[13px]" style={{ color: 'var(--warning)' }}>ID + Selfie verification required</span>
-          </div>
-        </div>
-
-        <Btn variant="primary" fullWidth>Start Strict Verification</Btn>
+        </VerificationGate>
       </div>
     </div>
   );

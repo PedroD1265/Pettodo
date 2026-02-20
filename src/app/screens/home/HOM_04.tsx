@@ -8,7 +8,7 @@ const notifications = [
   { type: 'emergency', icon: <MapPin size={16} style={{ color: 'var(--red-primary)' }} />, text: 'Possible match found — 87% confidence', time: '15 min ago', bg: 'var(--red-bg)' },
   { type: 'daily', icon: <Syringe size={16} style={{ color: 'var(--green-primary)' }} />, text: 'Vaccine reminder: Distemper booster in 29 days', time: '1 hour ago', bg: 'var(--green-bg)' },
   { type: 'daily', icon: <Calendar size={16} style={{ color: 'var(--green-primary)' }} />, text: 'Community dog walk — Saturday at 10 AM', time: '2 hours ago', bg: 'var(--green-bg)' },
-  { type: 'emergency', icon: <Bell size={16} style={{ color: 'var(--warning)' }} />, text: 'Case CASE-2026-0219 updated with new sighting', time: '4 hours ago', bg: '#FFFBEB' },
+  { type: 'emergency', icon: <Bell size={16} style={{ color: 'var(--warning)' }} />, text: 'Case CASE-2026-0219 updated with new sighting', time: '4 hours ago', bg: 'var(--warning-bg)' },
 ];
 
 export default function HOM_04() {

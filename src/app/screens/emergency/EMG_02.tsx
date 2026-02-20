@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { Banner } from '../../components/pettodo/Banners';
 import { Stepper } from '../../components/pettodo/Stepper';
 import { Btn } from '../../components/pettodo/Buttons';
-import { PhotoQualityBadge } from '../../components/pettodo/Badges';
+import { PhotoUploadGrid } from '../../components/pettodo/PhotoQuality';
 import { useNavigate } from 'react-router';
-import { Camera, Plus } from 'lucide-react';
+import type { PhotoQuality } from '../../data/demoData';
 
 export default function EMG_02() {
   const nav = useNavigate();
+  const [qualities, setQualities] = useState<PhotoQuality[]>([]);
+  const hasPhotos = qualities.length > 0;
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_02_Lost_Panic_Photos" />
@@ -19,34 +22,23 @@ export default function EMG_02() {
       <div className="flex-1 p-4 flex flex-col gap-4">
         <div>
           <h3 className="text-[17px] mb-1" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Add photos of your dog</h3>
-          <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Clear, well-lit photos help find your dog faster.</p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1" style={{ background: 'var(--gray-100)', border: '2px dashed var(--gray-300)' }}>
-            <Camera size={24} style={{ color: 'var(--gray-400)' }} />
-            <span className="text-[10px]" style={{ color: 'var(--gray-400)' }}>Main photo</span>
-          </div>
-          <div className="aspect-square rounded-xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '2px dashed var(--gray-300)' }}>
-            <Plus size={20} style={{ color: 'var(--gray-400)' }} />
-          </div>
-          <div className="aspect-square rounded-xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '2px dashed var(--gray-300)' }}>
-            <Plus size={20} style={{ color: 'var(--gray-400)' }} />
-          </div>
-        </div>
-
-        <PhotoQualityBadge quality="ok" />
-
-        <div className="p-3 rounded-xl" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-          <p className="text-[12px]" style={{ color: 'var(--info)', fontWeight: 500 }}>
-            Better photos improve match accuracy
+          <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Clear, well-lit photos help find your dog faster. Tap slots to add.</p>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--red-primary)', fontWeight: 600 }}>
+            No account needed to post — minimal fields only
           </p>
         </div>
 
-        <div className="mt-auto">
+        <PhotoUploadGrid onQualitiesChange={setQualities} />
+
+        <div className="mt-auto flex flex-col gap-2">
           <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-location')}>
             Next: Location
           </Btn>
+          {!hasPhotos && (
+            <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
+              At least 1 photo is required for publishing
+            </p>
+          )}
         </div>
       </div>
     </div>

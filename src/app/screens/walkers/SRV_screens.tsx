@@ -8,9 +8,11 @@ import { MapPlaceholder } from '../../components/pettodo/MapComponents';
 import { ChatView } from '../../components/pettodo/Chat';
 import { VerificationBadge, NewAccountBadge } from '../../components/pettodo/Badges';
 import { ReportSuspiciousModal } from '../../components/pettodo/Modals';
+import { VerificationGate } from '../../components/pettodo/VerificationFlows';
 import { useNavigate } from 'react-router';
+import { useApp } from '../../context/AppContext';
 import { WALKER, SAFE_POINT } from '../../data/demoData';
-import { MapPin, Star, Filter, Flag, Send, Shield, CheckCircle, AlertTriangle, Clock, Calendar } from 'lucide-react';
+import { MapPin, Star, Filter, Flag, Send, Shield, CheckCircle, AlertTriangle, Clock, Calendar, Briefcase } from 'lucide-react';
 
 // SRV_01
 export function SRV_01() {
@@ -34,9 +36,20 @@ export function SRV_01() {
         </div>
 
         <div className="flex-1 p-4 flex flex-col gap-2">
+          <Banner type="noPayments" text="PETTODO does not process payments. First meet in a safe point is recommended." />
+          
           <WalkerCard name={WALKER.name} verified="strict" rating={WALKER.rating} walks={WALKER.walks} onClick={() => nav('/walkers/profile')} />
           <WalkerCard name="Ana M." verified="sms" rating={4.5} walks={38} onClick={() => nav('/walkers/profile')} />
           <WalkerCard name="David K." verified="strict" rating={4.9} walks={210} onClick={() => nav('/walkers/profile')} />
+
+          <div className="mt-4 pt-4 border-t border-gray-100">
+             <Btn variant="secondary" fullWidth icon={<Briefcase size={16} />} onClick={() => nav('/walkers/onboarding')}>
+               Become a Walker
+             </Btn>
+             <p className="text-[11px] text-center mt-2" style={{ color: 'var(--gray-500)' }}>
+               Strict verification required for public listing
+             </p>
+          </div>
         </div>
       </div>
     </div>
@@ -46,6 +59,15 @@ export function SRV_01() {
 // SRV_02
 export function SRV_02() {
   const nav = useNavigate();
+  const { walkerAvailability, setWalkerAvailability } = useApp();
+  
+  const toggleDay = (d: string) => {
+    const days = walkerAvailability.days.includes(d) 
+      ? walkerAvailability.days.filter(x => x !== d)
+      : [...walkerAvailability.days, d];
+    setWalkerAvailability({ ...walkerAvailability, days });
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="SRV_02_WalkerProfile_BadgesRulesReviews" />
@@ -71,6 +93,33 @@ export function SRV_02() {
         </div>
 
         <NewAccountBadge />
+        
+        {/* Availability Stub */}
+        <div>
+          <h4 className="text-[14px] mb-2" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Availability</h4>
+          <div className="flex gap-2 flex-wrap mb-2">
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => {
+              const active = walkerAvailability.days.includes(d);
+              return (
+                <button 
+                  key={d}
+                  onClick={() => toggleDay(d)}
+                  className="px-2 py-1 rounded-lg text-[12px] transition-colors"
+                  style={{ 
+                    background: active ? 'var(--info-bg)' : 'var(--gray-100)', 
+                    color: active ? 'var(--info-dark)' : 'var(--gray-500)',
+                    fontWeight: active ? 600 : 400
+                  }}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+            Usually available: <span style={{ color: 'var(--gray-900)', fontWeight: 500 }}>Mornings, Afternoons</span>
+          </div>
+        </div>
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
           <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Walker rules</p>
@@ -337,7 +386,7 @@ export function SRV_09() {
 
         <textarea className="w-full px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 72 }} placeholder="Additional details..." />
 
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <p className="text-[12px]" style={{ color: 'var(--warning)', fontWeight: 500 }}>
             Strike system: Walkers receive strikes for confirmed incidents. 3 strikes = account suspension.
           </p>
@@ -355,25 +404,28 @@ export function SRV_10() {
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="SRV_10_WalkerStrictVerification_OnboardingStatus" />
       <AppBar title="Walker Verification" showBack />
-      <div className="flex-1 p-4 flex flex-col gap-4">
+      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
         <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Walker onboarding status</h3>
 
-        {[
-          { step: 'SMS Verification', done: true },
-          { step: 'ID + Selfie (Strict)', done: true },
-          { step: 'Background acknowledgment', done: true },
-          { step: 'Safety rules acceptance', done: false },
-          { step: 'First walk completed', done: false },
-        ].map((s, i) => (
-          <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: s.done ? 'var(--green-bg)' : 'var(--gray-100)', minHeight: 48 }}>
-            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: s.done ? 'var(--green-primary)' : 'var(--gray-200)' }}>
-              {s.done ? <CheckCircle size={14} style={{ color: 'var(--white)' }} /> : <span className="text-[12px]" style={{ color: 'var(--gray-400)', fontWeight: 600 }}>{i + 1}</span>}
-            </div>
-            <span className="text-[14px]" style={{ color: s.done ? 'var(--green-dark)' : 'var(--gray-700)', fontWeight: s.done ? 500 : 400 }}>{s.step}</span>
+        <VerificationGate requiredLevel="strict" actionLabel="Walker onboarding">
+          <div className="flex flex-col gap-3">
+            {[
+              { step: 'SMS Verification', done: true },
+              { step: 'ID + Selfie (Strict)', done: true },
+              { step: 'Background acknowledgment', done: true },
+              { step: 'Safety rules acceptance', done: false },
+              { step: 'First walk completed', done: false },
+            ].map((s, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: s.done ? 'var(--green-bg)' : 'var(--gray-100)', minHeight: 48 }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: s.done ? 'var(--green-primary)' : 'var(--gray-200)' }}>
+                  {s.done ? <CheckCircle size={14} style={{ color: 'var(--white)' }} /> : <span className="text-[12px]" style={{ color: 'var(--gray-400)', fontWeight: 600 }}>{i + 1}</span>}
+                </div>
+                <span className="text-[14px]" style={{ color: s.done ? 'var(--green-dark)' : 'var(--gray-700)', fontWeight: s.done ? 500 : 400 }}>{s.step}</span>
+              </div>
+            ))}
+            <Banner type="info" text="This action requires Strict verification (ID + Selfie)." />
           </div>
-        ))}
-
-        <Banner type="info" text="This action requires Strict verification (ID + Selfie)." />
+        </VerificationGate>
       </div>
     </div>
   );

@@ -7,13 +7,9 @@ import { CommunityDogCard } from '../../components/pettodo/Cards';
 import { MapPlaceholder } from '../../components/pettodo/MapComponents';
 import { TimelineView } from '../../components/pettodo/Timeline';
 import { useNavigate } from 'react-router';
-import { MapPin, Plus, Camera, AlertTriangle, Clock, FileText, Shield } from 'lucide-react';
-
-const communityDogs = [
-  { name: 'Buddy (street)', lastSeen: '2 hours ago', location: 'Central Park, East side' },
-  { name: 'Lady (community)', lastSeen: 'Yesterday', location: 'Riverside Park entrance' },
-  { name: 'Rex (street)', lastSeen: '3 days ago', location: 'West 72nd St area' },
-];
+import { useApp } from '../../context/AppContext';
+import { COMMUNITY_DOGS } from '../../data/demoData';
+import { MapPin, Plus, Camera, AlertTriangle, Clock, FileText, Shield, X, CheckCircle, Syringe, Utensils } from 'lucide-react';
 
 // CMT_01
 export function CMT_01() {
@@ -36,7 +32,7 @@ export function CMT_01() {
 
         {view === 'map' && <MapPlaceholder height={200} />}
 
-        {communityDogs.map((d) => (
+        {COMMUNITY_DOGS.map((d) => (
           <CommunityDogCard key={d.name} {...d} onClick={() => nav('/community-dogs/detail')} />
         ))}
 
@@ -82,19 +78,85 @@ export function CMT_02() {
 
 // CMT_03
 export function CMT_03() {
-  const entries = [
-    { label: 'First recorded', date: 'Oct 15, 2025', status: 'completed' as const, detail: 'By Maria G.' },
-    { label: 'Veterinary check', date: 'Nov 1, 2025', status: 'completed' as const, detail: 'Healthy, no microchip' },
-    { label: 'Fed by community', date: 'Feb 19, 2026', status: 'active' as const, detail: 'Regular feeding schedule' },
-    { label: 'Spay/neuter scheduled', date: 'Mar 5, 2026', status: 'pending' as const },
-  ];
+  const { communityDogSightings, addCommunityDogSighting, communityDogCareRecords, addCommunityDogCareRecord } = useApp();
+  const [showSightingModal, setShowSightingModal] = useState(false);
+  const [showCareModal, setShowCareModal] = useState<'feeding' | 'vaccine' | 'note' | null>(null);
+  
+  // Sighting state
+  const [sightingNote, setSightingNote] = useState('');
+  
+  // Care state
+  const [careDetail, setCareDetail] = useState('');
+  const [careDate, setCareDate] = useState('Today at 8:00 AM'); // Demo default
+  const [hasPhoto, setHasPhoto] = useState(false);
+
+  // Filter sightings for this dog (using 'cd1' as demo ID for Buddy)
+  const sightings = communityDogSightings.filter(s => s.dogId === 'cd1');
+  const careRecords = communityDogCareRecords.filter(r => r.dogId === 'cd1');
+  
+  // Convert sightings to timeline format
+  const timelineEntries = sightings.map(s => ({
+    label: s.location,
+    date: s.date,
+    status: 'active' as const,
+    detail: `${s.note} — by ${s.author}`
+  }));
+
+  const handleSightingSubmit = () => {
+    addCommunityDogSighting({
+      id: Date.now(),
+      dogId: 'cd1',
+      date: 'Just now',
+      location: 'Current Location',
+      note: sightingNote || 'Sighted',
+      author: 'You'
+    });
+    setShowSightingModal(false);
+    setSightingNote('');
+  };
+
+  const handleCareSubmit = () => {
+    if (!showCareModal) return;
+    
+    addCommunityDogCareRecord({
+      id: Date.now(),
+      dogId: 'cd1',
+      type: showCareModal,
+      date: careDate,
+      detail: careDetail || (showCareModal === 'feeding' ? 'Fed' : showCareModal === 'vaccine' ? 'Vaccinated' : 'Note'),
+      author: 'You' + (hasPhoto ? ' (w/ Photo)' : '')
+    });
+    
+    setShowCareModal(null);
+    setCareDetail('');
+    setHasPhoto(false);
+  };
+
+  const getCareIcon = (type: string) => {
+    switch (type) {
+      case 'feeding': return <Utensils size={14} style={{ color: 'var(--green-dark)' }} />;
+      case 'vaccine': return <Syringe size={14} style={{ color: 'var(--info-dark)' }} />;
+      default: return <FileText size={14} style={{ color: 'var(--gray-700)' }} />;
+    }
+  };
+
+  const getCareColor = (type: string) => {
+    switch (type) {
+      case 'feeding': return 'var(--green-bg)';
+      case 'vaccine': return 'var(--info-bg)';
+      default: return 'var(--gray-100)';
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full relative">
       <ScreenLabel name="CMT_03_CommunityDog_DetailTimeline" />
       <AppBar title="Community Dog Detail" showBack />
-      <div className="flex-1 p-4 flex flex-col gap-3">
+      <div className="flex-1 p-4 flex flex-col gap-6 pb-20">
+        
+        {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: '#FFF7ED' }}>
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--warning-bg)' }}>
             <span className="text-3xl">🐕‍🦺</span>
           </div>
           <div>
@@ -102,10 +164,139 @@ export function CMT_03() {
             <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Medium, brown, friendly · Central Park East</p>
           </div>
         </div>
+        
+        <Banner type="warning" text="Community dogs are shown with lower priority than emergencies." />
 
-        <h4 className="text-[14px] mt-2" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Care timeline</h4>
-        <TimelineView entries={entries} />
+        {/* Sightings */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-[14px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Sightings timeline</h4>
+            <span className="text-[11px]" style={{ color: 'var(--gray-500)' }}>Most recent first</span>
+          </div>
+          <TimelineView entries={timelineEntries} />
+        </div>
+
+        {/* Care & Records (Task 2) */}
+        <div>
+           <div className="flex items-center justify-between mb-3">
+             <h4 className="text-[14px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Care & Records</h4>
+           </div>
+
+           {/* Quick Actions */}
+           <div className="grid grid-cols-3 gap-2 mb-4">
+             <button onClick={() => setShowCareModal('feeding')} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
+               <Utensils size={18} style={{ color: 'var(--green-dark)' }} />
+               <span className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 600 }}>Log Feeding</span>
+             </button>
+             <button onClick={() => setShowCareModal('vaccine')} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: 'var(--info-bg)', border: '1px solid var(--info-soft)' }}>
+               <Syringe size={18} style={{ color: 'var(--info-dark)' }} />
+               <span className="text-[11px]" style={{ color: 'var(--info-dark)', fontWeight: 600 }}>Log Vaccine</span>
+             </button>
+             <button onClick={() => setShowCareModal('note')} className="flex flex-col items-center gap-1 p-2 rounded-xl" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+               <FileText size={18} style={{ color: 'var(--gray-700)' }} />
+               <span className="text-[11px]" style={{ color: 'var(--gray-700)', fontWeight: 600 }}>Add Note</span>
+             </button>
+           </div>
+
+           {/* Records List */}
+           <div className="flex flex-col gap-2">
+             {careRecords.map((r: any) => (
+               <div key={r.id} className="p-3 rounded-xl flex gap-3" style={{ background: getCareColor(r.type) }}>
+                 <div className="mt-0.5">{getCareIcon(r.type)}</div>
+                 <div>
+                   <div className="flex items-center gap-2">
+                     <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{r.type.charAt(0).toUpperCase() + r.type.slice(1)}</span>
+                     <span className="text-[11px]" style={{ color: 'var(--gray-500)' }}>{r.date}</span>
+                   </div>
+                   <p className="text-[12px]" style={{ color: 'var(--gray-700)' }}>{r.detail}</p>
+                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--gray-500)' }}>By {r.author}</p>
+                 </div>
+               </div>
+             ))}
+           </div>
+        </div>
       </div>
+
+      {/* Floating Action Button for Sighting */}
+      <div className="p-4 bg-white border-t border-gray-200 sticky bottom-0">
+        <Btn variant="primary" fullWidth icon={<MapPin size={16} />} onClick={() => setShowSightingModal(true)}>
+          I saw this dog today
+        </Btn>
+      </div>
+
+      {/* Sighting Modal */}
+      {showSightingModal && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full bg-white rounded-t-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[17px]" style={{ fontWeight: 600 }}>Report Sighting</h3>
+              <button onClick={() => setShowSightingModal(false)}><X size={24} style={{ color: 'var(--gray-500)' }} /></button>
+            </div>
+            
+            <div className="p-3 rounded-xl flex items-center gap-3" style={{ background: 'var(--green-bg)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
+                <MapPin size={16} style={{ color: 'var(--green-primary)' }} />
+              </div>
+              <div>
+                <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Current Location</p>
+                <p className="text-[11px]" style={{ color: 'var(--green-dark)' }}>Using GPS (Simulated)</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Note (optional)</label>
+              <textarea 
+                className="w-full px-3 py-2.5 rounded-xl text-[14px]" 
+                style={{ background: 'var(--gray-100)', minHeight: 80 }} 
+                placeholder="What was the dog doing?"
+                value={sightingNote}
+                onChange={(e) => setSightingNote(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Photo (optional)</label>
+              <div className="h-20 rounded-xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '2px dashed var(--gray-300)' }}>
+                <Camera size={20} style={{ color: 'var(--gray-400)' }} />
+              </div>
+            </div>
+
+            <Btn variant="primary" fullWidth onClick={handleSightingSubmit}>Submit Sighting</Btn>
+          </div>
+        </div>
+      )}
+
+      {/* Care Modal */}
+      {showCareModal && (
+        <div className="absolute inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full bg-white rounded-t-2xl p-4 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[17px]" style={{ fontWeight: 600 }}>Log {showCareModal.charAt(0).toUpperCase() + showCareModal.slice(1)}</h3>
+              <button onClick={() => setShowCareModal(null)}><X size={24} style={{ color: 'var(--gray-500)' }} /></button>
+            </div>
+
+            <div>
+              <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Details</label>
+              <input 
+                className="w-full px-3 py-2.5 rounded-xl text-[14px]" 
+                style={{ background: 'var(--gray-100)' }} 
+                placeholder={showCareModal === 'feeding' ? 'What food?' : showCareModal === 'vaccine' ? 'Which vaccine?' : 'Note details...'}
+                value={careDetail}
+                onChange={(e) => setCareDetail(e.target.value)}
+              />
+            </div>
+
+            <div onClick={() => setHasPhoto(!hasPhoto)} className="p-3 rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-colors" style={{ borderColor: hasPhoto ? 'var(--green-primary)' : 'var(--gray-300)', background: hasPhoto ? 'var(--green-bg)' : 'transparent' }}>
+              <div className="flex items-center gap-2">
+                <Camera size={16} style={{ color: hasPhoto ? 'var(--green-dark)' : 'var(--gray-400)' }} />
+                <span className="text-[13px]" style={{ color: hasPhoto ? 'var(--green-dark)' : 'var(--gray-500)' }}>{hasPhoto ? 'Proof photo added (simulated)' : 'Add proof photo'}</span>
+              </div>
+            </div>
+
+            <Btn variant="primary" fullWidth onClick={handleCareSubmit}>Save Record</Btn>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -124,7 +315,7 @@ export function CMT_04() {
             <p className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>New entry</p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--gray-500)' }}>Medium brown dog, East side</p>
           </div>
-          <div className="flex-1 p-3 rounded-xl" style={{ background: '#FFF7ED' }}>
+          <div className="flex-1 p-3 rounded-xl" style={{ background: 'var(--warning-bg)' }}>
             <p className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Existing: Buddy</p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--gray-500)' }}>Medium brown, Central Park East</p>
           </div>
@@ -148,7 +339,7 @@ export function CMT_05() {
       <ScreenLabel name="CMT_05_Found_vs_CommunityDog_Warning" />
       <AppBar title="Important Notice" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4 items-center">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: '#FFFBEB' }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--warning-bg)' }}>
           <AlertTriangle size={32} style={{ color: 'var(--warning)' }} />
         </div>
         <h3 className="text-[17px] text-center" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>This may be a community dog</h3>

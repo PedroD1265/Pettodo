@@ -18,6 +18,7 @@
 
   /* Neutrals */
   --gray-900: #111827;
+  --gray-950: #0a0a0a;
   --gray-700: #374151;
   --gray-500: #6B7280;
   --gray-400: #9CA3AF;
@@ -27,7 +28,13 @@
 
   /* Semantic */
   --info: #3B82F6;
+  --info-bg: #EFF6FF;
+  --info-soft: #BFDBFE;
+  --info-dark: #1E40AF;
   --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --warning-soft: #FDE68A;
+  --warning-dark: #92400E;
 
   /* Spacing */
   --sp-1: 4px;

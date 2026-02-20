@@ -29,7 +29,24 @@ export default function HOM_02() {
           time={LOST_CASE.time}
           matchCount={LOST_CASE.matchCount}
           onClick={() => nav('/emg/case-detail-lost')}
-        />
+        >
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={(e) => { e.stopPropagation(); nav('/emg/share-flyer'); }}
+              className="flex-1 py-2 px-3 rounded-lg text-[12px] font-medium transition-colors"
+              style={{ background: 'var(--gray-100)', color: 'var(--gray-900)' }}
+            >
+              Share Flyer
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); nav('/emg/matching-top10'); }}
+              className="flex-1 py-2 px-3 rounded-lg text-[12px] font-medium transition-colors"
+              style={{ background: 'var(--gray-100)', color: 'var(--gray-900)' }}
+            >
+              Matches
+            </button>
+          </div>
+        </CaseCard>
 
         <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center p-3 rounded-xl" style={{ background: 'var(--red-bg)' }}>

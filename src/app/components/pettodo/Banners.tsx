@@ -10,14 +10,14 @@ interface BannerProps {
 }
 
 const cfg: Record<BannerType, { bg: string; color: string; border: string; icon: ReactNode }> = {
-  info: { bg: '#EFF6FF', color: 'var(--info)', border: '#BFDBFE', icon: <Info size={16} /> },
-  warning: { bg: '#FFFBEB', color: 'var(--warning)', border: '#FDE68A', icon: <AlertTriangle size={16} /> },
+  info: { bg: 'var(--info-bg)', color: 'var(--info)', border: 'var(--info-soft)', icon: <Info size={16} /> },
+  warning: { bg: 'var(--warning-bg)', color: 'var(--warning)', border: 'var(--warning-soft)', icon: <AlertTriangle size={16} /> },
   antiscam: { bg: 'var(--red-bg)', color: 'var(--red-dark)', border: 'var(--red-soft)', icon: <Shield size={16} /> },
   activeCase: { bg: 'var(--red-bg)', color: 'var(--red-dark)', border: 'var(--red-soft)', icon: <AlertTriangle size={16} /> },
-  privacy: { bg: '#EFF6FF', color: 'var(--info)', border: '#BFDBFE', icon: <Lock size={16} /> },
+  privacy: { bg: 'var(--info-bg)', color: 'var(--info)', border: 'var(--info-soft)', icon: <Lock size={16} /> },
   success: { bg: 'var(--green-bg)', color: 'var(--green-dark)', border: 'var(--green-soft)', icon: <CheckCircle size={16} /> },
   prefilled: { bg: 'var(--green-bg)', color: 'var(--green-dark)', border: 'var(--green-soft)', icon: <CheckCircle size={16} /> },
-  noPayments: { bg: '#FFFBEB', color: 'var(--warning)', border: '#FDE68A', icon: <Info size={16} /> },
+  noPayments: { bg: 'var(--warning-bg)', color: 'var(--warning)', border: 'var(--warning-soft)', icon: <Info size={16} /> },
   calm: { bg: 'var(--green-bg)', color: 'var(--green-dark)', border: 'var(--green-soft)', icon: <Eye size={16} /> },
 };
 

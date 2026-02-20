@@ -38,7 +38,7 @@ export function DLY_01() {
           </div>
         </div>
 
-        <div className="p-3 rounded-xl" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--info-bg)', border: '1px solid var(--info-soft)' }}>
           <p className="text-[12px]" style={{ color: 'var(--info)', fontWeight: 500 }}>
             <Syringe size={12} className="inline mr-1" />
             Next vaccine: Distemper booster — Mar 20, 2026

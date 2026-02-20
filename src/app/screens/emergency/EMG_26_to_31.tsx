@@ -6,6 +6,7 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { MapPlaceholder } from '../../components/pettodo/MapComponents';
 import { TimelineView } from '../../components/pettodo/Timeline';
+import { CaseLifecycleBar, MatchLifecycleBar } from '../../components/pettodo/LifecycleTimers';
 import { useNavigate } from 'react-router';
 import { SAFE_POINT, LOST_CASE, LUNA } from '../../data/demoData';
 import { CheckCircle, Calendar, Clock, AlertTriangle, Shield, MapPin, Star } from 'lucide-react';
@@ -66,12 +67,12 @@ export function EMG_27() {
         </div>
 
         {/* Safe point unavailable fallback */}
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle size={14} style={{ color: 'var(--warning)' }} />
-            <span className="text-[12px]" style={{ fontWeight: 600, color: 'var(--warning)' }}>Safe point unavailable?</span>
+            <span className="text-[12px]" style={{ fontWeight: 600, color: 'var(--warning-dark)' }}>Safe point unavailable?</span>
           </div>
-          <p className="text-[11px]" style={{ color: '#92400E' }}>
+          <p className="text-[11px]" style={{ color: 'var(--warning-dark)' }}>
             If the safe point is closed or unavailable, you can choose a new trusted location or reschedule.
           </p>
           <div className="flex gap-2 mt-2">
@@ -153,9 +154,9 @@ export function EMG_29() {
         </div>
 
         {/* Safe point unavailable fallback */}
-        <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-          <p className="text-[12px]" style={{ fontWeight: 600, color: 'var(--warning)' }}>Safe point unavailable?</p>
-          <p className="text-[11px] mt-0.5" style={{ color: '#92400E' }}>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
+          <p className="text-[12px]" style={{ fontWeight: 600, color: 'var(--warning-dark)' }}>Safe point unavailable?</p>
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--warning-dark)' }}>
             Safe point unavailable. Choose a new trusted location.
           </p>
           <div className="flex gap-2 mt-2">
@@ -185,7 +186,7 @@ export function EMG_30() {
         <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
           <CheckCircle size={48} style={{ color: 'var(--green-primary)' }} />
         </div>
-        <h2 className="text-[22px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Luna is home! 🎉</h2>
+        <h2 className="text-[22px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Luna is home!</h2>
         <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>
           Case {LOST_CASE.id} has been resolved. Thank you to everyone who helped.
         </p>
@@ -225,9 +226,15 @@ export function EMG_31() {
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_31_CaseLifecycle_Statuses" />
       <AppBar title="Case Lifecycle" showBack />
-      <div className="flex-1 p-4 flex flex-col gap-3">
+      <div className="flex-1 p-4 flex flex-col gap-3 overflow-y-auto">
         <h3 className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Case {LOST_CASE.id} — Timeline</h3>
+
+        {/* Lifecycle bars */}
+        <CaseLifecycleBar />
+        <MatchLifecycleBar />
+
         <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>10-day match window · 30-day case lifecycle</p>
+        
         <TimelineView entries={entries} />
       </div>
     </div>

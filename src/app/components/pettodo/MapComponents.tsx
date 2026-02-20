@@ -5,7 +5,7 @@ const PIN_TYPES = [
   { icon: '📍', color: 'var(--red-primary)', label: 'Lost', desc: 'Dog reported lost' },
   { icon: '✅', color: 'var(--green-primary)', label: 'Found', desc: 'Dog found by someone' },
   { icon: '👁️', color: 'var(--warning)', label: 'Sighted', desc: 'Dog spotted in area' },
-  { icon: '🐕', color: '#F97316', label: 'Community Dog', desc: 'Known street/community dog (lower priority)' },
+  { icon: '🐕', color: 'var(--warning)', label: 'Community Dog', desc: 'Known street/community dog (lower priority)' },
   { icon: '🏥', color: 'var(--info)', label: 'Safe Point', desc: 'Trusted handoff location' },
 ];
 
@@ -45,7 +45,7 @@ export function MapPlaceholder({ children, height = 220 }: { children?: React.Re
   return (
     <div
       className="relative rounded-xl overflow-hidden flex items-center justify-center"
-      style={{ background: '#E8F4E8', height, border: '1px solid var(--gray-200)' }}
+      style={{ background: 'var(--green-bg)', height, border: '1px solid var(--gray-200)' }}
     >
       <div className="absolute inset-0 flex items-center justify-center opacity-20">
         <MapPin size={64} style={{ color: 'var(--gray-400)' }} />

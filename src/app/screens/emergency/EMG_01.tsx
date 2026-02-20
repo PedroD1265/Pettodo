@@ -2,6 +2,7 @@ import React from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { Btn } from '../../components/pettodo/Buttons';
+import { Banner } from '../../components/pettodo/Banners';
 import { useNavigate } from 'react-router';
 import { AlertTriangle, Search, Eye } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export default function EMG_01() {
             <div>
               <p className="text-[16px]" style={{ fontWeight: 700, color: 'var(--red-dark)' }}>I lost my dog</p>
               <p className="text-[12px] mt-0.5" style={{ color: 'var(--red-dark)' }}>Report and start searching immediately</p>
+              <p className="text-[11px] mt-1" style={{ color: 'var(--red-primary)', fontWeight: 600 }}>No account needed to post</p>
             </div>
           </button>
 
@@ -49,17 +51,19 @@ export default function EMG_01() {
           <button
             onClick={() => nav('/emg/sighted-report')}
             className="flex items-center gap-4 p-4 rounded-2xl text-left"
-            style={{ background: '#FFFBEB', border: '2px solid #FDE68A', minHeight: 80 }}
+            style={{ background: 'var(--warning-bg)', border: '2px solid var(--warning-soft)', minHeight: 80 }}
           >
             <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--warning)' }}>
               <Eye size={24} style={{ color: 'var(--white)' }} />
             </div>
             <div>
               <p className="text-[16px]" style={{ fontWeight: 700, color: 'var(--warning)' }}>I spotted a dog</p>
-              <p className="text-[12px] mt-0.5" style={{ color: '#92400E' }}>Report a sighting to help an active search</p>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--warning-dark)' }}>Report a sighting to help an active search</p>
             </div>
           </button>
         </div>
+
+        <Banner type="calm" text="Stay calm — we'll guide you step by step" />
       </div>
     </div>
   );
