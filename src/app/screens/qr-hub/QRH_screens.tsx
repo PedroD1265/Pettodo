@@ -4,8 +4,10 @@ import { AppBar } from '../../components/pettodo/AppBar';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate } from 'react-router';
+import { useApp } from '../../context/AppContext';
 import { LUNA } from '../../data/demoData';
-import { Download, Share2, Printer, Shield, Eye, Lock, AlertTriangle, Copy, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import { forceRateLimit, resetRateLimit } from '../../utils/rateLimit';
+import { Download, Share2, Printer, Shield, Lock, AlertTriangle, Copy, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -78,7 +80,22 @@ export function QRH_02() {
 
 // QRH_03
 export function QRH_03() {
+  const { store, updateSettings } = useApp();
+  const captchaEnabled = store.settings.captchaEnabled;
   const [exceeded, setExceeded] = useState(false);
+
+  const handlePreviewRateLimit = () => {
+    if (!exceeded) {
+      forceRateLimit();
+      setExceeded(true);
+      toast('Rate limit preview active. Go to the QR public page to see it in action.');
+    } else {
+      resetRateLimit();
+      setExceeded(false);
+      toast('Rate limit reset.');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="QRH_03_QR_AntiScraping_CaptchaRateLimit" />
@@ -87,37 +104,44 @@ export function QRH_03() {
         <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Anti-scraping protection</h3>
         <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>These settings protect your information from automated scraping.</p>
 
-        <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
+        <button
+          onClick={() => updateSettings({ captchaEnabled: !captchaEnabled })}
+          className="p-3 rounded-xl text-left w-full"
+          style={{ background: 'var(--gray-100)' }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <Shield size={16} style={{ color: 'var(--info)' }} />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Captcha verification</span>
           </div>
-          <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Visitors must pass a captcha before seeing contact info.</p>
-          <div className="mt-2 w-12 h-7 rounded-full flex items-center px-0.5" style={{ background: 'var(--green-primary)' }}>
-            <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: 18 }} />
+          <p className="text-[12px] mb-2" style={{ color: 'var(--gray-500)' }}>
+            {captchaEnabled
+              ? 'Visitors must pass a captcha before seeing contact info.'
+              : 'Captcha is OFF — contact info is revealed without verification.'}
+          </p>
+          <div className="w-12 h-7 rounded-full flex items-center px-0.5" style={{ background: captchaEnabled ? 'var(--green-primary)' : 'var(--gray-300)' }}>
+            <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: captchaEnabled ? 18 : 0 }} />
           </div>
-        </div>
+        </button>
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
           <div className="flex items-center gap-2 mb-2">
             <Lock size={16} style={{ color: 'var(--warning)' }} />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Rate limiting</span>
           </div>
-          <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Maximum 5 contact reveals per hour per visitor.</p>
+          <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Maximum 5 contact reveals per hour per visitor. This limit is always enforced regardless of captcha setting.</p>
         </div>
 
-        {/* Rate limit exceeded state */}
-        <button onClick={() => setExceeded(!exceeded)} className="text-left">
+        <button onClick={handlePreviewRateLimit} className="text-left w-full">
           <div className="p-3 rounded-xl" style={{ background: exceeded ? 'var(--red-bg)' : 'var(--gray-100)', border: exceeded ? '1px solid var(--red-soft)' : '1px solid transparent' }}>
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} style={{ color: exceeded ? 'var(--red-primary)' : 'var(--gray-400)' }} />
               <span className="text-[13px]" style={{ fontWeight: 600, color: exceeded ? 'var(--red-dark)' : 'var(--gray-500)' }}>
-                {exceeded ? 'Rate limit exceeded preview' : 'Tap to preview rate limit state'}
+                {exceeded ? 'Rate limit active — tap to reset' : 'Tap to preview rate limit state'}
               </span>
             </div>
             {exceeded && (
               <p className="text-[12px] mt-1" style={{ color: 'var(--red-dark)' }}>
-                Too many attempts. Try again in 60 minutes.
+                Too many attempts. Try again in 60 minutes. (Visit QR public page to see this state.)
               </p>
             )}
           </div>

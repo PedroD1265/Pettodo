@@ -157,6 +157,21 @@ February 19, 2026
   - Added "Calendar" button to `EVT_02` (Event Detail) and `PD_05` (Play Date Detail).
   - Implemented modal with "Google Calendar" and "Download .ics" options.
 
+### Iteration 8 — Emergency Navigation Fix + Case Actions
+- **Navigation (AppBar.tsx)**:
+  - Updated back button logic to prefer `navigate(-1)` (history back).
+  - Added fallback to `/home-emergency` (or `/home-daily`) if history is empty or looped.
+  - Removed hardcoded `backTo` props from screens where history flow is preferred (e.g. `EMG_17`).
+- **Emergency Matches (EMG_16 & EMG_17)**:
+  - Added "Case Actions" section below main CTAs.
+  - Included "Share Flyer" (`/emg/share-flyer`) and "Report Published" (`/emg/lost-published`) buttons.
+  - Removed `backTo` from `EMG_17` to allow natural history navigation.
+- **Home Emergency (HOM_02)**:
+  - Added "Share Flyer" and "Matches" quick action buttons inside the active `CaseCard`.
+  - Updated `CaseCard` component to support children for custom actions.
+- **Share Kit (EMG_07)**:
+  - Added "Back to Report Published" link at the bottom of the screen to complete the hub loop.
+
 ### Iteration 9 — Local-first Functionality
 
 **Run Date:** February 20, 2026
@@ -372,20 +387,5 @@ Si `ranked` tiene resultados, se usan directamente. Si `store.cases` está vací
 - **Matching sin visión artificial:** El algoritmo compara campos de texto estructurado. No analiza imágenes. El porcentaje de confianza es una estimación heurística, no un resultado de ML
 
 ---
-
-### Iteration 8 — Emergency Navigation Fix + Case Actions
-- **Navigation (AppBar.tsx)**:
-  - Updated back button logic to prefer `navigate(-1)` (history back).
-  - Added fallback to `/home-emergency` (or `/home-daily`) if history is empty or looped.
-  - Removed hardcoded `backTo` props from screens where history flow is preferred (e.g. `EMG_17`).
-- **Emergency Matches (EMG_16 & EMG_17)**:
-  - Added "Case Actions" section below main CTAs.
-  - Included "Share Flyer" (`/emg/share-flyer`) and "Report Published" (`/emg/lost-published`) buttons.
-  - Removed `backTo` from `EMG_17` to allow natural history navigation.
-- **Home Emergency (HOM_02)**:
-  - Added "Share Flyer" and "Matches" quick action buttons inside the active `CaseCard`.
-  - Updated `CaseCard` component to support children for custom actions.
-- **Share Kit (EMG_07)**:
-  - Added "Back to Report Published" link at the bottom of the screen to complete the hub loop.
 
 

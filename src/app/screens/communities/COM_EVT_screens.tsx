@@ -78,7 +78,7 @@ export function COM_02() {
             <Phone size={16} style={{ color: 'var(--gray-400)' }} />
             <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>+1 (555) 987-6543</span>
           </div>
-          <Btn variant="primary" fullWidth className="mt-3">Send Verification Code</Btn>
+          <Btn variant="primary" fullWidth className="mt-3" onClick={() => toast('Demo only — SMS verification coming soon.')}>Send Verification Code</Btn>
         </div>
 
         <Btn variant="daily" fullWidth onClick={() => nav('/communities/home')}>Create Community</Btn>
@@ -170,8 +170,8 @@ export function COM_04() {
           <textarea className="w-full px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 120 }} placeholder="Share something with the community..." />
         </div>
         <div className="flex gap-2">
-          <Btn variant="secondary" icon={<span>📷</span>}>Photo</Btn>
-          <Btn variant="secondary" icon={<MapPin size={16} />}>Location</Btn>
+          <Btn variant="secondary" icon={<span>📷</span>} onClick={() => toast('Demo only — photo attachment coming soon.')}>Photo</Btn>
+          <Btn variant="secondary" icon={<MapPin size={16} />} onClick={() => toast('Demo only — location tagging coming soon.')}>Location</Btn>
         </div>
         <div className="mt-auto pb-4">
           <Btn variant="daily" fullWidth onClick={() => nav('/communities/detail')}>Publish Post</Btn>
@@ -203,8 +203,8 @@ export function COM_05() {
             <p className="text-[13px]" style={{ color: 'var(--gray-900)' }}>{p.text}</p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--red-dark)' }}>Reason: {p.reason}</p>
             <div className="flex gap-2 mt-2">
-              <Btn variant="ghost" className="flex-1">Approve</Btn>
-              <Btn variant="destructive" className="flex-1">Remove</Btn>
+              <Btn variant="ghost" className="flex-1" onClick={() => toast('Post approved and restored.')}>Approve</Btn>
+              <Btn variant="destructive" className="flex-1" onClick={() => toast('Post removed from community.')}>Remove</Btn>
             </div>
           </div>
         ))}
@@ -460,7 +460,7 @@ export function EVT_06() {
               <span className="text-[13px]" style={{ color: 'var(--green-dark)' }}>ID + Selfie verification complete</span>
             </div>
             <Banner type="success" text="You are now eligible to be an official organizer!" />
-            <Btn variant="daily" fullWidth>Apply as Official Organizer</Btn>
+            <Btn variant="daily" fullWidth onClick={() => toast('Demo only — organizer application coming soon.')}>Apply as Official Organizer</Btn>
           </div>
         </VerificationGate>
       </div>

@@ -178,7 +178,19 @@ export function PRF_02() {
 
 // PRF_03
 export function PRF_03() {
-  const [radius, setRadius] = useState(300);
+  const { store, updateSettings } = useApp();
+  const settings = store.settings;
+
+  const toggle = (key: 'showPhone' | 'allowChat' | 'showEmail') => {
+    updateSettings({ [key]: !settings[key] });
+  };
+
+  const contactItems = [
+    { key: 'showPhone' as const, label: 'Show phone on QR page' },
+    { key: 'allowChat' as const, label: 'Allow chat from case followers' },
+    { key: 'showEmail' as const, label: 'Show email to verified users' },
+  ];
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="PRF_03_Privacy_RadiusAndContact" />
@@ -186,9 +198,9 @@ export function PRF_03() {
       <div className="flex-1 p-4 flex flex-col gap-4">
         <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Privacy & Location</h3>
 
-        <RadiusSelector value={radius} onChange={setRadius} />
+        <RadiusSelector value={settings.defaultRadius} onChange={(v) => updateSettings({ defaultRadius: v })} />
         <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
-          Default: 300m. Your exact location is never shown. Only an approximate area is visible on the map.
+          Default privacy radius. Your exact location is never shown — only an approximate area is visible on the map.
         </p>
 
         <Banner type="privacy" text="Your exact location is protected" />
@@ -197,17 +209,18 @@ export function PRF_03() {
         <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
           <h4 className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Contact settings</h4>
           <div className="mt-2 flex flex-col gap-2">
-            {[
-              { label: 'Show phone on QR page', value: false },
-              { label: 'Allow chat from case followers', value: true },
-              { label: 'Show email to verified users', value: false },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between py-1">
+            {contactItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => toggle(item.key)}
+                className="flex items-center justify-between py-1 w-full text-left"
+                style={{ minHeight: 44 }}
+              >
                 <span className="text-[13px]" style={{ color: 'var(--gray-700)' }}>{item.label}</span>
-                <div className="w-12 h-7 rounded-full flex items-center px-0.5" style={{ background: item.value ? 'var(--green-primary)' : 'var(--gray-300)' }}>
-                  <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: item.value ? 18 : 0 }} />
+                <div className="w-12 h-7 rounded-full flex items-center px-0.5 shrink-0 transition-colors" style={{ background: settings[item.key] ? 'var(--green-primary)' : 'var(--gray-300)' }}>
+                  <div className="w-6 h-6 rounded-full transition-all" style={{ background: 'var(--white)', marginLeft: settings[item.key] ? 18 : 0 }} />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -218,6 +231,30 @@ export function PRF_03() {
 
 // PRF_04
 export function PRF_04() {
+  const { store, updateSettings } = useApp();
+  const notif = store.settings.notif;
+
+  type NotifKey = keyof typeof notif;
+
+  const toggleNotif = (key: NotifKey) => {
+    updateSettings({ notif: { ...notif, [key]: !notif[key] } } as any);
+  };
+
+  const emergencyItems: { key: NotifKey; label: string }[] = [
+    { key: 'sightingsNearMe', label: 'New sightings near me' },
+    { key: 'aiMatch', label: 'AI match found' },
+    { key: 'caseUpdates', label: 'Case updates' },
+    { key: 'chatMessages', label: 'Chat messages' },
+  ];
+
+  const dailyItems: { key: NotifKey; label: string }[] = [
+    { key: 'vaccineReminders', label: 'Vaccine reminders' },
+    { key: 'feedingReminders', label: 'Feeding reminders' },
+    { key: 'communityPosts', label: 'Community posts' },
+    { key: 'eventUpdates', label: 'Event updates' },
+    { key: 'playdateInvitations', label: 'Play date invitations' },
+  ];
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="PRF_04_Notifications_ByMode" />
@@ -227,36 +264,35 @@ export function PRF_04() {
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--red-bg)', border: '1px solid var(--red-soft)' }}>
           <p className="text-[13px] mb-2" style={{ fontWeight: 600, color: 'var(--red-dark)' }}>Emergency notifications</p>
-          {[
-            { label: 'New sightings near me', value: true },
-            { label: 'AI match found', value: true },
-            { label: 'Case updates', value: true },
-            { label: 'Chat messages', value: true },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between py-1.5">
+          {emergencyItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => toggleNotif(item.key)}
+              className="flex items-center justify-between py-1.5 w-full text-left"
+              style={{ minHeight: 44 }}
+            >
               <span className="text-[13px]" style={{ color: 'var(--red-dark)' }}>{item.label}</span>
-              <div className="w-12 h-7 rounded-full flex items-center px-0.5" style={{ background: item.value ? 'var(--red-primary)' : 'var(--gray-300)' }}>
-                <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: item.value ? 18 : 0 }} />
+              <div className="w-12 h-7 rounded-full flex items-center px-0.5 shrink-0" style={{ background: notif[item.key] ? 'var(--red-primary)' : 'var(--gray-300)' }}>
+                <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: notif[item.key] ? 18 : 0 }} />
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
           <p className="text-[13px] mb-2" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Daily notifications</p>
-          {[
-            { label: 'Vaccine reminders', value: true },
-            { label: 'Feeding reminders', value: false },
-            { label: 'Community posts', value: true },
-            { label: 'Event updates', value: true },
-            { label: 'Play date invitations', value: true },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between py-1.5">
+          {dailyItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => toggleNotif(item.key)}
+              className="flex items-center justify-between py-1.5 w-full text-left"
+              style={{ minHeight: 44 }}
+            >
               <span className="text-[13px]" style={{ color: 'var(--green-dark)' }}>{item.label}</span>
-              <div className="w-12 h-7 rounded-full flex items-center px-0.5" style={{ background: item.value ? 'var(--green-primary)' : 'var(--gray-300)' }}>
-                <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: item.value ? 18 : 0 }} />
+              <div className="w-12 h-7 rounded-full flex items-center px-0.5 shrink-0" style={{ background: notif[item.key] ? 'var(--green-primary)' : 'var(--gray-300)' }}>
+                <div className="w-6 h-6 rounded-full" style={{ background: 'var(--white)', marginLeft: notif[item.key] ? 18 : 0 }} />
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>

@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { COMMUNITY_DOGS } from '../../data/demoData';
 import { MapPin, Plus, Camera, AlertTriangle, Clock, FileText, Shield, X, CheckCircle, Syringe, Utensils } from 'lucide-react';
+import { toast } from 'sonner';
 
 // CMT_01
 export function CMT_01() {
@@ -33,7 +34,7 @@ export function CMT_01() {
         {view === 'map' && <MapPlaceholder height={200} />}
 
         {COMMUNITY_DOGS.map((d) => (
-          <CommunityDogCard key={d.name} {...d} onClick={() => nav('/community-dogs/detail')} />
+          <CommunityDogCard key={d.name} name={d.name} lastSeen={d.lastSeen} location={d.location} onClick={() => nav('/community-dogs/detail')} />
         ))}
 
         <Btn variant="secondary" fullWidth onClick={() => nav('/community-dogs/create')} icon={<Plus size={16} />}>
@@ -325,8 +326,8 @@ export function CMT_04() {
           These records look similar. Would you like to merge them or keep as separate entries?
         </p>
 
-        <Btn variant="primary" fullWidth>Merge Records</Btn>
-        <Btn variant="secondary" fullWidth>Keep Separate</Btn>
+        <Btn variant="primary" fullWidth onClick={() => toast('Records merged successfully.')}>Merge Records</Btn>
+        <Btn variant="secondary" fullWidth onClick={() => toast('Records kept separate.')}>Keep Separate</Btn>
       </div>
     </div>
   );
@@ -352,9 +353,9 @@ export function CMT_05() {
         </Banner>
 
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth>It's a different dog — continue Found report</Btn>
-          <Btn variant="secondary" fullWidth>View community dog record</Btn>
-          <Btn variant="ghost" fullWidth>Cancel report</Btn>
+          <Btn variant="primary" fullWidth onClick={() => toast('Continuing Found report for this dog.')}>It's a different dog — continue Found report</Btn>
+          <Btn variant="secondary" fullWidth onClick={() => toast('Demo only — community dog record view coming soon.')}>View community dog record</Btn>
+          <Btn variant="ghost" fullWidth onClick={() => toast('Report cancelled.')}>Cancel report</Btn>
         </div>
       </div>
     </div>

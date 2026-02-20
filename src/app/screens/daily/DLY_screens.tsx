@@ -8,6 +8,7 @@ import { TimelineView } from '../../components/pettodo/Timeline';
 import { FreshnessBadge, VerificationBadge } from '../../components/pettodo/Badges';
 import { useNavigate } from 'react-router';
 import { LUNA, VACCINES, FEEDING } from '../../data/demoData';
+import { toast } from 'sonner';
 import { PawPrint, QrCode, Syringe, FileText, Calendar, Clock, Check, AlertTriangle, ChevronRight, Utensils } from 'lucide-react';
 
 // DLY_01
@@ -74,7 +75,7 @@ export function DLY_02() {
       <div className="flex-1 p-4 flex flex-col gap-3">
         <PetCard name={LUNA.name} breed={LUNA.breed} hasQR vaccineStatus="Up to date" onClick={() => nav('/daily/pet-profile')} />
         <PetCard name="Max" breed="Golden Retriever" hasQR={false} vaccineStatus="Due soon" onClick={() => nav('/daily/pet-profile')} />
-        <Btn variant="secondary" fullWidth icon={<PawPrint size={16} />}>Add Pet</Btn>
+        <Btn variant="secondary" fullWidth icon={<PawPrint size={16} />} onClick={() => toast('Demo only — pet registration form coming soon.')}>Add Pet</Btn>
       </div>
     </div>
   );
@@ -149,16 +150,21 @@ export function DLY_04() {
           { name: 'Adoption Certificate', type: 'Image', date: 'Jun 10, 2023' },
           { name: 'Veterinary Records', type: 'PDF', date: 'Feb 1, 2026' },
         ].map((doc) => (
-          <div key={doc.name} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
+          <button
+            key={doc.name}
+            onClick={() => toast(`Demo only — document viewer for "${doc.name}" coming soon.`)}
+            className="flex items-center gap-3 p-3 rounded-xl text-left w-full"
+            style={{ background: 'var(--gray-100)', minHeight: 48 }}
+          >
             <FileText size={20} style={{ color: 'var(--info)' }} />
             <div className="flex-1">
               <p className="text-[14px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{doc.name}</p>
               <p className="text-[11px]" style={{ color: 'var(--gray-400)' }}>{doc.type} · {doc.date}</p>
             </div>
             <ChevronRight size={16} style={{ color: 'var(--gray-400)' }} />
-          </div>
+          </button>
         ))}
-        <Btn variant="secondary" fullWidth>Upload Document</Btn>
+        <Btn variant="secondary" fullWidth onClick={() => toast('Demo only — document upload coming soon.')}>Upload Document</Btn>
       </div>
     </div>
   );
@@ -226,9 +232,9 @@ export function DLY_07() {
         </div>
 
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth>Add to Google Calendar</Btn>
-          <Btn variant="secondary" fullWidth>Add to Apple Calendar</Btn>
-          <Btn variant="secondary" fullWidth>Download .ICS File</Btn>
+          <Btn variant="primary" fullWidth onClick={() => toast('Demo only — Google Calendar integration coming soon.')}>Add to Google Calendar</Btn>
+          <Btn variant="secondary" fullWidth onClick={() => toast('Demo only — Apple Calendar integration coming soon.')}>Add to Apple Calendar</Btn>
+          <Btn variant="secondary" fullWidth onClick={() => toast('Demo only — .ICS download coming soon.')}>Download .ICS File</Btn>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { INITIAL_COMMUNITY_DOG_SIGHTINGS, INITIAL_COMMUNITY_DOG_CARE_RECORDS } from '../data/demoData';
 import { loadPersistedState, savePersistedState } from '../utils/localStorage';
-import { loadEntityStore, saveEntityStore, EntityStore, Pet, Case, Sighting, CareLog, generateId } from '../data/storage';
+import { loadEntityStore, saveEntityStore, EntityStore, Pet, Case, Sighting, CareLog, generateId, Settings } from '../data/storage';
 
 export type AppMode = 'emergency' | 'daily';
 export type VerificationLevel = 'none' | 'basic' | 'strict';
@@ -42,6 +42,7 @@ interface AppState {
   addSighting: (s: Omit<Sighting, 'id' | 'createdAt'>) => Sighting;
   addCareLog: (log: Omit<CareLog, 'id' | 'createdAt'>) => CareLog;
   resetStore: () => void;
+  updateSettings: (patch: Partial<Settings>) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -122,6 +123,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStore(fresh);
   };
 
+  const updateSettings = (patch: Partial<Settings>) => {
+    updateStore(s => ({
+      ...s,
+      settings: { ...s.settings, ...patch, notif: { ...s.settings.notif, ...((patch as any).notif ?? {}) } },
+    }));
+  };
+
   const toggleMode = () => setMode(m => m === 'emergency' ? 'daily' : 'emergency');
 
   useEffect(() => {
@@ -152,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       communityDogSightings, addCommunityDogSighting,
       communityDogCareRecords, addCommunityDogCareRecord,
       walkerAvailability, setWalkerAvailability,
-      store, addPet, addCase, addSighting, addCareLog, resetStore,
+      store, addPet, addCase, addSighting, addCareLog, resetStore, updateSettings,
     }}>
       {children}
     </AppContext.Provider>

@@ -136,6 +136,7 @@ export const router = createBrowserRouter([
           // Education
           { path: '/education/library', Component: EDU_01 },
           { path: '/education/article', Component: EDU_02 },
+          { path: '/education/article/:id', Component: EDU_02 },
           { path: '/education/ai-assistant', Component: EDU_03 },
           { path: '/education/guide', Component: EDU_04 },
 

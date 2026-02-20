@@ -8,6 +8,7 @@ import { MapPlaceholder, RadiusSelector } from '../../components/pettodo/MapComp
 import { MatchCard } from '../../components/pettodo/Cards';
 import { useNavigate } from 'react-router';
 import { Camera, Plus, QrCode, CheckCircle, Eye, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { MATCHES, LOST_CASE } from '../../data/demoData';
 
 // EMG_08
@@ -144,7 +145,7 @@ export function EMG_10() {
           If the dog has a PETTODO QR tag, scan it to instantly connect with the owner.
         </p>
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth icon={<QrCode size={18} />}>Scan QR Code</Btn>
+          <Btn variant="primary" fullWidth icon={<QrCode size={18} />} onClick={() => nav('/emg/found-published')}>Scan QR Code</Btn>
           <Btn variant="secondary" fullWidth onClick={() => nav('/emg/found-published')}>Skip — No QR Found</Btn>
         </div>
       </div>
@@ -179,7 +180,7 @@ export function EMG_11() {
 
         <div className="flex flex-col gap-2">
           {MATCHES.slice(0, 3).map((m) => (
-            <MatchCard key={m.id} {...m} onClick={() => nav('/emg/matching-top10')} />
+            <MatchCard key={m.id} confidence={m.confidence} reasons={m.reasons} location={m.location} time={m.time} onClick={() => nav('/emg/matching-top10')} />
           ))}
         </div>
 
@@ -258,7 +259,7 @@ export function EMG_13() {
         </div>
 
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth>Follow Case</Btn>
+          <Btn variant="primary" fullWidth onClick={() => toast('You are now following this case. Notifications will be sent for updates.')}>Follow Case</Btn>
           <Btn variant="secondary" fullWidth onClick={() => nav('/emg/case-detail-sighted')}>View Case Details</Btn>
           <Btn variant="ghost" fullWidth onClick={() => nav('/home-emergency')}>Go Home</Btn>
         </div>

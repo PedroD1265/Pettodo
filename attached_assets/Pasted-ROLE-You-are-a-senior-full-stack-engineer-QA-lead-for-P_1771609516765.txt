@@ -1,0 +1,94 @@
+ROLE: You are a senior full-stack engineer + QA lead for PETTODO.
+
+GOAL (Iteration 10): Turn the current local-first demo into a “fully interactive” demo by fixing ALL dead buttons/switches and correcting Learn/Education content so each item shows unique, correct information. Do NOT break existing routes/flows. Keep design tokens (CSS vars) compliance. Keep all 100 screens and existing navigation.
+
+CONTEXT:
+- The app already has local-first persistence (EntityStore in localStorage), real QR rendering, real Leaflet/OpenStreetMap maps, and deterministic match ranking in EMG_16.
+- Many UI controls still do nothing (toggles, “tap to preview…”, buttons across modules).
+- Learn/Education currently shows the same info for multiple clicks (likely missing id-based routing/data binding).
+
+WORK PLAN (must follow in order):
+1) Interaction Audit (no code changes yet)
+   - Run the app and click through EVERY module (Emergency, Daily, QR, Profile/Privacy, Communities/Events, Walkers, PlayDates, Public QR, Learn).
+   - Create a checklist file: docs/INTERACTION_AUDIT.md
+     For each dead element capture:
+       • Screen route
+       • Component name (if known)
+       • Control type (button/switch/list item)
+       • Expected behavior (navigate / toggle state / open modal / download / copy / submit)
+       • Current behavior (dead/no-op)
+     Prioritize: Safety-related first (anti-scraping, privacy, verification gates), then Learn, then the rest.
+
+2) Define a universal rule: no dead controls
+   For every interactive element, it must do ONE of:
+   A) Perform real action (update AppContext/store and persist)
+   B) Navigate to an existing route
+   C) Open an existing modal
+   D) If truly not implementable yet (e.g., SMS provider), show a toast/banner: “Demo only — not available yet” and optionally link to the relevant explanatory screen.
+   Implement a small helper (if not already present):
+     - useToast() or a simple toast util so we have consistent feedback for “coming soon”.
+
+3) Fix switches/toggles (make them controlled + persistent)
+   - Identify all switches across the app.
+   - For each, wire it to either:
+     • AppContext state, persisted (preferred), OR
+     • EntityStore.settings (create a Settings object inside EntityStore if missing).
+   - Must persist on refresh.
+   Specific must-fix examples:
+   - Anti-Scraping screen: “Captcha verification” toggle MUST change behavior:
+       • When ON: revealing contact requires captcha step (simulated captcha ok, but state must gate reveal)
+       • When OFF: allow reveal without captcha
+   - “Tap to preview rate limit state” MUST do something:
+       • Either navigate to the rate_limit screen OR flip a demo flag and show the rate-limited UI.
+
+4) Implement real anti-scraping rate limiting (local demo)
+   - Add a local rate-limit mechanism for “contact reveal” actions:
+       • Max 5 reveals per hour per visitor (use localStorage with timestamped counters).
+       • If exceeded, show the existing rate_limit UI/message (“Too many attempts…”).
+   - Add a “preview rate limit” action that forces the rate limit state for demo.
+
+5) Fix Learn/Education content correctness (stop showing the same content)
+   - Create a content dataset (src/app/data/education.ts or demoData.ts section):
+       • At least 6 articles with unique: id, title, category (Emergency/Daily), date, sourceName, sourceUrl, summary/body (markdown or paragraphs).
+   - Ensure EDU list screen renders items from this dataset.
+   - Ensure each list item navigates to a detail route using an id param, e.g. /education/article/:id (or the existing route pattern).
+   - Ensure EDU detail screen reads the route param and renders the correct article.
+   - Add “Source” link (open in new tab).
+   - If article id not found, show a polite 404 state with a back button (don’t crash).
+
+6) Sweep the rest of the app for dead actions
+   - For each dead button in non-critical modules:
+     • If the action should be local-first: implement it (store update + persistence).
+     • If it’s future backend: add toast “Demo only” + do not break flow.
+   Examples of acceptable local-first actions:
+     - Creating/editing pets (adds to store)
+     - Creating a new case (adds to store)
+     - Adding sightings / care logs (adds to store)
+     - Saving preferences (privacy radius defaults, notification toggles, anti-scraping settings)
+   Examples of “Demo only toast”:
+     - Real SMS sending
+     - Real ID verification submission to a server
+     - Real realtime chat server (unless you implement it locally without breaking anything)
+
+7) QA + Docs updates (mandatory)
+   - Update docs/QA_SELFCHECK.md:
+       • Add Iteration 10 checks for “No dead controls” + Learn correctness.
+   - Update docs/EXECUTION_LOG.md:
+       • Add a new section: Iteration 10 — Interaction Wiring + Learn Content Fix
+       • Explain what was fixed, where, and the new persistence/rate-limit behavior.
+   - Ensure build runs: npm run build (or equivalent) and the app launches without console errors.
+
+CONSTRAINTS:
+- Do NOT remove routes/screens. Do NOT break existing flows.
+- Keep token-only styling (CSS variables), no new hardcoded hex.
+- Keep maps/QR/matching functionality intact.
+- Prefer small, safe refactors over rewrites.
+
+DELIVERABLES:
+- docs/INTERACTION_AUDIT.md (before/after list)
+- Implemented fixes in code
+- Updated docs/EXECUTION_LOG.md with Iteration 10
+- Updated docs/QA_SELFCHECK.md with Iteration 10 checks
+- Git commit(s) with clear messages
+
+START NOW with Step 1 (Interaction Audit), then proceed sequentially.

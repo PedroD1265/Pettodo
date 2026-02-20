@@ -188,7 +188,7 @@ export function CommunityDogCard({ name, lastSeen, location, onClick }: {
   name: string;
   lastSeen: string;
   location: string;
-  onClick?: () => void;
+  onClick?: () => void | Promise<void>;
 }) {
   return (
     <CardShell onClick={onClick} className="opacity-80">
@@ -239,7 +239,7 @@ export function MatchCard({ confidence, reasons, location, time, onClick }: {
   reasons: string[];
   location: string;
   time: string;
-  onClick?: () => void;
+  onClick?: () => void | Promise<void>;
 }) {
   return (
     <CardShell onClick={onClick}>

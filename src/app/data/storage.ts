@@ -65,12 +65,53 @@ export interface UserVerificationState {
   verifiedAt?: number;
 }
 
+export interface NotifSettings {
+  sightingsNearMe: boolean;
+  aiMatch: boolean;
+  caseUpdates: boolean;
+  chatMessages: boolean;
+  vaccineReminders: boolean;
+  feedingReminders: boolean;
+  communityPosts: boolean;
+  eventUpdates: boolean;
+  playdateInvitations: boolean;
+}
+
+export interface Settings {
+  defaultRadius: number;
+  showPhone: boolean;
+  allowChat: boolean;
+  showEmail: boolean;
+  captchaEnabled: boolean;
+  notif: NotifSettings;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  defaultRadius: 300,
+  showPhone: false,
+  allowChat: true,
+  showEmail: false,
+  captchaEnabled: true,
+  notif: {
+    sightingsNearMe: true,
+    aiMatch: true,
+    caseUpdates: true,
+    chatMessages: true,
+    vaccineReminders: true,
+    feedingReminders: false,
+    communityPosts: true,
+    eventUpdates: true,
+    playdateInvitations: true,
+  },
+};
+
 export interface EntityStore {
   pets: Pet[];
   cases: Case[];
   sightings: Sighting[];
   careLogs: CareLog[];
   verification: UserVerificationState;
+  settings: Settings;
 }
 
 const SEED_PET: Pet = {
@@ -205,6 +246,7 @@ const DEFAULTS: EntityStore = {
   sightings: SEED_SIGHTINGS,
   careLogs: SEED_CARE_LOGS,
   verification: { level: 'none', strictStatus: 'not_started' },
+  settings: DEFAULT_SETTINGS,
 };
 
 export function loadEntityStore(): EntityStore {
@@ -219,6 +261,7 @@ export function loadEntityStore(): EntityStore {
       sightings: Array.isArray(parsed.sightings) ? parsed.sightings : DEFAULTS.sightings,
       careLogs: Array.isArray(parsed.careLogs) ? parsed.careLogs : DEFAULTS.careLogs,
       verification: parsed.verification ?? DEFAULTS.verification,
+      settings: parsed.settings ? { ...DEFAULT_SETTINGS, ...parsed.settings, notif: { ...DEFAULT_SETTINGS.notif, ...(parsed.settings.notif ?? {}) } } : DEFAULT_SETTINGS,
     };
   } catch {
     return DEFAULTS;
