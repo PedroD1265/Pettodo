@@ -1,0 +1,35 @@
+You are working inside this Replit project (PETTODO, React + Vite + TS + Tailwind v4, React Router v7).
+Goal: implement Iteration 9 with MINIMAL dependencies and MINIMAL scope. Avoid big refactors.
+
+Rules:
+- First, check if the changes already exist. If they already exist, skip them and report “already implemented”.
+- Keep changes small, commit-ready, and show a concise checklist of files modified.
+- Do not add heavy libraries unless strictly necessary. Prefer tiny libs or pure TS utilities.
+- After each task, run typecheck/build (or the closest available) and ensure the preview still runs.
+
+Task A — Verify Iteration 8 navigation is actually in code:
+- Confirm AppBar back button prefers navigate(-1) and has fallback to /home-emergency or /home-daily when history is empty/looped.
+- Confirm EMG_16 and EMG_17 have “Case Actions” buttons to reach:
+  - /emg/share-flyer
+  - /emg/lost-published
+- Confirm HOM_02 case card includes quick actions for Share Flyer and Matches.
+If anything is missing, implement it exactly as described above.
+
+Task B — Make “Download PNG” and “Download PDF” in the Share Kit actually work (no longer toast-only):
+- Implement client-side PNG download from the FlyerPreview (best-effort: html-to-image OR a lightweight approach).
+- Implement client-side PDF download from the same flyer (best-effort: use jsPDF only if needed).
+- Keep UI unchanged; just make the buttons produce real files.
+
+Task C — Make “Download .ics” work for Events and Play Dates:
+- Generate an .ics string with title, start/end, location, description.
+- Trigger file download on click.
+- Keep Google Calendar button as link-only or modal option (no OAuth).
+
+Task D — Add lightweight demo persistence:
+- Persist AppContext key states to localStorage (mode, hasActiveCase, caseClaimed, verificationLevel, strictStatus, demoTimeOffset, care records, sightings).
+- On app load, restore them safely with defaults.
+
+Deliverable:
+- A short summary + list of files changed
+- Any new dependencies added (and why)
+- Confirmation that the app runs after changes
