@@ -1,0 +1,205 @@
+ROLE: Principal Engineer (Frontend + Integration Architect) for PETTODO running on Replit.
+
+SETTING RECOMMENDATION (Replit):
+- Autonomy: HIGH
+- App testing: ON
+- You may create small, focused commits per task, but you MUST keep scope controlled and avoid breaking existing flows.
+
+GOAL (Integration-Ready + Demo Mode):
+Bring PETTODO to the point where:
+1) The app remains a fully working local-first demo (no backend required to run).
+2) The codebase is “integration-ready” with clean service interfaces + adapters so the team can later plug in real providers:
+   - Storage (Azure Blob / Google Cloud Storage)
+   - SMS (Twilio / MessageBird or similar)
+   - Realtime chat (Ably / Pusher / Supabase Realtime) OR “chat via Gemini” (LLM-assisted responses, not realtime transport)
+   - Push notifications (FCM / APNs via Firebase Cloud Messaging for web + mobile later)
+   - Maps (Google Maps) and Geocoding (Google Places) later
+   - AI Assistant + Matching using Gemini (Flash/Pro) later
+3) A DEMO MODE exists that simulates every integration end-to-end with realistic behavior, without secrets and without external accounts.
+
+HARD CONSTRAINTS (DO NOT VIOLATE):
+- DO NOT rename or delete existing routes/screens. Do not break the 100-screen structure and the 10 flows.
+- DO NOT remove the current Leaflet/OSM map or the current local-first store; they must keep working.
+- DO NOT add real secrets to the repo.
+- DO NOT implement real SMS, real KYC, real payments, or a full production backend.
+- Keep “0 dead buttons” rule: every UI control must do action OR navigation OR modal OR descriptive toast.
+- Keep token-only styling (CSS variables).
+
+MANDATORY DOCS RULE (EVERY ITERATION):
+At the end of this iteration you MUST update:
+1) docs/EXECUTION_LOG.md (new iteration section with exact changes + file paths)
+2) docs/QA_SELFCHECK.md (new iteration checks)
+3) If interactions changed, docs/INTERACTION_AUDIT.md add an addendum
+
+CURRENT STATE (assume true):
+- Iterations 1–11 implemented.
+- Local-first EntityStore in localStorage exists (storage.ts) with settings and rate limiting.
+- Real QR rendering exists.
+- Leaflet OSM maps exist.
+- Deterministic matching exists.
+- Education module fixed (routing /education/article/:id + 6 articles).
+- No dead buttons policy in place.
+
+WHAT YOU MUST DELIVER (THIS RUN) — “INTEGRATION READY + DEMO MODE”
+Implement Tasks A–H in order.
+
+A) Add a single configuration switch: DEMO vs INTEGRATION
+1) Create an app-wide config module:
+   - src/app/config/appConfig.ts
+2) Config sources (Vite env):
+   - VITE_APP_MODE = "demo" | "integration"   (default "demo")
+   - VITE_STORAGE_PROVIDER = "demo" | "azure" | "gcs"
+   - VITE_SMS_PROVIDER = "demo" | "twilio"
+   - VITE_CHAT_PROVIDER = "demo" | "ably" | "pusher" | "supabase"
+   - VITE_PUSH_PROVIDER = "demo" | "fcm"
+   - VITE_MAP_PROVIDER = "osm" | "google"
+   - VITE_AI_PROVIDER = "demo" | "gemini"
+   - VITE_API_BASE_URL = "" (placeholder for future backend)
+3) Add:
+   - .env.example containing ALL vars with safe placeholders.
+4) Add a small visible indicator in-app (tiny badge in AppBar or DemoControls):
+   - “MODE: DEMO” or “MODE: INTEGRATION”
+   - This must not clutter the UI.
+
+B) Create a clean “Services Layer” (interfaces + demo adapters + integration stubs)
+Create folder:
+- src/app/services/
+
+Create interfaces (TypeScript) with minimal methods needed by PETTODO:
+1) Storage:
+   - IStorageService:
+     - uploadImage(file | dataUrl, pathHint): Promise<{ url: string }>
+     - uploadDocument(file, pathHint): Promise<{ url: string }>
+2) SMS / Verification:
+   - ISmsService:
+     - requestOtp(phone): Promise<{ success: boolean }>
+     - verifyOtp(phone, code): Promise<{ success: boolean }>
+3) Realtime Chat transport:
+   - IChatService:
+     - createThread(caseId): Promise<{ threadId: string }>
+     - sendMessage(threadId, message): Promise<void>
+     - subscribe(threadId, onMessage): () => void   (returns unsubscribe)
+4) Push notifications:
+   - IPushService:
+     - requestPermission(): Promise<"granted"|"denied"|"default">
+     - subscribe(): Promise<{ success: boolean }>
+     - showLocalNotification(title, body): void   (always available)
+5) Maps/Geocoding (light abstraction):
+   - IGeoService:
+     - geocode(query): Promise<{ lat:number; lng:number; label:string }[]>
+     - reverseGeocode(lat,lng): Promise<{ label:string }>
+6) AI services:
+   - IAiAssistantService:
+     - answer(question, context): Promise<{ answer: string; citations?: {title:string; url?:string}[] }>
+   - IMatchingService:
+     - rankMatches(lostCaseId): Promise<MatchResult[]>  (wrap your deterministic matcher now; later can use embeddings)
+
+Then implement:
+- src/app/services/demo/* (DEMO adapters that WORK now)
+- src/app/services/integration/* (STUB adapters with clear TODO, but never used in demo)
+
+Service selection:
+- src/app/services/index.ts exports getServices() returning the chosen adapters based on appConfig.
+
+IMPORTANT:
+- DEMO adapters must be functional and mimic real flows:
+  - Storage demo returns object URLs or stores small data URLs in localStorage with a size cap + warning.
+  - SMS demo generates OTP (e.g., always “123456” or random) and verifies correctly.
+  - Chat demo uses local EntityStore to persist messages by threadId/caseId.
+  - Push demo uses in-app notifications list + toast (no browser push required).
+  - Geo demo can use a tiny local lookup + fallback; no web requests required.
+  - AI demo responds using Education articles + safety disclaimers (no LLM).
+
+C) Add a “Demo Data & Events Simulator”
+Goal: make the demo feel alive.
+1) Add a Demo Simulator panel (in DemoControlsPanel or a new /demo-tools route) with buttons:
+   - “Simulate New Sighting near active case” (adds a Sighting to store + triggers notification)
+   - “Simulate New AI Match” (adds a candidate case or adjusts data + refresh match list)
+   - “Simulate Chat Message from Finder” (adds inbound message in EMG_23)
+   - “Simulate Push Alert” (adds notification banner and stores it)
+   - “Reset Demo” (calls resetStore + resetRateLimit + clears demo notifications)
+2) These simulator actions must work in DEMO mode only.
+3) Persist notifications list in EntityStore (or a small notifications store) so refresh keeps them.
+
+D) Replace any remaining “toast-only” that should be a real local-first action
+Focus on the highest-impact ones (do not try to build the entire world):
+1) Add Pet: replace toast with a simple modal mini-form that calls addPet() and persists.
+2) Documents: allow attaching a “document” using demo storage adapter:
+   - In demo: file upload → store a record with a demo URL → show it in list.
+   - In integration mode: show toast “Integration required: Storage provider”.
+3) EMG photo upload:
+   - Keep the existing quality scoring simulation (do not break),
+   - But allow selecting a file in DEMO mode and store a tiny preview (object URL) as case photoUrl for realism.
+
+E) Make Chat feel real (but still demo)
+1) EMG_23 must support typing + send.
+2) In DEMO mode:
+   - Store messages per case/thread in EntityStore.
+   - On send, auto-reply with scripted responses (already allowed).
+3) In INTEGRATION mode:
+   - Use IChatService (stub) and show a clear banner: “Realtime chat integration pending”.
+   - Still allow local send for demo continuity (do not break the UI).
+
+F) Prepare “Integration Hooks” for the team (no real secrets)
+Create docs/INTEGRATIONS.md with:
+1) Recommended providers (and WHY) + required secrets (names only):
+   - Storage: Azure Blob Storage OR Google Cloud Storage
+     - Preferred for you: Azure Blob (you have $1000 credits), but support GCS if you standardize Google stack.
+   - SMS: Twilio (simple OTP) or MessageBird
+   - Realtime chat: Ably (easiest) OR Pusher OR Supabase Realtime
+   - Push: Firebase Cloud Messaging (FCM) for web (service worker) and later mobile
+   - Maps: Google Maps JS + Places/Geocoding (keep Leaflet for demo)
+   - AI: Gemini API (Flash for cost, Pro for quality) via server-side proxy
+2) Where the integration code will live:
+   - server/ (optional future) or external API base URL
+   - src/app/services/integration/* stubs to be completed
+3) Security rules:
+   - Never put secrets in client.
+   - Use backend to sign uploads (SAS for Azure, signed URLs for GCS).
+   - Use backend to send SMS.
+   - Use backend to call Gemini if you want to protect keys.
+
+G) Ensure no broken routes + quality gates
+You MUST run and pass:
+- npm run dev
+- npm run build
+And smoke test:
+- /home-daily
+- /home-emergency
+- /emg/share-flyer
+- /emg/matches
+- /public/qr-landing → /public/qr-captcha → reveal flow + rate limit
+- /education/library → /education/article/:id
+- /walkers/marketplace
+- Demo Simulator actions (sighting + notification + chat simulation)
+
+H) Documentation updates (non-negotiable)
+1) docs/EXECUTION_LOG.md:
+   - Add “Iteration 12 — Integration-Ready Architecture + Demo Mode”
+   - Include:
+     - what new modules exist (services layer, config, simulator)
+     - file list touched
+     - demo vs integration behavior
+     - known limitations
+2) docs/QA_SELFCHECK.md:
+   - Add “Iteration 12 Checks” verifying:
+     - DEMO/INTEGRATION switch works
+     - services resolve correctly (demo adapters function)
+     - simulator works
+     - add pet works and persists
+     - docs exist (.env.example + INTEGRATIONS.md)
+3) If you changed interactions: add IT12 addendum to docs/INTERACTION_AUDIT.md.
+
+STOP CONDITIONS:
+- If any change risks breaking router flows or the 100-screen structure: STOP and propose a minimal alternative.
+- If a dependency is heavy: STOP and propose lighter.
+- Do not spend time implementing real external calls; only stubs + demo simulation.
+
+QUESTION RULE:
+If and ONLY if you are blocked by an architectural decision (e.g., where to store notifications: EntityStore vs separate), ask ONE concise question and proceed with a reasonable default.
+
+NOW START:
+1) Read current docs and code structure.
+2) Print a 10–15 line plan.
+3) Implement Tasks A–H with small commits.
+4) Update docs at the end.

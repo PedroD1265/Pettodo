@@ -16,6 +16,23 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-02-20: Iteration 12 — Integration-Ready Architecture
+  - `src/app/config/appConfig.ts`: reads 7 VITE_* env vars; DEMO/INTEGRATION mode switch
+  - `.env.example`: 7 safe placeholder vars with inline comments
+  - `src/app/services/interfaces.ts`: 7 TypeScript interfaces (IStorageService, ISmsService, IChatService, IPushService, IGeoService, IAiAssistantService, IMatchingService)
+  - `src/app/services/demo/`: 6 functional demo adapters (storage, sms, chat, push, geo, ai)
+  - `src/app/services/integration/`: 6 integration stubs (Azure Blob, Twilio, Ably, FCM, Google Maps, Gemini)
+  - `src/app/services/index.ts`: `getServices()` + `useServices()` hook (singleton, mode-aware)
+  - `src/app/data/storage.ts`: AppNotification, ChatMessage, DemoDocument, Provider, BookingRequest types; SEED_NOTIFICATIONS + SEED_PROVIDERS; EntityStore extended
+  - `src/app/context/AppContext.tsx`: addNotification, markNotificationRead, addChatMessage, addDocument, addPet, resetStore methods
+  - `AppBar.tsx`: DEMO/INTEG mode badge (9px pill) + bell with live unread count badge
+  - `DemoControls.tsx`: 5 simulator buttons (Sighting, AI Match, Chat, Push, Reset Demo) — DEMO mode only
+  - `HOM_01.tsx`: 4-category services grid (Walkers, Grooming, Daycare, Training) with icons
+  - `HOM_04.tsx`: real notifications from store with filter tabs (All/Emergency/Daily) + read/unread states
+  - `DLY_screens.tsx`: DLY_02 Add Pet modal form (real); DLY_04 file upload → storageDemo → addDocument
+  - `EMG_21_to_25.tsx`: EMG_23 real chat with controlled input, send, 1.2s auto-reply, scroll-to-bottom
+  - `SRV_screens.tsx`: SRV_01 category tabs (Walkers/Grooming/Daycare/Training) filtering store.providers
+  - `docs/INTEGRATIONS.md`: 6 providers, security rules, migration checklist
 - 2026-02-20: Iteration 9 — Local-first Functionality
   - `src/app/data/storage.ts`: typed entity store (Pet, Case, Sighting, CareLog) with localStorage persistence + seed demo data
   - `src/app/utils/matching.ts`: deterministic match ranking (Haversine distance + recency + size/color/traits)

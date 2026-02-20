@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { INITIAL_COMMUNITY_DOG_SIGHTINGS, INITIAL_COMMUNITY_DOG_CARE_RECORDS } from '../data/demoData';
 import { loadPersistedState, savePersistedState } from '../utils/localStorage';
-import { loadEntityStore, saveEntityStore, EntityStore, Pet, Case, Sighting, CareLog, generateId, Settings } from '../data/storage';
+import {
+  loadEntityStore, saveEntityStore, EntityStore,
+  Pet, Case, Sighting, CareLog, generateId, Settings,
+  AppNotification, ChatMessage, DemoDocument, BookingRequest,
+} from '../data/storage';
 
 export type AppMode = 'emergency' | 'daily';
 export type VerificationLevel = 'none' | 'basic' | 'strict';
@@ -41,8 +45,19 @@ interface AppState {
   addCase: (c: Omit<Case, 'id' | 'createdAt'>) => Case;
   addSighting: (s: Omit<Sighting, 'id' | 'createdAt'>) => Sighting;
   addCareLog: (log: Omit<CareLog, 'id' | 'createdAt'>) => CareLog;
+  updateCase: (caseId: string, partial: Partial<Case>) => void;
   resetStore: () => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  // Notifications
+  addNotification: (n: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => AppNotification;
+  markNotificationRead: (id: string) => void;
+  // Chat
+  addChatMessage: (msg: Omit<ChatMessage, 'id' | 'createdAt'>) => ChatMessage;
+  getThreadMessages: (threadId: string) => ChatMessage[];
+  // Documents
+  addDocument: (doc: Omit<DemoDocument, 'id' | 'createdAt'>) => DemoDocument;
+  // Bookings
+  addBookingRequest: (req: Omit<BookingRequest, 'id' | 'createdAt'>) => BookingRequest;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -83,7 +98,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     times: ['Morning']
   });
 
-  // Entity store
   const [store, setStore] = useState<EntityStore>(() => loadEntityStore());
 
   const updateStore = (updater: (prev: EntityStore) => EntityStore) => {
@@ -118,6 +132,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return newLog;
   };
 
+  const updateCase = (caseId: string, partial: Partial<Case>) => {
+    updateStore(s => ({
+      ...s,
+      cases: s.cases.map(c => c.id === caseId ? { ...c, ...partial } : c),
+    }));
+  };
+
   const resetStore = () => {
     const fresh = loadEntityStore();
     setStore(fresh);
@@ -128,6 +149,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...s,
       settings: { ...s.settings, ...patch, notif: { ...s.settings.notif, ...((patch as any).notif ?? {}) } },
     }));
+  };
+
+  const addNotification = (n: Omit<AppNotification, 'id' | 'createdAt' | 'read'>): AppNotification => {
+    const newN: AppNotification = { ...n, id: generateId('notif'), createdAt: Date.now(), read: false };
+    updateStore(s => ({ ...s, notifications: [newN, ...s.notifications] }));
+    return newN;
+  };
+
+  const markNotificationRead = (id: string) => {
+    updateStore(s => ({
+      ...s,
+      notifications: s.notifications.map(n => n.id === id ? { ...n, read: true } : n),
+    }));
+  };
+
+  const addChatMessage = (msg: Omit<ChatMessage, 'id' | 'createdAt'>): ChatMessage => {
+    const newMsg: ChatMessage = { ...msg, id: generateId('msg'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, chatMessages: [...s.chatMessages, newMsg] }));
+    return newMsg;
+  };
+
+  const getThreadMessages = (threadId: string): ChatMessage[] => {
+    return store.chatMessages.filter(m => m.threadId === threadId);
+  };
+
+  const addDocument = (doc: Omit<DemoDocument, 'id' | 'createdAt'>): DemoDocument => {
+    const newDoc: DemoDocument = { ...doc, id: generateId('doc'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, documents: [...s.documents, newDoc] }));
+    return newDoc;
+  };
+
+  const addBookingRequest = (req: Omit<BookingRequest, 'id' | 'createdAt'>): BookingRequest => {
+    const newReq: BookingRequest = { ...req, id: generateId('booking'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, bookingRequests: [...s.bookingRequests, newReq] }));
+    return newReq;
   };
 
   const toggleMode = () => setMode(m => m === 'emergency' ? 'daily' : 'emergency');
@@ -160,7 +216,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       communityDogSightings, addCommunityDogSighting,
       communityDogCareRecords, addCommunityDogCareRecord,
       walkerAvailability, setWalkerAvailability,
-      store, addPet, addCase, addSighting, addCareLog, resetStore, updateSettings,
+      store, addPet, addCase, addSighting, addCareLog, updateCase, resetStore, updateSettings,
+      addNotification, markNotificationRead,
+      addChatMessage, getThreadMessages,
+      addDocument,
+      addBookingRequest,
     }}>
       {children}
     </AppContext.Provider>

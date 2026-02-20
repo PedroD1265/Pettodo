@@ -1,0 +1,296 @@
+ROLE: Principal Engineer (Frontend + Integration Architect) for PETTODO running on Replit.
+
+REPLIT SETTINGS RECOMMENDATION:
+- Autonomy: HIGH
+- App testing: ON
+- Use small focused commits per task (T001…T009).
+- Do not “large refactor”; only surgical changes.
+
+OBJECTIVE (Iteration 12 — Integration-Ready Architecture + Demo Mode + Final Demo Polish):
+Transform PETTODO from a self-contained demo into an integration-ready codebase with a DEMO/INTEGRATION switch, a clean services layer (interfaces + demo adapters + integration stubs), a Demo Simulator panel, and upgrade key “toast-only” features into real local-first functionality. Also apply the requested IA changes: move Community Dogs/Street Dogs to the Community section and add Grooming/Daycare/Training services to Services.
+
+HARD CONSTRAINTS (DO NOT VIOLATE):
+- DO NOT rename or delete existing routes/screens. Do NOT break the 100-screen structure and the 10 flows.
+- DO NOT remove Leaflet/OSM maps or local-first EntityStore; they must keep working.
+- DO NOT add real secrets to the repo.
+- DO NOT implement real SMS delivery, real KYC, real payments, or realtime socket infrastructure.
+- Keep “0 dead buttons” rule: action OR navigation OR modal OR descriptive toast.
+- Keep token-only styling (CSS variables). No new hardcoded hex.
+- Prefer reusing existing components (Modal/Toast patterns) over adding new UI libraries.
+
+MANDATORY DOCS RULE (EVERY ITERATION):
+At the end you MUST update:
+1) docs/EXECUTION_LOG.md  (append “Iteration 12 — …” with accurate details + file list)
+2) docs/QA_SELFCHECK.md   (append “Iteration 12 Checks”)
+3) docs/INTERACTION_AUDIT.md (ONLY if you changed/added interactions: add an IT12 addendum)
+If any doc is not updated, the task is incomplete.
+
+CURRENT STATE (ASSUME TRUE):
+- Iterations 1–11 exist.
+- EntityStore in localStorage exists (storage.ts) including settings + rate limiting.
+- Real QR via qrcode.react.
+- Leaflet OSM maps.
+- Deterministic matching.
+- Education routing fixed (/education/article/:id).
+- No-dead-buttons policy exists.
+
+================================================================================
+PLAN: IMPLEMENT TASKS T001–T009 IN ORDER
+================================================================================
+
+T001 — App Config Module (DEMO vs INTEGRATION)
+Details:
+1) Create src/app/config/appConfig.ts:
+   - Read env vars with safe defaults:
+     VITE_APP_MODE = "demo" | "integration" (default "demo")
+     VITE_STORAGE_PROVIDER = "demo" | "azure" | "gcs" (default "demo")
+     VITE_SMS_PROVIDER = "demo" | "twilio" (default "demo")
+     VITE_CHAT_PROVIDER = "demo" | "ably" | "pusher" | "supabase" (default "demo")
+     VITE_PUSH_PROVIDER = "demo" | "fcm" (default "demo")
+     VITE_MAP_PROVIDER = "osm" | "google" (default "osm")
+     VITE_AI_PROVIDER = "demo" | "gemini" (default "demo")
+     VITE_API_BASE_URL = "" (default empty)
+   - Export typed appConfig.
+2) Create .env.example containing ALL vars with placeholder values (NO secrets).
+3) Add a small mode badge in AppBar (non-intrusive):
+   - DEMO badge for demo mode
+   - INTEG badge for integration mode
+Files:
+- src/app/config/appConfig.ts
+- .env.example
+- src/app/components/pettodo/AppBar.tsx (or wherever AppBar lives)
+Acceptance:
+- Badge visible, appConfig importable, no layout break.
+
+T002 — Services Layer (Interfaces + Demo Adapters + Integration Stubs)
+IMPORTANT ADJUSTMENT: Do NOT store chatThreads as Record<string, ChatMessage[]>.
+Instead: store chatMessages: ChatMessage[] and filter by threadId/caseId.
+
+Details:
+1) Create folder src/app/services/
+2) Create src/app/services/interfaces.ts defining:
+   - IStorageService:
+     uploadImage(input, pathHint): Promise<{ url: string }>
+     uploadDocument(file, pathHint): Promise<{ url: string }>
+   - ISmsService:
+     requestOtp(phone): Promise<{ success: boolean }>
+     verifyOtp(phone, code): Promise<{ success: boolean }>
+   - IChatService:
+     createThread(caseId): Promise<{ threadId: string }>
+     sendMessage(threadId, message): Promise<void>
+     subscribe(threadId, onMessage): () => void
+   - IPushService:
+     requestPermission(): Promise<"granted"|"denied"|"default">
+     subscribe(): Promise<{ success: boolean }>
+     showLocalNotification(title, body): void
+   - IGeoService:
+     geocode(query): Promise<{ lat:number; lng:number; label:string }[]>
+     reverseGeocode(lat,lng): Promise<{ label:string }>
+   - IAiAssistantService:
+     answer(question, context): Promise<{ answer: string; citations?: {title:string; url?:string}[] }>
+   - IMatchingService:
+     rankMatches(lostCaseId): Promise<MatchResult[]>
+3) Create demo adapters in src/app/services/demo/ (must WORK now):
+   - storageDemo.ts:
+     IMPORTANT: object URLs do NOT persist across refresh.
+     Implement persistence strategy:
+       a) If file <= 500KB: store as dataURL (FileReader) and return that URL (persists).
+       b) If > 500KB: store only metadata + toast warning; return a placeholder URL.
+   - smsDemo.ts: OTP always "123456" (or randomized but stored), verify works.
+   - chatDemo.ts: uses EntityStore.chatMessages and threadId; supports subscribe via simple event bus or polling.
+   - pushDemo.ts: writes EntityStore.notifications; showLocalNotification uses toast + adds notification.
+   - geoDemo.ts: tiny local lookup table (no network).
+   - aiDemo.ts: keyword-search Education articles; return answer + citations + safety disclaimer.
+4) Create integration stubs in src/app/services/integration/ (typed TODOs, no real calls):
+   - storageAzure.stub.ts, storageGcs.stub.ts, smsTwilio.stub.ts, chatAbly.stub.ts, pushFcm.stub.ts, aiGemini.stub.ts, geoGoogle.stub.ts
+   Stubs must never run in DEMO mode.
+5) Create src/app/services/index.ts:
+   - getServices() selects demo vs integration adapters by appConfig.
+   - export useServices() hook.
+6) Extend EntityStore in src/app/data/storage.ts:
+   - Add:
+     notifications: AppNotification[]
+     chatMessages: ChatMessage[]
+     documents: DemoDocument[]
+     (Optional) providers & bookingRequests will be in T009
+   - Add types:
+     AppNotification { id, title, body, type, createdAt, read }
+     ChatMessage { id, threadId, caseId, text, sender: "user"|"other"|"system", createdAt }
+     DemoDocument { id, name, url, size, createdAt }
+   - Update DEFAULTS + loadEntityStore merge so old stores migrate safely.
+7) Extend AppContext.tsx with methods:
+   - addNotification(), markNotificationRead()
+   - addChatMessage(), getThreadMessages(threadId)
+   - addDocument()
+   - updateCase(caseId, partial) helper for photoUrl updates
+Files:
+- src/app/services/interfaces.ts
+- src/app/services/demo/*.ts
+- src/app/services/integration/*.ts
+- src/app/services/index.ts
+- src/app/data/storage.ts
+- src/app/context/AppContext.tsx
+Acceptance:
+- Demo adapters work with no secrets; EntityStore migrations safe; no TS errors.
+
+T003 — Notification Center UI (make notifications visible)
+Details:
+1) Ensure /home-notifications (HOM_04) lists notifications from EntityStore.notifications.
+2) Add unread badge count on AppBar bell icon (or wherever notifications icon exists).
+3) Clicking a notification marks it read and navigates to relevant screen if possible (or toast).
+Files:
+- src/app/screens/home/HOM_04.tsx (or equivalent)
+- AppBar / notification icon component
+- AppContext.tsx additions if needed
+Acceptance:
+- Notifications actually visible, persist across refresh, badge updates.
+
+T004 — Demo Simulator Panel (5 live actions)
+Details:
+Extend DemoControlsPanel with “Simulator” section (DEMO mode only):
+- Simulate New Sighting → addSighting() near active case + addNotification()
+- Simulate New AI Match → add synthetic candidate case + notification
+- Simulate Chat Message → inbound ChatMessage in thread-luna-001 + notification
+- Simulate Push Alert → addNotification() + toast
+- Reset Demo → resetStore() + resetRateLimit() + clear notifications/documents/chatMessages
+All simulator buttons must show descriptive toast and persist results.
+Files:
+- src/app/components/pettodo/DemoControls.tsx
+Acceptance:
+- All 5 work and persist; only enabled in demo mode.
+
+T005 — Upgrade “toast-only” to real local-first actions
+Details:
+1) Add Pet (DLY_02):
+   - Replace toast with existing Modal component (do NOT introduce Radix unless already used everywhere).
+   - Mini-form: name, breed, size, age, colors.
+   - Submit calls addPet() → appears in list → persists.
+2) Documents (DLY_04):
+   - “Upload Document” uses <input type="file">.
+   - In DEMO: services.storage.uploadDocument() returns persistent URL (dataURL if small) → addDocument() → appears in list.
+   - In INTEGRATION: toast “Integration required: Storage provider”.
+3) EMG Photo (EMG_02 and/or EMG_08):
+   - Keep quality scoring simulation intact.
+   - Add optional file input to attach a real image in DEMO mode:
+     - Use storageDemo.uploadImage() → updateCase(photoUrl)
+     - Show thumbnail preview if photoUrl exists.
+   - In INTEGRATION: toast “Integration required: Storage provider”.
+Files:
+- src/app/screens/daily/DLY_screens.tsx
+- src/app/screens/emergency/* (where photo upload is implemented)
+- src/app/context/AppContext.tsx (updateCase)
+Acceptance:
+- Add Pet persists after refresh; documents persist (small files); EMG photo persists (small images).
+
+T006 — Real Chat in EMG_23 (demo transport + persistence)
+Details:
+1) EMG_23 must allow typing + send + show messages list.
+2) Use IChatService via useServices():
+   - In DEMO: store messages in EntityStore.chatMessages; append scripted replies after 1.2s.
+   - In INTEGRATION: show banner “Realtime chat integration pending” but keep local send working (do not break UI).
+3) Seed 2 initial messages for Luna thread in DEFAULTS.chatMessages.
+4) Auto-scroll to bottom on new messages.
+Files:
+- src/app/screens/emergency/EMG_* (where EMG_23 lives)
+- src/app/services/demo/chatDemo.ts
+- storage.ts seeds
+Acceptance:
+- Messages survive refresh; scripted replies feel alive.
+
+T007 — Integration Guide (docs/INTEGRATIONS.md)
+Details:
+Create docs/INTEGRATIONS.md with:
+- Recommended providers + WHY (no secrets)
+  Storage: Azure Blob (SAS via backend) / GCS signed URLs
+  SMS: Twilio Verify (backend proxy)
+  Realtime: Ably/Pusher/Supabase (serverless)
+  Push: Firebase Cloud Messaging
+  Maps: Google Maps JS + Places/Geocoding
+  AI: Gemini Flash/Pro via backend proxy
+- Required env var names (no values)
+- Where code lives: src/app/services/integration/*.ts
+- Security rules: no client secrets; backend for SMS/Gemini/uploads
+- Migration path: switch VITE_* vars to activate stubs
+File:
+- docs/INTEGRATIONS.md
+Acceptance:
+- Clear, accurate, actionable.
+
+T008 — Requested IA / Home taxonomy changes + New Services
+Details:
+1) HOM_01:
+   - Ensure “Community” section includes: Communities, Events, Play Dates, Community Dogs.
+   - Remove Community Dogs from “Services”.
+2) HOM_01 “Services” section:
+   - Cards: Verified Walkers, Dog Grooming & Baths, Dog Daycare, Professional Training.
+   - Each service navigates into the existing services marketplace (SRV_01) with a category query param, e.g.:
+     /walkers/marketplace?cat=walkers|grooming|daycare|training
+3) Services marketplace SRV_01:
+   - Add category tabs/segmented control reading query param.
+   - Render providers list from EntityStore.providers (seeded).
+4) SRV_02 provider profile:
+   - Read provider id (query param ?id=) and show category-specific fields.
+5) SRV_03 request service:
+   - Generic “Request Service” that creates BookingRequest in EntityStore and confirms via toast.
+Data model:
+- Extend EntityStore in storage.ts:
+  providers: Provider[]
+  bookingRequests: BookingRequest[]
+- Provider fields:
+  { id, category, name, shortBio, zoneLabel, lat, lng, rating, verifiedLevel, priceHint, photoUrl? }
+- BookingRequest fields:
+  { id, providerId, category, requestedTime, notes, status, createdAt }
+Seed:
+- 2 Walkers (one Strict)
+- 2 Grooming
+- 2 Daycare
+- 2 Training
+Persist across refresh.
+Files:
+- HOM_01 screen file
+- SRV screens files
+- storage.ts seeds + types
+- AppContext methods addProvider? addBookingRequest?
+Acceptance:
+- Home shows new structure; services categories work; requests persist.
+
+T009 — Quality Gates + Final Docs (non-negotiable)
+Details:
+1) Run:
+   - npm run dev (no runtime errors)
+   - npm run build (exit 0)
+2) Smoke test routes (manual):
+   - /home-daily
+   - /home-emergency
+   - /emg/share-flyer
+   - /emg/matches
+   - /qr/anti-scraping
+   - /public/qr-landing → /public/qr-captcha → reveal + rate limit
+   - /education/library → /education/article/first-hour
+   - /walkers/marketplace?cat=grooming (and other cats)
+   - EMG_23 chat send + scripted reply
+   - DLY_02 add pet persists after refresh
+   - DLY_04 upload doc persists (small file)
+   - Simulator buttons
+3) Fix minimal issues only (do not refactor).
+4) Documentation updates:
+   - docs/EXECUTION_LOG.md: add “Iteration 12 — Integration-Ready + Demo Mode + Services Expansion”
+     Include: config switch, services layer, simulator, upgraded local-first actions, chat, notifications center, new services categories, file list, known limitations.
+   - docs/QA_SELFCHECK.md: add “Iteration 12 Checks” verifying all acceptance items.
+   - docs/INTERACTION_AUDIT.md: add IT12 addendum listing any new/changed interactions (Add Pet modal, Upload Doc, Photo attach, Chat input, Services categories).
+Acceptance:
+- Builds pass; demo feels alive; docs accurate.
+
+STOP CONDITIONS:
+- If any task risks breaking routing/flows, STOP and implement a minimal alternative.
+- If you need a major new dependency, STOP and propose a lighter approach.
+- No external secrets. No real provider calls.
+
+QUESTION RULE:
+If blocked by ONE architectural decision, ask ONE concise question, then proceed with a reasonable default.
+
+START NOW:
+1) Read current docs + repo structure.
+2) Print a short plan (10–15 lines).
+3) Implement T001–T009 with small commits.
+4) Update docs at end.

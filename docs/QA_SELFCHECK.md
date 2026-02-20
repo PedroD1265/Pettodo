@@ -245,3 +245,85 @@
 - [x] `Cards.tsx`: `onClick?` en `CommunityDogCard` y `MatchCard` actualizado a `() => void | Promise<void>`
 - [x] Cero errores de compilación en Vite (el build y hot-reload funcionan sin advertencias)
 
+
+---
+
+## Iteration 12 QA Checklist
+
+### A. App Config Switch
+- [x] `appConfig.mode` defaults to "demo" when `VITE_APP_MODE` is not set
+- [x] AppBar shows "DEMO" gray pill badge when mode = "demo"
+- [x] AppBar "INTEG" blue pill would display when mode = "integration"
+- [x] `appConfig` importable from any module without circular deps
+
+### B. Services Layer
+- [x] `getServices()` returns demo adapters when mode = "demo"
+- [x] `useServices()` hook works in React components (DLY_04 uses it)
+- [x] `storageDemo.uploadDocument()` returns object URL and handles >500KB cap
+- [x] `smsDemo` OTP always "123456", verifies correctly
+- [x] `chatDemo.getNextScriptedReply()` cycles through 5 scripted messages
+- [x] `pushDemo.showLocalNotification()` calls `addNotification` + toast
+- [x] `geoDemo.reverseGeocode()` returns NYC area labels from lookup table
+- [x] `aiDemo.ask()` keyword-searches Education articles + appends safety disclaimer
+- [x] EntityStore has `notifications: AppNotification[]` (seeded with 3 demo items)
+- [x] EntityStore has `chatMessages: ChatMessage[]` (seeded with 3 for thread-luna-001)
+- [x] EntityStore has `documents: DemoDocument[]` (empty, filled by upload)
+- [x] EntityStore has `providers: Provider[]` (seeded with 6 providers, 4 categories)
+- [x] EntityStore has `bookingRequests: BookingRequest[]` (empty at start)
+
+### C. Demo Simulator Panel
+- [x] Settings gear FAB opens DemoControlsPanel
+- [x] "Simulate Sighting" button → `addSighting()` + `addNotification()` + toast
+- [x] "Simulate AI Match" → notification added + toast
+- [x] "Simulate Chat Message" → `addChatMessage()` to thread-luna-001 + notification + toast
+- [x] "Simulate Push Alert" → `addNotification()` + toast with random message
+- [x] "Reset Demo" → `resetStore()` + `resetRateLimit()` + toast + closes panel
+- [x] All 5 simulator buttons disabled (gray, not clickable) when mode = "integration"
+- [x] "Simulator (DEMO mode only)" label shown when mode ≠ "demo"
+
+### D. Real Local-First Actions
+- [x] DLY_02: Luna card shown from `store.pets` (not hardcoded)
+- [x] DLY_02: "Add Pet" opens Modal with fields: name, breed, size, age, colors
+- [x] DLY_02: form validation — name + breed required (toast.error if empty)
+- [x] DLY_02: successful save → `addPet()` → new pet card appears in list → modal closes
+- [x] DLY_04: "Upload Document" triggers `<input type="file">` (PDF + images)
+- [x] DLY_04: demo mode → `storageDemo.uploadDocument()` → `addDocument()` → green card appears
+- [x] DLY_04: uploaded doc shows size in KB and "Uploaded" label
+- [x] DLY_04: seed docs (4 hardcoded) + uploaded docs both visible
+
+### E. Real Chat — EMG_23
+- [x] Screen shows 3 seeded messages on first visit (other/me/system)
+- [x] Input field accepts text, Enter key sends
+- [x] Send button enabled only when input is non-empty
+- [x] Send → `addChatMessage()` → message appears immediately
+- [x] 1.2s delay → scripted auto-reply appears + notification added
+- [x] Messages survive page refresh (persisted in EntityStore)
+- [x] Antiscam banner visible above chat
+- [x] "Request proof of life" + "Safe Handoff" buttons still present
+
+### F. HOM_01 Services Grid
+- [x] 4 service categories displayed (Verified Walkers, Dog Grooming, Dog Daycare, Training)
+- [x] Each card navigates to `/walkers/marketplace?cat=<category>`
+- [x] Walkers card shows Shield icon (strict verification note)
+- [x] Disclaimer text visible below grid
+
+### G. SRV_01 Category Tabs
+- [x] Category tabs row: Walkers, Grooming, Daycare, Training
+- [x] Active tab highlighted dark; tabs scroll horizontally if overflow
+- [x] Category tab switches `cat` state → filters `store.providers`
+- [x] Provider cards show name, verification badge, zone, rating, price hint
+- [x] "Become a Walker" CTA visible only on Walkers tab
+
+### H. HOM_04 Notifications
+- [x] Filter tabs: All (n), Emergency, Daily
+- [x] Emergency filter shows sighting/match/chat/push types
+- [x] Daily filter shows vaccine/community/system types
+- [x] Unread items shown with colored background + dot
+- [x] Tapping item → `markNotificationRead()` + navigates to `linkTo`
+- [x] "All caught up!" empty state shown when no notifications in filter
+
+### I. Build & Runtime
+- [x] `npm run build` exits 0, no TypeScript errors
+- [x] No unused import warnings break the build
+- [x] No console errors on smoke-tested routes
+

@@ -96,3 +96,45 @@ Every interactive element now does ONE of:
 - **D)** Show `toast("Demo only — not available yet")` for future backend features
 
 Toast implementation: `sonner` library (already installed). Import `{ toast } from 'sonner'` in any screen.
+
+---
+
+## IT12 Addendum — New Real Interactions
+
+| Screen | Element | Before (IT11) | After (IT12) | Type |
+|---|---|---|---|---|
+| DLY_02 | "Add Pet" button | `toast("Demo only — pet registration coming soon.")` | Opens Modal form (name, breed, size, age, colors) → `addPet()` → pet appears in list | **Real local-first** |
+| DLY_02 | Add Pet modal — Save | n/a | Validates required fields; calls `addPet()`; closes modal; toast.success | **Real local-first** |
+| DLY_02 | Pet list | Hardcoded 2 pets | Rendered from `store.pets` (Luna always present, plus any added pets) | **Real local-first** |
+| DLY_04 | "Upload Document" | `toast("Demo only — document upload coming soon.")` | Opens `<input type="file">` → `storageDemo.uploadDocument()` → `addDocument()` → green card appears | **Real local-first** |
+| DLY_04 | Uploaded doc card | n/a | Shows filename, KB size, "Uploaded" label; tapping opens file URL | **Real local-first** |
+| EMG_23 | Chat input | Placeholder `<div>` (not typeable) | Real `<input>` (controlled state) — Enter key or send button triggers send | **Real local-first** |
+| EMG_23 | Send button | Grayed out, no action | Active when input non-empty; calls `addChatMessage()` | **Real local-first** |
+| EMG_23 | Auto-reply | None | 1.2s after user send → `getNextScriptedReply()` → `addChatMessage()` + `addNotification()` | **Real local-first** |
+| EMG_23 | Messages | CHAT_MESSAGES static array (demo data) | `store.chatMessages` filtered by `thread-luna-001` (persisted) | **Real local-first** |
+| HOM_04 | Notification item tap | n/a | `markNotificationRead(id)` → navigates to `n.linkTo` | **Real local-first** |
+| HOM_04 | Filter tabs | n/a | "All / Emergency / Daily" — filters by notification type; unread count in "All" tab | **Real local-first** |
+| AppBar | Bell icon | Static icon (navigate to notifications) | Bell icon with live unread count badge from `store.notifications` | **Real local-first** |
+| AppBar | Mode badge | None | "DEMO" / "INTEG" pill — reflects `appConfig.mode` at build time | **Config-driven display** |
+| SRV_01 | Category tabs | Single "Dog Walkers" title | 4 tabs (Walkers/Grooming/Daycare/Training) — each filters `store.providers` | **Real local-first** |
+| DemoControls | Simulate Sighting | None | `addSighting()` near Luna's case + `addNotification()` + toast | **Simulator (demo only)** |
+| DemoControls | Simulate AI Match | None | `addNotification()` with high-confidence match + toast | **Simulator (demo only)** |
+| DemoControls | Simulate Chat Msg | None | `addChatMessage()` inbound to `thread-luna-001` + notification | **Simulator (demo only)** |
+| DemoControls | Simulate Push Alert | None | `addNotification()` + toast with random body | **Simulator (demo only)** |
+| DemoControls | Reset Demo | None | `resetStore()` + `resetRateLimit()` + closes panel | **Simulator (demo only)** |
+
+### Simulator Guard Rule (IT12)
+
+All 5 simulator buttons check `appConfig.mode === 'demo'` before activating. In `integration` mode, buttons render as disabled/grayed to prevent accidental simulation of events that would be real in production.
+
+### Services Mode Matrix (IT12)
+
+| Service | DEMO | INTEGRATION |
+|---|---|---|
+| Storage | object URL (localStorage) | Azure Blob (SAS token via backend) |
+| SMS | OTP "123456" (no network) | Twilio Verify V2 |
+| Chat | EntityStore + scripted reply | Ably Realtime channels |
+| Push | addNotification + toast | Firebase Cloud Messaging |
+| Geo | NYC lookup table | Google Maps Platform |
+| AI | keyword Education search | Gemini API (backend proxy) |
+

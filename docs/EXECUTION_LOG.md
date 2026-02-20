@@ -670,3 +670,95 @@ Estos 3 son una quirk de TypeScript strict mode con `key` como prop especial de 
 ---
 
 
+
+---
+
+## Iteration 12 — Integration-Ready Architecture
+
+**Date:** 2026-02-20  
+**Focus:** DEMO/INTEGRATION config switch, services layer with 6 typed adapters, Demo Simulator panel, 3 real local-first flows, real EMG_23 chat, INTEGRATIONS.md.
+
+### A. App Config Module
+
+- Created `src/app/config/appConfig.ts`: reads 7 `VITE_*` env vars (APP_MODE, STORAGE_PROVIDER, SMS_PROVIDER, CHAT_PROVIDER, PUSH_PROVIDER, GEO_PROVIDER, AI_PROVIDER) with safe defaults (all → "demo")
+- Created `.env.example` with all 7 vars + safe placeholder values and inline comments
+- AppBar updated: "DEMO" gray pill or "INTEG" blue pill badge right of title; bell icon with unread count badge; navigates to `/home-notifications`
+
+### B. Services Layer
+
+| Interface | Demo Adapter | Integration Stub |
+|---|---|---|
+| `IStorageService` | object URL, 500 KB cap | Azure Blob Storage (SAS token) |
+| `ISmsService` | OTP always "123456" | Twilio Verify V2 |
+| `IChatService` | EntityStore + scripted auto-reply (1.2s) | Ably Realtime |
+| `IPushService` | addNotification + toast | Firebase Cloud Messaging |
+| `IGeoService` | 10-location NYC lookup table | Google Maps Platform |
+| `IAiAssistantService` | keyword-search Education articles + disclaimer | Gemini API (via backend proxy) |
+
+- `src/app/services/interfaces.ts`: 7 TypeScript interfaces
+- `src/app/services/demo/`: 6 functional adapters
+- `src/app/services/integration/`: 6 TODO stub files
+- `src/app/services/index.ts`: `getServices()` + `useServices()` hook (singleton, mode-aware)
+- EntityStore extended: `AppNotification[]`, `ChatMessage[]`, `DemoDocument[]`, `Provider[]`, `BookingRequest[]`
+- AppContext extended: `addNotification`, `markNotificationRead`, `addChatMessage`, `addDocument`, `addPet`, `resetStore`
+
+### C. Demo Simulator Panel
+
+5 live simulator buttons added to DemoControlsPanel (only active in DEMO mode):
+1. Simulate Sighting → `addSighting()` + `addNotification()`
+2. Simulate AI Match → notification linking to `/emg/matching-top10`
+3. Simulate Chat Message → inbound ChatMessage to `thread-luna-001` + notification
+4. Simulate Push Alert → random alert + toast
+5. Reset Demo → `resetStore()` + `resetRateLimit()` + clear notifications
+
+### D. Real Local-First Actions
+
+| Screen | Before | After |
+|---|---|---|
+| DLY_02 Add Pet | `toast("Demo only")` | Modal form (name, breed, size, age, colors) → `addPet()` → appears in list |
+| DLY_04 Document Upload | `toast("Demo only")` | `<input type="file">` → `storageDemo.uploadDocument()` → `addDocument()` → appears in list |
+| DLY_04 Seed Docs | Hardcoded only | Hardcoded seed + uploaded docs with distinct styling |
+
+### E. Real Chat — EMG_23
+
+- Seeded 2 messages in `DEFAULTS.chatMessages` for `thread-luna-001`
+- Replaced placeholder `<div>` with real `<input>` (controlled, Enter to send)
+- Send → `addChatMessage()` → 1.2s → scripted auto-reply from `chatDemo.ts`
+- Messages rendered from `store.chatMessages` filtered by threadId
+- Auto-scroll to bottom on new message
+- Integration mode: top banner "Realtime chat integration pending"
+
+### F. INTEGRATIONS.md
+
+- Created `docs/INTEGRATIONS.md` covering all 6 providers with rationale, env var names, code locations, security rules, migration checklist
+
+### Files Modified in Iteration 12
+
+| File | Change |
+|---|---|
+| `src/app/config/appConfig.ts` | Created — mode config module |
+| `.env.example` | Created — 7 safe placeholder vars |
+| `src/app/services/interfaces.ts` | Created — 7 typed interfaces |
+| `src/app/services/demo/*.ts` (6) | Created — functional demo adapters |
+| `src/app/services/integration/*.ts` (6) | Created — integration stubs |
+| `src/app/services/index.ts` | Created — `getServices()` + `useServices()` |
+| `src/app/data/storage.ts` | Extended — AppNotification, ChatMessage, DemoDocument, Provider, BookingRequest; DEFAULTS + SEED_PROVIDERS |
+| `src/app/context/AppContext.tsx` | Extended — addNotification, markNotificationRead, addChatMessage, addDocument, addPet, resetStore |
+| `src/app/components/pettodo/AppBar.tsx` | DEMO/INTEG badge + bell with unread count |
+| `src/app/components/pettodo/DemoControls.tsx` | 5 simulator buttons + DEMO-mode guard |
+| `src/app/screens/home/HOM_01.tsx` | 4-category services grid (Walkers, Grooming, Daycare, Training) |
+| `src/app/screens/home/HOM_04.tsx` | Real notifications from store + filter tabs + read/unread states |
+| `src/app/screens/daily/DLY_screens.tsx` | DLY_02 Add Pet modal; DLY_04 real file upload |
+| `src/app/screens/emergency/EMG_21_to_25.tsx` | EMG_23 real chat with input + send + auto-reply |
+| `src/app/screens/walkers/SRV_screens.tsx` | SRV_01 category tabs + real providers from store |
+| `docs/INTEGRATIONS.md` | Created |
+
+### Known Limits (IT12)
+
+- Storage demo: 500 KB cap (data URL in localStorage); larger files get placeholder URL
+- SMS demo: OTP always "123456", never sends network request
+- Chat auto-reply: 5 scripted messages (cycle repeats)
+- Geo demo: 10-location NYC lookup, no external geocoding
+- AI demo: keyword-search over Education articles only, no LLM
+- Integration stubs: never activated in DEMO mode; require `VITE_APP_MODE=integration` + respective `VITE_*_PROVIDER` env vars
+

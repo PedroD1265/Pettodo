@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { MapPlaceholder } from '../../components/pettodo/MapComponents';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { FreshnessBadge } from '../../components/pettodo/Badges';
-import { ChatView } from '../../components/pettodo/Chat';
-import { Modal, ReportSuspiciousModal, ProofOfLifeModal } from '../../components/pettodo/Modals';
+import { ChatBubble } from '../../components/pettodo/Chat';
+import { ReportSuspiciousModal, ProofOfLifeModal } from '../../components/pettodo/Modals';
 import { useNavigate } from 'react-router';
-import { CHAT_MESSAGES, LOST_CASE } from '../../data/demoData';
+import { useApp } from '../../context/AppContext';
+import { appConfig } from '../../config/appConfig';
+import { getNextScriptedReply } from '../../services/demo/chatDemo';
 import { Flag, Send, Camera, Video, Shield } from 'lucide-react';
 
 // EMG_21
@@ -119,12 +121,39 @@ export function EMG_22() {
 // EMG_23
 export function EMG_23() {
   const nav = useNavigate();
+  const { store, addChatMessage, addNotification } = useApp();
   const [showReport, setShowReport] = useState(false);
   const [showProof, setShowProof] = useState(false);
+  const [input, setInput] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const isDemo = appConfig.mode === 'demo';
+
+  const THREAD_ID = 'thread-luna-001';
+  const CASE_ID = 'CASE-2026-0219';
+
+  const messages = store.chatMessages.filter(m => m.threadId === THREAD_ID);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text) return;
+    addChatMessage({ threadId: THREAD_ID, caseId: CASE_ID, text, sender: 'user' });
+    setInput('');
+    if (isDemo) {
+      setTimeout(() => {
+        const reply = getNextScriptedReply();
+        addChatMessage({ threadId: THREAD_ID, caseId: CASE_ID, text: reply, sender: 'other' });
+        addNotification({ title: 'New message from Finder', body: reply, type: 'chat', linkTo: '/emg/chat' });
+      }, 1200);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_23_Chat_Safe_AntiscamBanner" />
-      {/* Chat header */}
       <div className="flex items-center justify-between px-4 py-2" style={{ background: 'var(--red-bg)', borderBottom: '1px solid var(--red-soft)' }}>
         <button onClick={() => nav(-1)} className="text-[14px]" style={{ color: 'var(--red-primary)', minHeight: 44, minWidth: 44 }}>← Back</button>
         <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Chat — Case</span>
@@ -133,6 +162,14 @@ export function EMG_23() {
         </button>
       </div>
 
+      {!isDemo && (
+        <div className="px-4 py-2" style={{ background: 'var(--info-bg)', borderBottom: '1px solid var(--info-soft)' }}>
+          <p className="text-[12px]" style={{ color: 'var(--info)', fontWeight: 500 }}>
+            Realtime chat integration pending — messages are stored locally.
+          </p>
+        </div>
+      )}
+
       <Banner type="antiscam">
         <div className="flex flex-col gap-0.5">
           <span>Do not share your address</span>
@@ -140,17 +177,34 @@ export function EMG_23() {
         </div>
       </Banner>
 
-      <ChatView messages={CHAT_MESSAGES} />
+      <div className="flex flex-col gap-0.5 px-4 py-3 flex-1 overflow-y-auto">
+        {messages.map(m => (
+          <ChatBubble
+            key={m.id}
+            msg={{ id: m.createdAt, sender: m.sender === 'user' ? 'me' : m.sender === 'other' ? 'other' : 'system', text: m.text }}
+          />
+        ))}
+        <div ref={bottomRef} />
+      </div>
 
-      {/* Action bar */}
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderTop: '1px solid var(--gray-200)' }}>
-        <button onClick={() => { setShowProof(true); }} className="p-2" style={{ minWidth: 44, minHeight: 44, color: 'var(--gray-500)' }}>
+        <button onClick={() => setShowProof(true)} className="p-2" style={{ minWidth: 44, minHeight: 44, color: 'var(--gray-500)' }}>
           <Shield size={20} />
         </button>
-        <div className="flex-1 px-3 py-2 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 44 }}>
-          <span className="text-[14px]" style={{ color: 'var(--gray-400)' }}>Type a message...</span>
-        </div>
-        <button className="p-2" style={{ minWidth: 44, minHeight: 44, color: 'var(--red-primary)' }}>
+        <input
+          className="flex-1 px-3 py-2 rounded-xl text-[14px]"
+          style={{ background: 'var(--gray-100)', minHeight: 44, outline: 'none', border: 'none' }}
+          placeholder="Type a message..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSend()}
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim()}
+          className="p-2"
+          style={{ minWidth: 44, minHeight: 44, color: input.trim() ? 'var(--red-primary)' : 'var(--gray-300)' }}
+        >
           <Send size={20} />
         </button>
       </div>

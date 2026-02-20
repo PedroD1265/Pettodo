@@ -9,22 +9,72 @@ import { ChatView } from '../../components/pettodo/Chat';
 import { VerificationBadge, NewAccountBadge } from '../../components/pettodo/Badges';
 import { ReportSuspiciousModal } from '../../components/pettodo/Modals';
 import { VerificationGate } from '../../components/pettodo/VerificationFlows';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { WALKER, SAFE_POINT } from '../../data/demoData';
-import { MapPin, Star, Filter, Flag, Send, Shield, CheckCircle, AlertTriangle, Clock, Calendar, Briefcase } from 'lucide-react';
+import { MapPin, Star, Filter, Flag, Send, Shield, CheckCircle, AlertTriangle, Clock, Calendar, Briefcase, Footprints, Scissors, Home, GraduationCap } from 'lucide-react';
+import type { Provider } from '../../data/storage';
+
+const CAT_LABELS: Record<string, string> = {
+  walkers: 'Walkers',
+  grooming: 'Grooming',
+  daycare: 'Daycare',
+  training: 'Training',
+};
+
+const CAT_ICONS: Record<string, React.ReactNode> = {
+  walkers: <Footprints size={14} />,
+  grooming: <Scissors size={14} />,
+  daycare: <Home size={14} />,
+  training: <GraduationCap size={14} />,
+};
 
 // SRV_01
 export function SRV_01() {
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const { store } = useApp();
+  const initialCat = (params.get('cat') ?? 'walkers') as Provider['category'];
+  const [cat, setCat] = useState<Provider['category']>(initialCat);
+
+  const providers = store.providers.filter(p => p.category === cat);
+
+  const catTitle: Record<string, string> = {
+    walkers: 'Dog Walkers',
+    grooming: 'Dog Grooming & Baths',
+    daycare: 'Dog Daycare',
+    training: 'Professional Training',
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="SRV_01_WalkerMarketplace_MapListFilters" />
-      <AppBar title="Dog Walkers" showBack />
+      <AppBar title={catTitle[cat] ?? 'Services'} showBack />
       <div className="flex-1 flex flex-col">
+
+        {/* Category tabs */}
+        <div className="flex px-4 py-2 gap-1.5 overflow-x-auto" style={{ borderBottom: '1px solid var(--gray-200)' }}>
+          {(['walkers', 'grooming', 'daycare', 'training'] as Provider['category'][]).map(c => (
+            <button
+              key={c}
+              onClick={() => setCat(c)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] shrink-0"
+              style={{
+                background: cat === c ? 'var(--gray-900)' : 'var(--gray-100)',
+                color: cat === c ? 'var(--white)' : 'var(--gray-700)',
+                fontWeight: 600,
+                minHeight: 36,
+              }}
+            >
+              {CAT_ICONS[c]}
+              {CAT_LABELS[c]}
+            </button>
+          ))}
+        </div>
+
         <div className="px-4 py-2 flex items-center gap-2">
           <div className="flex-1 px-3 py-2 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 44 }}>
-            <span className="text-[14px]" style={{ color: 'var(--gray-400)' }}>Search walkers...</span>
+            <span className="text-[14px]" style={{ color: 'var(--gray-400)' }}>Search {CAT_LABELS[cat].toLowerCase()}...</span>
           </div>
           <button className="p-2 rounded-xl" style={{ background: 'var(--gray-100)', minWidth: 44, minHeight: 44 }}>
             <Filter size={18} style={{ color: 'var(--gray-500)' }} />
@@ -32,24 +82,58 @@ export function SRV_01() {
         </div>
 
         <div className="px-4">
-          <MapPlaceholder height={150} />
+          <MapPlaceholder height={130} />
         </div>
 
         <div className="flex-1 p-4 flex flex-col gap-2">
-          <Banner type="noPayments" text="PETTODO does not process payments. First meet in a safe point is recommended." />
-          
-          <WalkerCard name={WALKER.name} verified="strict" rating={WALKER.rating} walks={WALKER.walks} onClick={() => nav('/walkers/profile')} />
-          <WalkerCard name="Ana M." verified="sms" rating={4.5} walks={38} onClick={() => nav('/walkers/profile')} />
-          <WalkerCard name="David K." verified="strict" rating={4.9} walks={210} onClick={() => nav('/walkers/profile')} />
+          <Banner type="noPayments" text="PETTODO does not process payments. First meet at a safe point is recommended." />
 
-          <div className="mt-4 pt-4 border-t border-gray-100">
-             <Btn variant="secondary" fullWidth icon={<Briefcase size={16} />} onClick={() => nav('/walkers/onboarding')}>
-               Become a Walker
-             </Btn>
-             <p className="text-[11px] text-center mt-2" style={{ color: 'var(--gray-500)' }}>
-               Strict verification required for public listing
-             </p>
-          </div>
+          {providers.length === 0 ? (
+            <p className="text-[14px] text-center py-8" style={{ color: 'var(--gray-400)' }}>No providers in this category yet.</p>
+          ) : (
+            providers.map(p => (
+              <button
+                key={p.id}
+                onClick={() => nav(`/walkers/profile?id=${p.id}`)}
+                className="flex items-start gap-3 p-3 rounded-xl text-left"
+                style={{ background: 'var(--white)', border: '1px solid var(--gray-200)', minHeight: 72 }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl" style={{ background: 'var(--gray-100)', shrink: 0 }}>
+                  👤
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{p.name}</span>
+                    {p.verifiedLevel === 'strict' && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px]" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)', fontWeight: 700 }}>STRICT</span>
+                    )}
+                    {p.verifiedLevel === 'basic' && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px]" style={{ background: 'var(--info-bg)', color: 'var(--info-dark)', fontWeight: 700 }}>BASIC</span>
+                    )}
+                  </div>
+                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--gray-500)' }}>{p.zoneLabel}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-0.5">
+                      <Star size={11} fill="var(--warning)" style={{ color: 'var(--warning)' }} />
+                      <span className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{p.rating}</span>
+                    </div>
+                    <span className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{p.priceHint}</span>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+
+          {cat === 'walkers' && (
+            <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--gray-200)' }}>
+              <Btn variant="secondary" fullWidth icon={<Briefcase size={16} />} onClick={() => nav('/walkers/onboarding')}>
+                Become a Walker
+              </Btn>
+              <p className="text-[11px] text-center mt-2" style={{ color: 'var(--gray-500)' }}>
+                Strict verification required for public listing
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

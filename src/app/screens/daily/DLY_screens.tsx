@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { PetCard } from '../../components/pettodo/Cards';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
+import { Modal } from '../../components/pettodo/Modals';
 import { TimelineView } from '../../components/pettodo/Timeline';
-import { FreshnessBadge, VerificationBadge } from '../../components/pettodo/Badges';
+import { FreshnessBadge } from '../../components/pettodo/Badges';
 import { useNavigate } from 'react-router';
+import { useApp } from '../../context/AppContext';
 import { LUNA, VACCINES, FEEDING } from '../../data/demoData';
 import { toast } from 'sonner';
-import { PawPrint, QrCode, Syringe, FileText, Calendar, Clock, Check, AlertTriangle, ChevronRight, Utensils } from 'lucide-react';
+import { appConfig } from '../../config/appConfig';
+import { useServices } from '../../services/index';
+import { PawPrint, QrCode, Syringe, FileText, Calendar, Clock, Check, AlertTriangle, ChevronRight, Utensils, Upload } from 'lucide-react';
 
 // DLY_01
 export function DLY_01() {
@@ -68,15 +72,106 @@ export function DLY_01() {
 // DLY_02
 export function DLY_02() {
   const nav = useNavigate();
+  const { store, addPet } = useApp();
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: '', breed: '', size: 'Medium' as 'Small'|'Medium'|'Large', age: '', colors: '' });
+
+  const handleAddPet = () => {
+    if (!form.name.trim() || !form.breed.trim()) {
+      toast.error('Name and breed are required.');
+      return;
+    }
+    addPet({
+      name: form.name.trim(),
+      breed: form.breed.trim(),
+      size: form.size,
+      age: form.age.trim() || '?',
+      colors: form.colors ? form.colors.split(',').map(c => c.trim()) : [],
+      marks: '',
+      collar: '',
+      temperament: '',
+      weight: '',
+      microchip: '',
+      vaccines: '',
+      lastVaccine: '',
+      nextVaccine: '',
+    });
+    toast.success(`${form.name} added to your pets!`);
+    setForm({ name: '', breed: '', size: 'Medium', age: '', colors: '' });
+    setShowModal(false);
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="DLY_02_PetList" />
       <AppBar title="My Pets" showBack />
       <div className="flex-1 p-4 flex flex-col gap-3">
-        <PetCard name={LUNA.name} breed={LUNA.breed} hasQR vaccineStatus="Up to date" onClick={() => nav('/daily/pet-profile')} />
-        <PetCard name="Max" breed="Golden Retriever" hasQR={false} vaccineStatus="Due soon" onClick={() => nav('/daily/pet-profile')} />
-        <Btn variant="secondary" fullWidth icon={<PawPrint size={16} />} onClick={() => toast('Demo only — pet registration form coming soon.')}>Add Pet</Btn>
+        {store.pets.map(p => (
+          <PetCard key={p.id} name={p.name} breed={p.breed} hasQR={p.id === 'pet-luna-001'} vaccineStatus={p.vaccines || 'Unknown'} onClick={() => nav('/daily/pet-profile')} />
+        ))}
+        <Btn variant="secondary" fullWidth icon={<PawPrint size={16} />} onClick={() => setShowModal(true)}>Add Pet</Btn>
       </div>
+
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Add a New Pet">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Name *</label>
+            <input
+              className="px-3 py-2 rounded-xl text-[14px]"
+              style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 }}
+              placeholder="e.g. Max"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Breed *</label>
+            <input
+              className="px-3 py-2 rounded-xl text-[14px]"
+              style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 }}
+              placeholder="e.g. Golden Retriever"
+              value={form.breed}
+              onChange={e => setForm(f => ({ ...f, breed: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Size</label>
+            <select
+              className="px-3 py-2 rounded-xl text-[14px]"
+              style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 }}
+              value={form.size}
+              onChange={e => setForm(f => ({ ...f, size: e.target.value as any }))}
+            >
+              <option value="Small">Small</option>
+              <option value="Medium">Medium</option>
+              <option value="Large">Large</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Age</label>
+              <input
+                className="px-3 py-2 rounded-xl text-[14px]"
+                style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 }}
+                placeholder="e.g. 2 years"
+                value={form.age}
+                onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={{ fontWeight: 600, color: 'var(--gray-700)' }}>Colors</label>
+              <input
+                className="px-3 py-2 rounded-xl text-[14px]"
+                style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 }}
+                placeholder="Brown, White"
+                value={form.colors}
+                onChange={e => setForm(f => ({ ...f, colors: e.target.value }))}
+              />
+            </div>
+          </div>
+          <Btn variant="primary" fullWidth onClick={handleAddPet}>Save Pet</Btn>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -138,18 +233,42 @@ export function DLY_03() {
 
 // DLY_04
 export function DLY_04() {
+  const { store, addDocument } = useApp();
+  const services = useServices();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const isDemo = appConfig.mode === 'demo';
+
+  const SEED_DOCS = [
+    { name: 'Vaccination Certificate', type: 'PDF', date: 'Jan 15, 2026' },
+    { name: 'Microchip Registration', type: 'PDF', date: 'Dec 1, 2024' },
+    { name: 'Adoption Certificate', type: 'Image', date: 'Jun 10, 2023' },
+    { name: 'Veterinary Records', type: 'PDF', date: 'Feb 1, 2026' },
+  ];
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!isDemo) {
+      toast('Integration required: Storage provider not configured.');
+      return;
+    }
+    try {
+      const { url } = await services.storage.uploadDocument(file, `docs/luna/${file.name}`);
+      addDocument({ name: file.name, url, size: file.size });
+      toast.success(`"${file.name}" uploaded and saved.`);
+    } catch {
+      toast.error('Upload failed. Try a smaller file.');
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="DLY_04_DocumentVault" />
       <AppBar title="Document Vault" showBack />
       <div className="flex-1 p-4 flex flex-col gap-3">
         <h3 className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Luna's documents</h3>
-        {[
-          { name: 'Vaccination Certificate', type: 'PDF', date: 'Jan 15, 2026' },
-          { name: 'Microchip Registration', type: 'PDF', date: 'Dec 1, 2024' },
-          { name: 'Adoption Certificate', type: 'Image', date: 'Jun 10, 2023' },
-          { name: 'Veterinary Records', type: 'PDF', date: 'Feb 1, 2026' },
-        ].map((doc) => (
+        {SEED_DOCS.map((doc) => (
           <button
             key={doc.name}
             onClick={() => toast(`Demo only — document viewer for "${doc.name}" coming soon.`)}
@@ -164,7 +283,30 @@ export function DLY_04() {
             <ChevronRight size={16} style={{ color: 'var(--gray-400)' }} />
           </button>
         ))}
-        <Btn variant="secondary" fullWidth onClick={() => toast('Demo only — document upload coming soon.')}>Upload Document</Btn>
+        {store.documents.map((doc) => (
+          <button
+            key={doc.id}
+            onClick={() => window.open(doc.url, '_blank')}
+            className="flex items-center gap-3 p-3 rounded-xl text-left w-full"
+            style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)', minHeight: 48 }}
+          >
+            <FileText size={20} style={{ color: 'var(--green-primary)' }} />
+            <div className="flex-1">
+              <p className="text-[14px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{doc.name}</p>
+              <p className="text-[11px]" style={{ color: 'var(--gray-400)' }}>{(doc.size / 1024).toFixed(0)} KB · Uploaded</p>
+            </div>
+            <ChevronRight size={16} style={{ color: 'var(--gray-400)' }} />
+          </button>
+        ))}
+        <input ref={fileRef} type="file" accept="application/pdf,image/*" className="hidden" onChange={handleUpload} />
+        <Btn variant="secondary" fullWidth icon={<Upload size={16} />} onClick={() => fileRef.current?.click()}>
+          Upload Document
+        </Btn>
+        {!isDemo && (
+          <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
+            Integration mode: configure storage provider to enable uploads.
+          </p>
+        )}
       </div>
     </div>
   );
