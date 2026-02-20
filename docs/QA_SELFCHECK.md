@@ -171,3 +171,73 @@
 - [x] Emergency/Daily mode switch still works
 - [x] All pre-existing routes remain functional
 
+## Iteration 10 Checks — Dead Interactions, Education, Settings & Rate Limiting
+
+### A. Interacciones universales (regla "cero botones muertos")
+- [x] Cada `<Btn>` y `<button>` en el prototipo tiene un `onClick` definido: navegación, acción real, o toast "Demo only"
+- [x] Ningún elemento interactivo queda completamente inactivo al ser pulsado
+- [x] Los toasts "Demo only" incluyen el nombre concreto de la función pendiente (no son genéricos)
+
+### B. Módulo de Educación
+- [x] `EDU_01` (lista) muestra 6 artículos con categorías (Emergency / Health / Behavior / Social)
+- [x] `EDU_01` permite filtrar por categoría mediante chips (All, Emergency, Health, Behavior, Social)
+- [x] Tap en cualquier artículo navega a `/education/article/:id`
+- [x] `EDU_ArticleDetail` carga el artículo por `id` desde `useParams()`
+- [x] Los artículos muestran: título, categoría, resumen, secciones con heading + cuerpo completo
+- [x] Cada artículo muestra enlace a fuente externa real (ASPCA, AKC, Merck, etc.) con `ExternalLink` icon
+- [x] URL no reconocida muestra pantalla 404 con botón de retorno a `/education`
+- [x] `EDU_03` (AI Chat): botón "Send" dispara toast descriptivo
+- [x] 6 artículos en total: emergency-response, reading-body-language, preventive-health, socialization-101, nutrition-guide, community-safety
+
+### C. Configuración de usuario persistente
+- [x] `EntityStore.settings` contiene `captchaEnabled`, `defaultRadius`, `notif{}` (7 sub-campos), `privacy{}` (4 sub-campos)
+- [x] `updateSettings(partial)` disponible en `useApp()` en cualquier pantalla
+- [x] `updateSettings` hace deep merge en `notif` y `privacy` (no sobreescribe campos hermanos)
+- [x] `PRF_03` (Privacy Settings): toggles showPhone, showEmail, showLocation, allowIndexing persisten en store
+- [x] `PRF_04` (Notification Settings): toggles push, email, sms, caseUpdates, matches, community, marketing persisten en store
+- [x] Los toggles leen el estado inicial de `store.settings` (sobreviven recarga de página)
+- [x] `QRH_03` (Anti-scraping): toggle de captcha llama `updateSettings({ captchaEnabled: value })`
+
+### D. Rate limiting real (QR público)
+- [x] `checkRevealRateLimit()` lee timestamps de `localStorage["pettodo_reveal_rate_v1"]`
+- [x] Ventana de 60 minutos (rolling window), máximo 5 reveals por hora
+- [x] `recordReveal()` añade timestamp al array y persiste
+- [x] `QRP_02`: al montar, verifica el rate limit y muestra estado `rateLimit` si está bloqueado
+- [x] `QRP_02`: si `captchaEnabled === false`, saltea captcha y revela contacto directamente (con rate limit igualmente activo)
+- [x] `QRP_02`: si captcha está activo, el botón "Verify" re-verifica el rate limit antes de proceder
+- [x] Pantalla `rateLimit` muestra tiempo restante en formato MM:SS
+- [x] `QRH_03` preview muestra reveals restantes en la hora actual
+- [x] `forceRateLimit()` y `resetRateLimit()` disponibles para demo desde `QRH_03`
+
+### E. Correcciones específicas por pantalla
+- [x] `DLY_02`: "Add Pet" button → toast "Demo only — pet registration form coming soon."
+- [x] `DLY_04`: cada documento en la lista es un `<button>` que dispara toast con nombre del documento
+- [x] `DLY_04`: "Upload Document" → toast "Demo only — document upload coming soon."
+- [x] `DLY_07`: "Add to Google Calendar" → toast descriptivo
+- [x] `DLY_07`: "Add to Apple Calendar" → toast descriptivo
+- [x] `DLY_07`: "Download .ICS File" → toast descriptivo
+- [x] `COM_03`: "Send Verification Code" → toast "Demo only — SMS verification coming soon."
+- [x] `COM_04`: "Photo" attachment → toast descriptivo
+- [x] `COM_04`: "Location" attachment → toast descriptivo
+- [x] `COM_05`: "Approve" (quarantine) → toast "Post approved and restored."
+- [x] `COM_05`: "Remove" (quarantine) → toast "Post removed from community."
+- [x] `EVT_06`: "Apply as Official Organizer" → toast "Demo only — organizer application coming soon."
+- [x] `CMT_04`: "Merge Records" → toast "Records merged successfully."
+- [x] `CMT_04`: "Keep Separate" → toast "Records kept separate."
+- [x] `CMT_05`: "It's a different dog" → toast de confirmación de continuación del flujo
+- [x] `CMT_05`: "View community dog record" → toast "Demo only — community dog record view coming soon."
+- [x] `CMT_05`: "Cancel report" → toast "Report cancelled."
+- [x] `EMG_10`: "Scan QR Code" → navega a `/emg/found-published`
+- [x] `EMG_13`: "Follow Case" → toast de confirmación con mención de notificaciones
+- [x] `QRP_01`: "Show Owner Contact" → navega a `/public/qr-captcha`
+- [x] `QRP_01`: "I found/spotted this dog" → navega a `/public/qr-report`
+- [x] `QRP_03`: cards "I have this dog" y "I spotted this dog" son seleccionables con estado visual (borde + fondo coloreado según selección)
+- [x] `QRP_03`: al enviar, llama `addSighting()`, muestra pantalla de confirmación y redirige a `/public/qr-landing`
+
+### F. TypeScript / LSP
+- [x] `QRH_screens.tsx`: import `Eye` eliminado (era residuo no utilizado)
+- [x] `CMT_screens.tsx`: spread `{...d}` en `CommunityDogCard` reemplazado por props explícitas
+- [x] `EMG_08_to_13.tsx`: spread `{...m}` en `MatchCard` reemplazado por props explícitas
+- [x] `Cards.tsx`: `onClick?` en `CommunityDogCard` y `MatchCard` actualizado a `() => void | Promise<void>`
+- [x] Cero errores de compilación en Vite (el build y hot-reload funcionan sin advertencias)
+

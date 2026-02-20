@@ -388,4 +388,212 @@ Si `ranked` tiene resultados, se usan directamente. Si `store.cases` está vací
 
 ---
 
+### Iteration 10 — Dead Interaction Fix, Education Module, Settings Persistence & Rate Limiting
+
+**Run Date:** February 20, 2026
+
+**Objetivo general:** Eliminar todas las interacciones muertas detectadas en la auditoría completa de 100+ pantallas, construir el módulo de Educación con contenido rico real, implementar configuración de usuario persistente y añadir rate limiting real para proteger las páginas públicas QR contra scraping.
+
+---
+
+#### A. Auditoría de interacciones (`docs/INTERACTION_AUDIT.md`)
+
+Se realizó una auditoría exhaustiva de todos los elementos interactivos del prototipo con el objetivo de identificar botones, toggles y listas sin `onClick`. La auditoría documentó:
+
+- **Prioridad alta:** Elementos en pantallas críticas del flujo principal (QR público, emergencia, perfil)
+- **Prioridad media:** Acciones secundarias en comunidades, eventos, documentos
+- **Prioridad baja:** Acciones de diseño demo (design system, placeholders intencionales)
+
+Regla universal adoptada: **Cada elemento interactivo debe ejecutar una acción real, navegar a otra pantalla, abrir un modal o mostrar un toast de "Demo only" explícito.** Ningún elemento puede quedar completamente inactivo.
+
+---
+
+#### B. Módulo de Educación completo (`src/app/data/education.ts`)
+
+Se construyó una base de datos de artículos educativos con 6 artículos de 1.500+ palabras cada uno, estructurados con secciones, ejemplos prácticos y referencias a fuentes externas reales.
+
+**Estructura de cada artículo:**
+
+```ts
+interface EducationArticle {
+  id: string;
+  title: string;
+  category: 'Emergency' | 'Health' | 'Behavior' | 'Social';
+  sourceName: string;
+  sourceUrl: string;
+  summary: string;
+  body: { heading: string; content: string }[];
+}
+```
+
+**Artículos incluidos:**
+
+| ID | Título | Categoría | Fuente |
+|---|---|---|---|
+| `emergency-response` | What To Do in the First 24 Hours | Emergency | ASPCA |
+| `reading-body-language` | Understanding Your Dog's Body Language | Behavior | AKC |
+| `preventive-health` | Essential Preventive Care for Dogs | Health | Merck Vet Manual |
+| `socialization-101` | Socializing Your Dog: A Complete Guide | Behavior | VCA Hospitals |
+| `nutrition-guide` | Canine Nutrition Fundamentals | Health | PetMD |
+| `community-safety` | Keeping Your Neighborhood Safe for Pets | Social | Best Friends Animal Society |
+
+Cada artículo incluye: resumen ejecutivo, 4–5 secciones con cuerpo de texto completo (sin lorem ipsum), crédito de fuente con enlace externo real.
+
+**Routing dinámico:**
+
+Se añadió la ruta `/education/article/:id` en `App.tsx` para servir artículos individuales. `EDU_ArticleDetail` usa `useParams()` para obtener el `id` y buscar el artículo en el array. Si el ID no existe, renderiza una pantalla de error 404 con botón de retorno a la lista. Los artículos se abren desde `EDU_01` (lista de artículos) al hacer tap en cualquier card.
+
+**Botón "Send" del AI Chat (EDU_03):**
+Wired con toast "Demo only — AI Q&A coming soon." Importado `toast` de `sonner` al archivo `EDU_screens.tsx`.
+
+---
+
+#### C. Sistema de ajustes de usuario persistentes (`src/app/data/storage.ts` + `AppContext`)
+
+Se añadió el campo `settings` al tipo `EntityStore` con 13 preferencias de usuario, todas persistidas automáticamente en `localStorage` mediante el mecanismo existente de `saveEntityStore()`.
+
+**Tipo `UserSettings`:**
+
+```ts
+interface UserSettings {
+  captchaEnabled: boolean;          // Mostrar captcha en QRP_02 (defecto: true)
+  defaultRadius: number;            // Radio de privacidad por defecto en metros (defecto: 300)
+  notif: {
+    push: boolean;                  // Notificaciones push globales (defecto: true)
+    email: boolean;                 // Notificaciones por correo (defecto: true)
+    sms: boolean;                   // Notificaciones SMS (defecto: false)
+    caseUpdates: boolean;           // Actualizaciones del caso activo (defecto: true)
+    matches: boolean;               // Nuevas coincidencias (defecto: true)
+    community: boolean;             // Eventos y posts de comunidad (defecto: false)
+    marketing: boolean;             // Boletines y noticias (defecto: false)
+  };
+  privacy: {
+    showPhone: boolean;             // Mostrar teléfono en el perfil público (defecto: false)
+    showEmail: boolean;             // Mostrar email en el perfil público (defecto: false)
+    showLocation: boolean;          // Mostrar ciudad en el perfil público (defecto: true)
+    allowIndexing: boolean;         // Permitir indexación por buscadores (defecto: false)
+  };
+}
+```
+
+**Función `updateSettings(partial)`:**
+Añadida al `AppContext`. Realiza deep merge sobre el objeto `notif` y `privacy` anidados para no sobreescribir configuraciones hermanas al actualizar solo un campo.
+
+```ts
+updateSettings: (partial: Partial<UserSettings>) => void
+```
+
+**Uso en pantallas:**
+- `PRF_03` (Privacy Settings): todos los toggles de privacidad llaman `updateSettings({ privacy: { campo: value } })`
+- `PRF_04` (Notification Settings): todos los toggles de notificación llaman `updateSettings({ notif: { campo: value } })`
+- `QRH_03` (Anti-scraping): el toggle de captcha llama `updateSettings({ captchaEnabled: value })`
+
+Los toggles leen el estado inicial directamente desde `store.settings`, por lo que al recargar la página conservan el valor guardado.
+
+---
+
+#### D. Rate limiting real para QR público (`src/app/utils/rateLimit.ts`)
+
+Se implementó rate limiting real usando `localStorage` como almacenamiento de timestamps. Protege la función "Show Owner Contact" de la página QR pública contra bots y scrapers.
+
+**Configuración:**
+- Clave de localStorage: `pettodo_reveal_rate_v1`
+- Máximo de reveals permitidos: 5 por hora
+- Ventana de tiempo: 60 minutos (rolling window — no reloj fijo)
+
+**Funciones exportadas:**
+
+```ts
+checkRevealRateLimit(): { allowed: boolean; remaining: number; resetInMinutes: number }
+```
+- Lee el array de timestamps del localStorage
+- Filtra los que están dentro de la última hora (timestamps > `Date.now() - 3_600_000`)
+- Si el array filtrado tiene < 5 elementos: `{ allowed: true, remaining: N }`
+- Si tiene ≥ 5 elementos: calcula `resetInMinutes` como los minutos hasta que el timestamp más antiguo salga de la ventana
+
+```ts
+recordReveal(): void
+```
+- Agrega el timestamp actual al array y vuelve a guardar en localStorage
+
+```ts
+forceRateLimit(): void   // Fuerza el estado de rate limit para demo
+resetRateLimit(): void   // Resetea a 0 reveals para demo
+```
+
+**Integración en `QRP_02` (captcha screen):**
+- `useEffect` al montar: llama `checkRevealRateLimit()`. Si no está permitido → muestra pantalla `rateLimit` directamente. Si `captchaEnabled === false` (setting del usuario) → saltea captcha, llama `recordReveal()`, navega a `/public/qr-landing`
+- Botón "Verify": re-verifica el rate limit antes de proceder. Si está bloqueado, muestra pantalla `rateLimit` con contador de minutos
+- Pantalla `rateLimit`: muestra timer visual con formato MM:SS, botón demo para resetear
+
+**Integración en `QRH_03` (Anti-scraping hub):**
+- Muestra previsualización del estado actual de rate limit (reveals restantes en la hora actual)
+- Toggle de captcha conectado a `updateSettings({ captchaEnabled: value })`
+
+---
+
+#### E. Corrección masiva de interacciones muertas
+
+Se auditaron y corrigieron todos los botones sin acción en el prototipo, archivo por archivo:
+
+**`src/app/screens/qr-public/QRP_screens.tsx` — Reescritura completa:**
+- `QRP_01`: botón "Show Owner Contact" navega a `/public/qr-captcha`; botón "I found/spotted this dog" navega a `/public/qr-report`
+- `QRP_02`: flujo de 3 estados (`captcha` → `countdown` → reveal, o `rateLimit`). El botón "Verify" ejecuta la verificación real con rate limit. Integrado con `captchaEnabled` de settings
+- `QRP_03`: botones "I have this dog" y "I spotted this dog" son cards seleccionables con estado visual (color de borde, fondo) y toast contextual al seleccionar. El form completo incluye inputs de ubicación y teléfono, y al enviar llama `addSighting()` del context, muestra pantalla de confirmación y redirige
+
+**`src/app/screens/daily/DLY_screens.tsx`:**
+- "Add Pet" (DLY_02): `onClick={() => toast('Demo only — pet registration form coming soon.')}`
+- Documentos (DLY_04): cada documento convertido de `<div>` a `<button>` con toast contextual que menciona el nombre del documento específico; "Upload Document" también wired
+- Calendario (DLY_07): botones "Add to Google Calendar", "Add to Apple Calendar", "Download .ICS File" wired con toasts descriptivos
+
+**`src/app/screens/daily/EDU_screens.tsx`:**
+- "Send" (EDU_03, AI Chat): wired con toast "Demo only — AI Q&A coming soon."
+- Añadido `import { toast } from 'sonner'` al archivo
+
+**`src/app/screens/communities/COM_EVT_screens.tsx`:**
+- "Send Verification Code" (COM_03): toast "Demo only — SMS verification coming soon."
+- "Photo" y "Location" (COM_04, compose post): toasts individuales descriptivos
+- "Approve" y "Remove" (COM_05, quarantined posts): toasts de confirmación de acción ("Post approved and restored." / "Post removed from community.")
+- "Apply as Official Organizer" (EVT_06): toast "Demo only — organizer application coming soon."
+
+**`src/app/screens/community-dogs/CMT_screens.tsx`:**
+- "Merge Records" (CMT_04): toast "Records merged successfully."
+- "Keep Separate" (CMT_04): toast "Records kept separate."
+- "It's a different dog — continue Found report" (CMT_05): toast de confirmación de continuación del flujo
+- "View community dog record" (CMT_05): toast "Demo only — community dog record view coming soon."
+- "Cancel report" (CMT_05): toast "Report cancelled."
+- Añadido `import { toast } from 'sonner'` al archivo
+
+**`src/app/screens/emergency/EMG_08_to_13.tsx`:**
+- "Scan QR Code" (EMG_10): navega a `/emg/found-published` (mismo destino que "Skip")
+- "Follow Case" (EMG_13): toast de confirmación "You are now following this case. Notifications will be sent for updates."
+- Añadido `import { toast } from 'sonner'` al archivo
+
+**`src/app/screens/qr-hub/QRH_screens.tsx`:**
+- Eliminado import no usado `Eye` de lucide-react (resolvía LSP diagnostic)
+
+---
+
+#### F. Correcciones de TypeScript
+
+**Imports no utilizados:**
+- `QRH_screens.tsx`: eliminado `Eye` del import de lucide-react (era residuo de refactor anterior)
+
+**Tipos de componentes:**
+- `CommunityDogCard` y `MatchCard` en `Cards.tsx`: actualizado el tipo de `onClick?` de `() => void` a `() => void | Promise<void>` para compatibilidad con el tipo de retorno de `useNavigate()` de React Router
+- `CMT_01`: corregido spread `{...d}` en `CommunityDogCard` → props explícitas (`name={d.name} lastSeen={d.lastSeen} location={d.location}`) para evitar error de tipos con campos extra del objeto de datos
+- `EMG_12`: corregido spread `{...m}` en `MatchCard` → props explícitas (`confidence={m.confidence} reasons={m.reasons} location={m.location} time={m.time}`) por la misma razón
+
+---
+
+#### Limitaciones conocidas de esta iteración
+
+- **AI Chat (EDU_03):** La interfaz de chat está wired con toast. El backend de IA no está implementado; requeriría integración con OpenAI/Claude API
+- **Cámara (QRP_03):** El área de foto en el form de reporte QR público no tiene FileReader real — es UI placeholder
+- **SMS (COM_03):** La verificación por SMS es UI-only, no hay integración con Twilio ni similar
+- **Rate limit en demo:** `forceRateLimit()` y `resetRateLimit()` son utilidades de desarrollo accesibles desde `QRH_03` para demostrar el flujo sin esperar 1 hora real
+- **Indexación buscadores:** El toggle `allowIndexing` en PRF_03 no tiene efecto en el servidor (no hay servidor); es una preferencia guardada para futura implementación de meta tags o robots.txt dinámico
+
+---
+
 
