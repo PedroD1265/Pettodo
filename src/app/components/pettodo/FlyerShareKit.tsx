@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { LUNA, LOST_CASE, FLYER_SHARE_TEXT, FLYER_SAFETY_REMINDER } from '../../data/demoData';
 import { Btn } from './Buttons';
 import { Banner } from './Banners';
 import { Modal } from './Modals';
 import { toast } from 'sonner';
 import { Image, FileText, Download, Share2, Copy, Link, Shield, QrCode, X } from 'lucide-react';
+import { downloadFlyerPNG, downloadFlyerPDF } from '../../utils/flyerDownload';
 
-export function FlyerPreview({ type = 'lost' }: { type?: 'lost' | 'found' }) {
+export const FlyerPreview = React.forwardRef<HTMLDivElement, { type?: 'lost' | 'found' }>(
+  ({ type = 'lost' }, ref) => {
   const isLost = type === 'lost';
   const headerBg = isLost ? 'var(--red-primary)' : 'var(--green-primary)';
   const label = isLost ? 'LOST DOG' : 'FOUND DOG';
   const traits = [LUNA.size, ...LUNA.colors, LUNA.collar ? 'Collar' : ''].filter(Boolean);
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ border: `2px solid ${isLost ? 'var(--red-soft)' : 'var(--green-soft)'}`, boxShadow: 'var(--shadow-md)' }}>
+    <div ref={ref} className="rounded-2xl overflow-hidden" style={{ border: `2px solid ${isLost ? 'var(--red-soft)' : 'var(--green-soft)'}`, boxShadow: 'var(--shadow-md)' }}>
       {/* Header */}
       <div className="p-3 text-center" style={{ background: headerBg }}>
         <p className="text-[22px]" style={{ fontWeight: 800, color: 'var(--white)', letterSpacing: '0.05em' }}>{label}</p>
@@ -68,17 +70,42 @@ export function FlyerPreview({ type = 'lost' }: { type?: 'lost' | 'found' }) {
       </div>
     </div>
   );
-}
+});
 
 export function ShareKitActions() {
   const [showPreview, setShowPreview] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const flyerRef = useRef<HTMLDivElement>(null);
+  const modalFlyerRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPNG = () => {
-    toast.success('PNG download started (simulated)');
+  const getFlyerElement = (): HTMLDivElement | null => modalFlyerRef.current || flyerRef.current;
+
+  const handleDownloadPNG = async () => {
+    const el = getFlyerElement();
+    if (!el) { toast.error('Flyer not ready'); return; }
+    setDownloading(true);
+    try {
+      await downloadFlyerPNG(el, `pettodo-flyer-${LOST_CASE.id}.png`);
+      toast.success('PNG downloaded');
+    } catch {
+      toast.error('PNG download failed');
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  const handleDownloadPDF = () => {
-    toast.success('PDF download started (simulated)');
+  const handleDownloadPDF = async () => {
+    const el = getFlyerElement();
+    if (!el) { toast.error('Flyer not ready'); return; }
+    setDownloading(true);
+    try {
+      await downloadFlyerPDF(el, `pettodo-flyer-${LOST_CASE.id}.pdf`);
+      toast.success('PDF downloaded');
+    } catch {
+      toast.error('PDF download failed');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleCopyText = () => {
@@ -87,18 +114,24 @@ export function ShareKitActions() {
   };
 
   const handleShareLink = () => {
+    navigator.clipboard?.writeText?.('pettodo.app/case/' + LOST_CASE.id).catch(() => {});
     toast.success('Share link copied: pettodo.app/case/' + LOST_CASE.id);
   };
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Hidden flyer for capture when modal is closed */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <FlyerPreview ref={flyerRef} />
+      </div>
+
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2">
-        <Btn variant="secondary" onClick={handleDownloadPNG} icon={<Image size={16} />}>
-          Download PNG
+        <Btn variant="secondary" onClick={handleDownloadPNG} icon={<Image size={16} />} disabled={downloading}>
+          {downloading ? 'Wait…' : 'Download PNG'}
         </Btn>
-        <Btn variant="secondary" onClick={handleDownloadPDF} icon={<FileText size={16} />}>
-          Download PDF
+        <Btn variant="secondary" onClick={handleDownloadPDF} icon={<FileText size={16} />} disabled={downloading}>
+          {downloading ? 'Wait…' : 'Download PDF'}
         </Btn>
         <Btn variant="secondary" onClick={handleCopyText} icon={<Copy size={16} />}>
           Copy Text
@@ -147,10 +180,10 @@ export function ShareKitActions() {
       {/* Preview Modal */}
       <Modal open={showPreview} onClose={() => setShowPreview(false)} title="Flyer Preview">
         <div className="max-h-[60vh] overflow-y-auto -mx-1">
-          <FlyerPreview />
+          <FlyerPreview ref={modalFlyerRef} />
         </div>
         <div className="mt-3 flex gap-2">
-          <Btn variant="secondary" className="flex-1" onClick={handleDownloadPNG} icon={<Download size={14} />}>Save</Btn>
+          <Btn variant="secondary" className="flex-1" onClick={handleDownloadPNG} icon={<Download size={14} />} disabled={downloading}>Save</Btn>
           <Btn variant="emergency" className="flex-1" onClick={() => { handleShareLink(); setShowPreview(false); }} icon={<Share2 size={14} />}>Share</Btn>
         </div>
       </Modal>

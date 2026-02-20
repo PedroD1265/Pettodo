@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { LUNA } from '../../data/demoData';
 import { Filter, Plus, Shield, MapPin, Calendar, Clock, CheckCircle, AlertTriangle, Flag, Send, Star, Phone } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadICS } from '../../utils/icsHelper';
 
 // PD_01
 export function PD_01() {
@@ -171,11 +172,15 @@ export function PD_05() {
   const nav = useNavigate();
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
+  const pdStart = new Date('2026-02-22T15:00:00');
+  const pdEnd = new Date('2026-02-22T16:30:00');
+
   const handleCalendar = (type: 'google' | 'ics') => {
     if (type === 'google') {
-      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Park play session') + '&location=' + encodeURIComponent('Central Park Dog Run'), '_blank');
+      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Park play session') + '&location=' + encodeURIComponent('Central Park Dog Run') + '&dates=' + encodeURIComponent(pdStart.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z') + '/' + encodeURIComponent(pdEnd.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'), '_blank');
     } else {
-      toast.success('Downloaded .ics file (simulated)');
+      downloadICS({ title: 'Park play session — Small dogs', start: pdStart, end: pdEnd, location: 'Central Park Dog Run', description: 'PETTODO Play Date. All dogs must be up to date on vaccinations. Meet in a public, fenced area.' });
+      toast.success('.ics file downloaded');
     }
     setShowCalendarModal(false);
   };
@@ -232,7 +237,7 @@ export function PD_05() {
              <Btn variant="secondary" fullWidth onClick={() => handleCalendar('google')}>Google Calendar</Btn>
              <Btn variant="secondary" fullWidth onClick={() => handleCalendar('ics')}>Download .ics File</Btn>
              <Btn variant="ghost" fullWidth onClick={() => setShowCalendarModal(false)}>Cancel</Btn>
-             <p className="text-[11px] text-center text-gray-400">Calendar integration is simulated in this prototype.</p>
+             <p className="text-[11px] text-center text-gray-400">Choose your preferred calendar format.</p>
           </div>
         </div>
       )}

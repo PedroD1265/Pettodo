@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { INITIAL_COMMUNITY_DOG_SIGHTINGS, INITIAL_COMMUNITY_DOG_CARE_RECORDS } from '../data/demoData';
+import { loadPersistedState, savePersistedState } from '../utils/localStorage';
 
 export type AppMode = 'emergency' | 'daily';
 export type VerificationLevel = 'none' | 'basic' | 'strict';
@@ -14,60 +15,79 @@ interface AppState {
   setHasActiveCase: (v: boolean) => void;
   contactRevealed: boolean;
   setContactRevealed: (v: boolean) => void;
-  // Verification
   verificationLevel: VerificationLevel;
   setVerificationLevel: (v: VerificationLevel) => void;
   strictStatus: StrictStatus;
   setStrictStatus: (v: StrictStatus) => void;
-  // Panic mode
   caseClaimed: boolean;
   setCaseClaimed: (v: boolean) => void;
-  // Lifecycle timers
-  demoTimeOffset: number; // in days
+  demoTimeOffset: number;
   setDemoTimeOffset: (d: number) => void;
   caseStatus: CaseStatus;
   setCaseStatus: (s: CaseStatus) => void;
-  caseCreatedDay: number; // day 0 = today
-  // Demo controls
+  caseCreatedDay: number;
   showDemoControls: boolean;
   setShowDemoControls: (v: boolean) => void;
-  // Community Dogs
   communityDogSightings: typeof INITIAL_COMMUNITY_DOG_SIGHTINGS;
   addCommunityDogSighting: (s: any) => void;
   communityDogCareRecords: typeof INITIAL_COMMUNITY_DOG_CARE_RECORDS;
   addCommunityDogCareRecord: (r: any) => void;
-  // Walkers
   walkerAvailability: { days: string[], times: string[] };
   setWalkerAvailability: (v: { days: string[], times: string[] }) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
+function getInitialPersisted() {
+  if (typeof window === 'undefined') return {};
+  return loadPersistedState();
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<AppMode>('daily');
-  const [hasActiveCase, setHasActiveCase] = useState(false);
+  const [persisted] = useState(getInitialPersisted);
+  const [mode, setMode] = useState<AppMode>(persisted.mode ?? 'daily');
+  const [hasActiveCase, setHasActiveCase] = useState(persisted.hasActiveCase ?? false);
   const [contactRevealed, setContactRevealed] = useState(false);
-  const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>('none');
-  const [strictStatus, setStrictStatus] = useState<StrictStatus>('not_started');
-  const [caseClaimed, setCaseClaimed] = useState(false);
-  const [demoTimeOffset, setDemoTimeOffset] = useState(0);
+  const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>(persisted.verificationLevel ?? 'none');
+  const [strictStatus, setStrictStatus] = useState<StrictStatus>(persisted.strictStatus ?? 'not_started');
+  const [caseClaimed, setCaseClaimed] = useState(persisted.caseClaimed ?? false);
+  const [demoTimeOffset, setDemoTimeOffset] = useState(persisted.demoTimeOffset ?? 0);
   const [caseStatus, setCaseStatus] = useState<CaseStatus>('active');
   const [showDemoControls, setShowDemoControls] = useState(false);
   
-  // Community Dogs
-  const [communityDogSightings, setCommunityDogSightings] = useState(INITIAL_COMMUNITY_DOG_SIGHTINGS);
+  const [communityDogSightings, setCommunityDogSightings] = useState(
+    persisted.communityDogSightings && persisted.communityDogSightings.length > 0
+      ? persisted.communityDogSightings
+      : INITIAL_COMMUNITY_DOG_SIGHTINGS
+  );
   const addCommunityDogSighting = (s: any) => setCommunityDogSightings(prev => [s, ...prev]);
 
-  const [communityDogCareRecords, setCommunityDogCareRecords] = useState(INITIAL_COMMUNITY_DOG_CARE_RECORDS);
+  const [communityDogCareRecords, setCommunityDogCareRecords] = useState(
+    persisted.communityDogCareRecords && persisted.communityDogCareRecords.length > 0
+      ? persisted.communityDogCareRecords
+      : INITIAL_COMMUNITY_DOG_CARE_RECORDS
+  );
   const addCommunityDogCareRecord = (r: any) => setCommunityDogCareRecords(prev => [r, ...prev]);
 
-  // Walkers Availability Stub
   const [walkerAvailability, setWalkerAvailability] = useState<{ days: string[], times: string[] }>({
     days: ['Mon', 'Wed', 'Fri'],
     times: ['Morning']
   });
 
   const toggleMode = () => setMode(m => m === 'emergency' ? 'daily' : 'emergency');
+
+  useEffect(() => {
+    savePersistedState({
+      mode,
+      hasActiveCase,
+      caseClaimed,
+      verificationLevel,
+      strictStatus,
+      demoTimeOffset,
+      communityDogSightings,
+      communityDogCareRecords,
+    });
+  }, [mode, hasActiveCase, caseClaimed, verificationLevel, strictStatus, demoTimeOffset, communityDogSightings, communityDogCareRecords]);
 
   return (
     <AppContext.Provider value={{

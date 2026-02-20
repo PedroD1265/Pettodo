@@ -10,9 +10,10 @@ interface BtnProps {
   className?: string;
   fullWidth?: boolean;
   icon?: ReactNode;
+  disabled?: boolean;
 }
 
-export function Btn({ variant = 'primary', children, onClick, className = '', fullWidth = false, icon }: BtnProps) {
+export function Btn({ variant = 'primary', children, onClick, className = '', fullWidth = false, icon, disabled = false }: BtnProps) {
   const base = 'inline-flex items-center justify-center gap-2 rounded-xl transition-all';
   const size = variant === 'icon' ? 'p-2.5' : 'px-5 py-3';
   const w = fullWidth ? 'w-full' : '';
@@ -31,10 +32,10 @@ export function Btn({ variant = 'primary', children, onClick, className = '', fu
 
   return (
     <button
-      onClick={variant === 'disabled' ? undefined : onClick}
+      onClick={(variant === 'disabled' || disabled) ? undefined : onClick}
       className={`${base} ${size} ${w} ${className}`}
-      style={styles[variant]}
-      disabled={variant === 'disabled'}
+      style={disabled ? styles['disabled'] : styles[variant]}
+      disabled={variant === 'disabled' || disabled}
     >
       {variant === 'loading' && <Loader2 size={18} className="animate-spin" />}
       {icon && variant !== 'loading' && icon}

@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { COMMUNITY, EVENT } from '../../data/demoData';
 import { Users, Plus, MessageSquare, Shield, Phone, Flag, AlertTriangle, CheckCircle, Star, MapPin, Calendar, ExternalLink, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadICS } from '../../utils/icsHelper';
 
 // COM_01
 export function COM_01() {
@@ -237,13 +238,15 @@ export function EVT_02() {
   const nav = useNavigate();
   const [showCalendarModal, setShowCalendarModal] = useState(false);
 
+  const eventStart = new Date('2026-02-22T10:00:00');
+  const eventEnd = new Date('2026-02-22T12:00:00');
+
   const handleCalendar = (type: 'google' | 'ics') => {
     if (type === 'google') {
-      // transform date string to ISO-like for google
-      // Demo: just open google calendar create link
-      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(EVENT.name) + '&location=' + encodeURIComponent(EVENT.location), '_blank');
+      window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(EVENT.name) + '&location=' + encodeURIComponent(EVENT.location) + '&dates=' + encodeURIComponent(eventStart.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z') + '/' + encodeURIComponent(eventEnd.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'), '_blank');
     } else {
-      toast.success('Downloaded .ics file (simulated)');
+      downloadICS({ title: EVENT.name, start: eventStart, end: eventEnd, location: EVENT.location, description: `Organized by ${EVENT.organizer}. Source: ${EVENT.source}` });
+      toast.success('.ics file downloaded');
     }
     setShowCalendarModal(false);
   };
@@ -299,7 +302,7 @@ export function EVT_02() {
              <Btn variant="secondary" fullWidth onClick={() => handleCalendar('google')}>Google Calendar</Btn>
              <Btn variant="secondary" fullWidth onClick={() => handleCalendar('ics')}>Download .ics File</Btn>
              <Btn variant="ghost" fullWidth onClick={() => setShowCalendarModal(false)}>Cancel</Btn>
-             <p className="text-[11px] text-center text-gray-400">Calendar integration is simulated in this prototype.</p>
+             <p className="text-[11px] text-center text-gray-400">Choose your preferred calendar format.</p>
           </div>
         </div>
       )}

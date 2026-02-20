@@ -16,7 +16,15 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-02-20: Iteration 9 implementation
+  - Real PNG/PDF flyer download (html-to-image + jsPDF)
+  - Real .ics file download for Events and Play Dates
+  - localStorage persistence for demo state (mode, activeCase, verification, sightings, etc.)
+  - Added `disabled` prop to Btn component
+  - New utility files: `src/app/utils/flyerDownload.ts`, `src/app/utils/icsHelper.ts`, `src/app/utils/localStorage.ts`
 - 2026-02-20: Initial Replit setup - configured Vite dev server on port 5000 with all hosts allowed, added .gitignore, configured static deployment
 
 ## User Preferences
-- None recorded yet
+- Minimal dependencies, minimal scope changes
+- Small commit-ready changes preferred
+- No heavy libraries unless strictly necessary
