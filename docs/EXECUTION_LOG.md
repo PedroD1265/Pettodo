@@ -157,50 +157,219 @@ February 19, 2026
   - Added "Calendar" button to `EVT_02` (Event Detail) and `PD_05` (Play Date Detail).
   - Implemented modal with "Google Calendar" and "Download .ics" options.
 
-### Iteration 9 — Local-first Functionality (Replit)
+### Iteration 9 — Local-first Functionality
 
 **Run Date:** February 20, 2026
 
-#### A. Local-first Data Layer (`src/app/data/storage.ts`)
-- Created typed schemas: `Pet`, `Case`, `Sighting`, `CareLog`, `UserVerificationState`, `EntityStore`
-- Implemented `loadEntityStore()`, `saveEntityStore()`, `resetEntityStore()`, `generateId()` using `localStorage` key `pettodo_entities_v1`
-- Seeded demo data: Luna's pet profile, lost case (Central Park coords), 2 sightings, 3 found/sighted cases for matching
-- Extended `AppContext` with `store`, `addPet`, `addCase`, `addSighting`, `addCareLog`, `resetStore` — all auto-save to localStorage on change
+**Objetivo general:** Convertir el prototipo de UI en una demo funcional real. Esto implicó cuatro áreas de trabajo: persistencia de datos local, generación real de códigos QR, mapas interactivos con tiles reales, y un algoritmo de coincidencia determinista. Ningún cambio rompe las rutas o pantallas existentes.
 
-#### B. Real QR Generation
-- Installed `qrcode.react@4.2.0`
-- Replaced `QrCode` icon placeholders with `<QRCodeSVG>` in:
-  - `FlyerShareKit.tsx` — flyer preview now includes a real scannable QR (points to `pettodo.app/case/CASE-2026-0219`)
-  - `QRH_01` (QR Hub main screen) — 168px real QR for Luna (`pettodo.app/pet/pet-luna-001`)
-  - `QRH_04` (Share & Download) — 136px real QR
+---
 
-#### C. Working Maps (Leaflet + OpenStreetMap)
-- Installed `leaflet@1.9.4`, `react-leaflet@4.2.1` (React 18 compatible), `@types/leaflet`
-- Added Leaflet CSS import to `src/styles/index.css`
-- Created `PettodoMap` component in `MapComponents.tsx`:
-  - `MapContainer` + OpenStreetMap tiles + `RecenterMap` helper
-  - Emoji-based custom `DivIcon` per pin type (📍 lost, ✅ found, 👁️ sighted, 🏥 safe)
-  - Popup on click with label + time + privacy note
-  - Optional `Circle` for found-privacy radius (dashed, 8% opacity)
-- `MapPlaceholder` is now a backward-compatible wrapper around `PettodoMap`
-- Automatically applies to all 7 screens that import `MapPlaceholder` (EMG_03, EMG_08-13, EMG_14-20, EMG_21-25, EMG_26-31, CMT, SRV)
+#### A. Capa de datos local (`src/app/data/storage.ts`)
 
-#### D. Deterministic Match Ranking (`src/app/utils/matching.ts`)
-- Pure function `rankMatches(lostCase, candidates)` scores matches by:
-  - **Distance** (Haversine formula, 30 pts max for <0.5 km)
-  - **Recency** (30 pts max for <2 hours)
-  - **Size match** (20 pts)
-  - **Color overlap** (10 pts per shared color)
-  - **Trait overlap** (5 pts per shared trait)
-- Outputs `reasons[]` strings: "near your area", "very recent sighting", "similar size", "similar color", "matching feature"
-- Confidence capped at 95% (honest uncertainty)
-- Wired into `EMG_16` — pulls live cases from `store`, falls back to static MATCHES if none
+**Qué se hizo y por qué:**
+Antes de esta iteración, toda la información de la demo era estática y se perdía al recargar la página. Se creó un módulo de almacenamiento completo usando `localStorage` del navegador como base de datos local.
 
-#### Limitations
-- localStorage max ~5MB; no real image storage (emoji placeholders)
-- QR codes point to demo URLs (not live)
-- Map tiles require internet (no offline cache)
-- Matching is deterministic; no real image ML
+**Tipos e interfaces creados:**
+
+| Tipo | Campos principales | Propósito |
+|---|---|---|
+| `Pet` | id, name, breed, size, colors, marks, collar, temperament, age, weight, microchip, vaccines, createdAt | Perfil completo de una mascota registrada |
+| `Case` | id, type (lost/found/sighted), petId, status, lat, lng, privacyRadius, size, colors, traits, direction, createdAt | Caso de mascota perdida, encontrada o avistada |
+| `Sighting` | id, caseId, lat, lng, location, time, note, createdAt | Avistamiento individual de un caso activo |
+| `CareLog` | id, petId, date, ate, water, walked, note, createdAt | Registro de cuidado diario (comida, agua, paseo) |
+| `UserVerificationState` | level, strictStatus, phone, verifiedAt | Estado de verificación del usuario |
+| `EntityStore` | pets[], cases[], sightings[], careLogs[], verification | Contenedor raíz de todos los datos |
+
+**Funciones implementadas:**
+
+- `generateId()` — genera IDs únicos con prefijo de timestamp (ej. `pet-1708450000000-a3f`)
+- `loadEntityStore()` — intenta leer `localStorage["pettodo_entities_v1"]`; si no existe o está corrupto, crea el store vacío e inyecta los datos semilla de demo
+- `saveEntityStore(store)` — serializa el store completo a JSON y lo guarda en `localStorage`
+- `resetEntityStore()` — borra la clave de localStorage y recarga el store (vuelve a semilla)
+
+**Datos semilla insertados automáticamente en demo fresca:**
+
+- **Luna** (pet-luna-001): perra mediana, mixed-breed, colores `["golden", "white"]`, collar rojo, microchip registrado, vacunas al día con próximo recordatorio el 20 Mar 2026
+- **Caso perdida de Luna** (case-lost-001): tipo `lost`, activo, coordenadas Central Park (40.7751, -73.9738), 300 m de radio de privacidad, traits `["friendly", "collar"]`
+- **2 avistamientos** de Luna: cerca de la Bethesda Fountain (hace 12 min) y Great Lawn (hace 45 min)
+- **3 casos candidatos** para el algoritmo de coincidencia:
+  - `case-found-001`: perro encontrado a 0.3 km, hace 2 h, talla Medium, color golden → alta coincidencia esperada
+  - `case-sighted-001`: avistamiento a 0.8 km, hace 4 h, talla Medium → coincidencia media
+  - `case-found-002`: perro encontrado a 3 km, hace 30 h, talla Small → baja coincidencia
+
+**Integración en AppContext (`src/app/context/AppContext.tsx`):**
+
+Se extendió el contexto global con las siguientes propiedades y métodos, todos disponibles en cualquier pantalla mediante `useApp()`:
+
+```
+store: EntityStore          — el store completo, actualizado en tiempo real
+addPet(pet)  → Pet          — agrega una mascota y auto-guarda
+addCase(c)   → Case         — agrega un caso y auto-guarda
+addSighting(s) → Sighting   — agrega un avistamiento y auto-guarda
+addCareLog(log) → CareLog   — agrega un registro de cuidado y auto-guarda
+resetStore()                — resetea a datos semilla
+```
+
+Todos los métodos `add*` utilizan un patrón `updateStore(updater)` que:
+1. Calcula el nuevo estado con `updater(prev)`
+2. Llama a `setStore(next)` para re-renderizar React
+3. Llama a `saveEntityStore(next)` para persistir en localStorage inmediatamente
+
+El store se inicializa con `useState(() => loadEntityStore())` — se ejecuta solo una vez al montar el árbol de componentes.
+
+---
+
+#### B. Generación real de códigos QR
+
+**Qué se hizo y por qué:**
+Las pantallas de QR Hub y el flyer de búsqueda mostraban un ícono estático `<QrCode>` de Lucide. Esto no era escaneable. Se reemplazaron por códigos QR reales generados en el cliente.
+
+**Paquete instalado:** `qrcode.react@4.2.0`  
+El componente `<QRCodeSVG>` renderiza un SVG en el DOM. No requiere servidor, funciona offline y es escalable a cualquier resolución de pantalla.
+
+**Cambios por archivo:**
+
+**`src/app/components/pettodo/FlyerShareKit.tsx`**
+- Import: `import { QRCodeSVG } from 'qrcode.react'`
+- La constante `QR_URL` apunta a `https://pettodo.app/case/CASE-2026-0219`
+- El `<QRCodeSVG>` tiene `size={80}` y `level="M"` (corrección de errores media — suficiente para impresión en formato A4)
+- Está posicionado en la esquina inferior derecha del flyer preview, tal como lo haría un flyer real impreso
+
+**`src/app/screens/qr-hub/QRH_screens.tsx`**
+- Import: `import { QRCodeSVG } from 'qrcode.react'`
+- **QRH_01** (pantalla principal del QR Hub): QR de 168px que apunta a `https://pettodo.app/pet/pet-luna-001`. Es el QR de identidad permanente de Luna — se escanea para ver el perfil y contactar al dueño
+- **QRH_04** (Compartir y Descargar): QR de 136px con la misma URL. Se muestra junto con botones de descarga y opciones de compartir por plataforma
+
+---
+
+#### C. Mapas interactivos reales (Leaflet + OpenStreetMap)
+
+**Qué se hizo y por qué:**
+Las pantallas de mapa usaban un componente `MapPlaceholder` que mostraba un rectángulo gris con texto "Map". Se reemplazó por un mapa interactivo real usando tiles de OpenStreetMap.
+
+**Paquetes instalados:**
+- `leaflet@1.9.4` — biblioteca de mapas base
+- `react-leaflet@4.2.1` — wrapper React para Leaflet, versión 4.x compatible con React 18 (la v5 requiere React 19)
+- `@types/leaflet` — tipos TypeScript para Leaflet
+
+**CSS:** Se agregó `import 'leaflet/dist/leaflet.css'` al inicio de `src/styles/index.css`. Sin este import los controles del mapa (zoom, atribución) no se renderizan correctamente.
+
+**Fix de iconos:** Leaflet resuelve las rutas de sus iconos PNG usando variables internas que el bundler de Vite rompe. Se aplicó la corrección estándar:
+```ts
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl });
+```
+
+**Nuevo componente `PettodoMap` (`src/app/components/pettodo/MapComponents.tsx`):**
+
+Props aceptadas:
+```
+height?          — altura en px del contenedor (default: 220)
+centerLat/Lng?   — coordenadas del centro del mapa (default: Central Park)
+zoom?            — nivel de zoom inicial (default: 14)
+pins?            — array de PettodoPin con lat/lng/type/label/time/privacyRadius
+showPrivacyCircle? — dibuja un círculo rojo punteado en el centro (para pantalla de denuncia)
+privacyRadius?   — radio del círculo de privacidad en metros (default: 300)
+```
+
+**Pins con iconos emoji personalizados:**
+Cada tipo de caso tiene un `L.DivIcon` propio con un emoji grande y `filter: drop-shadow` para visibilidad:
+- 📍 `lost` — pin rojo de ubicación estándar
+- ✅ `found` — checkmark verde (perro encontrado)
+- 👁️ `sighted` — ojo (avistamiento)
+- 🏥 `safe` — cruz médica (en refugio o veterinaria)
+
+**Popup al hacer clic:** Cada marker muestra un popup con el nombre/label del caso, la hora, y para los de tipo `found` una nota de privacidad ("Approximate area only").
+
+**Círculo de privacidad para casos `found`:** Si el pin tiene `privacyRadius`, se dibuja un `<Circle>` verde punteado (`dashArray: '6 4'`, `fillOpacity: 0.08`) para indicar que la ubicación exacta está ocultada. Esto es visible en las pantallas EMG_15 y EMG_21-25.
+
+**`RecenterMap`:** Componente interno que llama a `map.setView([lat, lng])` en un `useEffect` cuando cambian las coordenadas — necesario porque `MapContainer` no re-centra automáticamente si las props cambian.
+
+**`MapPlaceholder` — wrapper retrocompatible:**
+El componente `MapPlaceholder` existente (usado en ~7 archivos de pantallas) se convirtió en un wrapper de `PettodoMap` con pins demo predeterminados. Esto significa que todas las pantallas que ya importaban `MapPlaceholder` obtuvieron el mapa real automáticamente sin necesitar cambios individuales:
+- `EMG_03` (Panic Mode)
+- `EMG_08_to_13` (FOUND flow)
+- `EMG_14_to_20` (Search Map, Pin Detail, Matches)
+- `EMG_21_to_25` (Claim flow)
+- `EMG_26_to_31` (Resolution flow)
+- `CMT` (Community)
+- `SRV` (Services / Street Dogs)
+
+---
+
+#### D. Algoritmo de coincidencia determinista (`src/app/utils/matching.ts`)
+
+**Qué se hizo y por qué:**
+La pantalla EMG_16 (AI Matches) mostraba porcentajes de coincidencia hardcodeados (95%, 78%, 63%). No reflejaban ninguna lógica real. Se implementó un algoritmo de ranking determinista que evalúa candidatos reales del store.
+
+**Función principal:** `rankMatches(lostCase: Case, candidates: Case[]): MatchResult[]`
+
+El algoritmo filtra automáticamente:
+- El propio caso perdido (`c.id === lostCase.id`)
+- Otros casos de tipo `lost` (solo se compara contra `found` y `sighted`)
+- Casos con estado `resolved` o `archived`
+
+Luego asigna una puntuación de 0–95 a cada candidato según cinco criterios:
+
+| Criterio | Puntos máximos | Lógica |
+|---|---|---|
+| **Distancia** | 30 pts | Calculada con la fórmula de Haversine. <0.5 km = 30 pts, <1 km = 22, <2 km = 15, <5 km = 8, más lejos = 2 |
+| **Recencia** | 30 pts | <2 horas = 30 pts, <6 h = 22, <24 h = 15, <72 h = 8, más antiguo = 2 |
+| **Tamaño** | 20 pts | Coincidencia exacta de `size` (Small/Medium/Large) |
+| **Color** | 10 pts por color | Se comparan arrays `colors[]` case-insensitive; por cada color compartido suma 10 |
+| **Rasgos** | 5 pts por rasgo | Se comparan arrays `traits[]` con inclusión parcial case-insensitive |
+
+**Razones generadas (campo `reasons[]`):**
+El algoritmo también genera hasta 3 strings descriptivos que se muestran en la UI bajo cada match:
+- `"near your area"` — distancia <1 km
+- `"X.X km away"` — distancia entre 1–5 km
+- `"very recent sighting"` — menos de 6 horas
+- `"recent report"` — entre 6 y 72 horas
+- `"similar size"` — talla igual
+- `"similar color"` — al menos un color compartido
+- `"matching feature"` — al menos un rasgo compartido
+
+**Cálculo del porcentaje de confianza:**
+```ts
+confidence = Math.min(Math.round((score / 95) * 100), 95)
+```
+El máximo teórico es 95 puntos (30 + 30 + 20 + 10 + 5), por lo que el porcentaje es lineal. Se aplica un techo de 95% para reflejar incertidumbre honesta (nunca se puede asegurar un 100% sin confirmación humana).
+
+Solo se incluyen candidatos con `confidence >= 20`. El resultado se ordena de mayor a menor confianza.
+
+**Wiring en EMG_16 (`src/app/screens/emergency/EMG_14_to_20.tsx`):**
+```ts
+const { store } = useApp();
+const lostCase = store.cases.find(c => c.type === 'lost' && c.status === 'active') ?? store.cases[0];
+const ranked = rankMatches(lostCase, store.cases);
+```
+Si `ranked` tiene resultados, se usan directamente. Si `store.cases` está vacío (solo posible si el usuario borró manualmente localStorage), la pantalla cae de vuelta a las constantes `MATCHES` estáticas que ya existían.
+
+---
+
+#### E. Cambios de infraestructura y paquetes
+
+**`package.json`:**
+- `react` y `react-dom` movidos de `peerDependencies` a `dependencies` para garantizar que el bundler de Vite resuelva una sola copia de React (previene el error "Invalid hook call" con múltiples instancias de React)
+- Nuevas dependencias añadidas:
+  - `"qrcode.react": "^4.2.0"`
+  - `"react-leaflet": "^4.2.1"`
+  - `"leaflet": "^1.9.4"`
+  - `"@types/leaflet": "^1.9.14"`
+
+**`src/styles/index.css`:**
+- Línea añadida al inicio: `@import 'leaflet/dist/leaflet.css';`
+- Sin este import los controles de zoom, los popups y la atribución del mapa no se renderizan correctamente
+
+---
+
+#### Limitaciones conocidas de esta iteración
+
+- **localStorage (~5 MB):** No es apto para guardar imágenes reales. Las fotos de mascotas siguen siendo placeholders con emoji
+- **QR apuntan a URLs demo:** `pettodo.app/*` no es un servidor real. Los QR son escaneables y válidos técnicamente, pero el destino no carga nada
+- **Mapa requiere internet:** Los tiles de OpenStreetMap se descargan en tiempo real. Sin conexión, el mapa aparece en gris
+- **Matching sin visión artificial:** El algoritmo compara campos de texto estructurado. No analiza imágenes. El porcentaje de confianza es una estimación heurística, no un resultado de ML
 
 ---
 
