@@ -1,0 +1,1135 @@
+ROLE
+You are the Replit Agent acting as a senior product engineer (React + TypeScript) optimizing for: (1) a functional, demo-ready PETTODO MVP, (2) minimal risk of breaking existing working flows, and (3) low Replit AI credit burn.
+
+IMPORTANT CONSTRAINTS (DO NOT VIOLATE)
+- Keep ALL existing routes and navigation working (Emergency/Daily bipolar switch + current router structure).
+- Do NOT do large refactors, renames, or “cleanup” across the whole app.
+- Prefer small, incremental changes with clear commits.
+- No paid services. No API keys. Avoid heavy dependencies.
+- Do NOT use Web Search unless absolutely necessary. If you need Replit limits, use only official Replit docs quickly and summarize.
+- Keep design tokens in CSS variables (theme.css). Do not introduce random hex colors.
+- Maintain mobile-first layout and iPhone 13 wrapper.
+
+CONTEXT
+This repo currently contains a complete UI prototype: 100+ routes, design system tokens/components, demo data (“Luna”), and full flows for:
+- Emergency (Lost/Found/Sighted, Panic Mode, Photo quality UX, Matching UI, Map UI placeholders, Chat mock, Flyer/Share kit UI, Timers/Lifecycle)
+- Daily (Pets, QR, Vaccines, Learn, Communities, Events, Community Dogs, Walkers, Play Dates)
+You already have an Execution Log in docs/EXECUTION_LOG.md describing Iterations 1–8 (UI + flows).
+
+
+PETTODO — Descripción ultra detallada (para alguien que no sabe nada)
+1) Qué problema resuelve PETTODO
+
+Cuando se pierde un perro, hoy pasa esto:
+
+El dueño entra en pánico y publica en grupos (Facebook/WhatsApp) con fotos malas o incompletas.
+
+Hay cientos de comentarios, spam, gente confundida y estafadores.
+
+No hay forma ordenada de cruzar “perdí” con “encontré” más que por casualidad.
+
+Se expone información privada (direcciones, teléfonos).
+
+Se pierden horas críticas sin una guía clara.
+
+PETTODO existe para transformar ese caos en un proceso:
+
+Reportar (rápido y bien)
+
+Encontrar coincidencias (IA + mapa + tiempo)
+
+Difundir (flyer + QR + link)
+
+Contactar con seguridad (chat + prueba de vida)
+
+Entregar en punto seguro (aliados)
+
+Cerrar el caso y dejar registro
+
+Y además: que la app siga sirviendo cuando no hay emergencia (vida diaria).
+
+2) “Navegación bipolar”: dos mundos dentro de la misma app
+
+Esta es una decisión central de UX.
+
+Modo Emergencia (Rojo)
+
+Se activa cuando:
+
+tienes un caso PERDIDO activo (tu perro)
+
+o estás reportando/ayudando con un ENCONTRADO/AVISTADO
+
+o estás siguiendo un caso de emergencia
+
+Qué se prioriza en pantalla
+
+Botones grandes y claros: Reportar / Buscar / Alertas / Compartir flyer
+
+Mapa y coincidencias primero
+
+Mensajes y coordinación de devolución
+
+Cero distracciones de “vida diaria” mientras dure la emergencia
+
+Modo Vida Diaria (Verde)
+
+Se usa cuando no tienes una emergencia activa.
+
+Qué se prioriza en pantalla
+
+Gestor de mascotas (vacunas, alimentación, documentos)
+
+QR/Identificación del perro
+
+Educación/Asistente IA
+
+Comunidades y eventos
+
+Paseadores
+
+Play dates
+
+El “switch” entre mundos
+
+Hay un switch visible (no escondido).
+
+Si el usuario tiene un caso activo, la Home recomienda entrar a Emergencia.
+
+Si no hay caso activo, la Home por defecto está en Vida Diaria.
+
+Si el usuario quiere, puede cambiar manualmente siempre.
+
+3) Seguridad y verificación por riesgo
+
+PETTODO usa un principio simple: más riesgo = más verificación.
+
+Verificación básica (SMS)
+
+Te convierte en “usuario real”.
+Se exige para:
+
+editar casos
+
+chatear con otros
+
+coordinar devolución
+
+crear comunidades
+
+participar en play dates (nivel base)
+
+Verificación estricta (SMS + ID + Selfie)
+
+Te convierte en “usuario de confianza alta”.
+Se exige para:
+
+paseadores (alto riesgo)
+
+organizadores oficiales de eventos (si representan organización)
+
+cuentas que coordinan recompensas/pagos con señales de riesgo
+
+comportamientos sospechosos (antiestafa)
+
+Importante: PETTODO no “castiga”; simplemente sube el nivel de seguridad si la acción lo requiere.
+
+ÁREA 1 — Buscador de Perros (Emergencia) — ultra detallado
+Objetivo del área
+
+Hacer que “PERDÍ MI PERRO” se convierta en un flujo claro:
+
+publicar rápido
+
+encontrar coincidencias
+
+coordinar con seguridad
+
+recuperar en punto seguro
+
+cerrar el caso
+
+Esta área incluye reportes, IA, mapa, difusión, chat, antiestafa, aliados, seguimiento y limpieza.
+
+1.1 Reportes (crear casos) + Modo Pánico
+Tipos de caso (tres botones, tres intenciones)
+
+PERDIDO
+
+El dueño (o un familiar) dice: “mi perro se perdió”.
+
+Importa: última ubicación conocida y hora aproximada.
+
+Se usa para activar búsqueda y alertas.
+
+ENCONTRADO (resguardado)
+
+Una persona dice: “tengo este perro conmigo”.
+
+Importa: evidencia fuerte (fotos) y zona aproximada.
+
+Se protege la privacidad (no revelar dirección exacta).
+
+AVISTADO
+
+Una persona dice: “lo vi por acá, pero no lo tengo”.
+
+Importa: ubicación + hora y, si se puede, foto.
+
+Modo Pánico (publicar PERDIDO sin cuenta)
+
+Esto existe porque un dueño en pánico no quiere:
+
+crear contraseña
+
+confirmar email
+
+llenar formularios eternos
+
+Flujo real
+
+Abre PETTODO → Modo Emergencia
+
+Botón “PERDIDO”
+
+Sube 1 foto (mínimo)
+
+Marca ubicación (último punto)
+
+Selecciona hora aproximada (o “hace 1 hora / hoy / ayer”)
+
+Publica
+
+Después de publicar
+
+Para editar, chatear o coordinar devolución: PETTODO pide SMS.
+
+El caso queda “reclamado” por ese número.
+
+Datos mínimos y datos recomendados
+
+Mínimos para publicar
+
+foto
+
+ubicación
+
+tiempo aproximado
+
+tipo de caso
+
+Recomendados
+
+tamaño (S/M/L)
+
+colores dominantes
+
+rasgos únicos (manchas, cicatriz, oreja, cola, ojos)
+
+collar/placa (sí/no)
+
+comportamiento (miedoso/sociable/reactivo)
+
+estado físico (herido/flaco)
+
+Por qué son clave
+
+Mejoran el matching
+
+Ayudan a la gente a identificar
+
+Reducen falsos positivos
+
+1.2 Evidencia (fotos) y control de calidad
+Qué pasa cuando subes fotos
+
+PETTODO guarda:
+
+original
+
+miniaturas para carga rápida
+
+PETTODO calcula un “quality score” para cada foto (interno):
+
+está muy borrosa → baja calidad
+
+está muy oscura → baja calidad
+
+el perro está lejos → baja calidad
+
+cara/cuerpo visible → mejor calidad
+
+Qué hace la app si la evidencia es mala
+
+No bloquea al usuario (porque es emergencia), pero:
+
+recomienda fotos específicas (“frente + cuerpo completo”)
+
+advierte: “con estas fotos la coincidencia será menos precisa”
+
+puede limitar funciones sensibles:
+
+por ejemplo, para ENCONTRADO resguardado “serio” se exigirán más fotos sí o sí
+
+1.3 Matching por IA (la parte “inteligente”)
+Qué hace para el usuario
+
+Cuando publicas:
+
+un PERDIDO → la app te muestra ENCONTRADOS/AVISTADOS parecidos
+
+un ENCONTRADO/AVISTADO → la app te muestra PERDIDOS parecidos
+
+Te devuelve un “Top” con:
+
+Confianza Alta / Media / Baja
+
+y razones simples:
+
+“color similar”
+
+“tamaño similar”
+
+“rasgo compatible”
+
+“cerca de tu zona”
+
+Qué NO hace (regla sagrada)
+
+No dice “es tu perro”.
+
+Dice “posible coincidencia”.
+
+Qué hace “por dentro” (sin tecnicismos innecesarios)
+
+Convierte fotos en una “huella” comparable.
+
+Busca huellas parecidas en casos recientes.
+
+Ajusta el ranking según:
+
+distancia (más cerca = más probable)
+
+tiempo (más reciente = más probable)
+
+atributos (tamaño/color)
+
+Qué evita errores
+
+Si las fotos son malas, baja confianza.
+
+Si el caso es viejo, baja prioridad.
+
+Si es lejos, baja prioridad.
+
+1.4 Mapa + búsqueda (capas y filtros)
+Qué ve el usuario
+
+Un mapa con tres capas:
+
+PERDIDOS (por ejemplo icono rojo)
+
+ENCONTRADOS (icono distinto)
+
+AVISTADOS (icono distinto)
+
+Puede ver:
+
+pines agrupados (cluster) si hay muchos
+
+lista debajo para scrollear rápido
+
+Filtros típicos
+
+radio: 1km / 3km / 5km / 10km
+
+fecha: últimas 24h / 7d / 30d
+
+tamaño: S/M/L
+
+color: principal/secundario
+
+estado: resguardado vs avistado
+
+Privacidad de ENCONTRADO (clave)
+
+Cuando alguien resguarda un perro:
+
+no se muestra punto exacto
+
+se muestra “zona aproximada” (círculo)
+
+El radio lo elige el usuario.
+
+PETTODO recomienda 300m por defecto
+
+el usuario puede subirlo (500m / 1km / etc.)
+
+1.5 Mapas de calor y búsqueda operativa (esto es lo que lo hace útil de verdad)
+1) Heatmap por caso (no heatmap genérico)
+
+El heatmap no es “todos los perros”.
+Es “este perro PERDIDO” y sus avistamientos.
+
+Incluye:
+
+slider: 24h / 7d / 30d
+
+densidad: dónde se repite
+
+2) Zonas probables (clusters A/B/C)
+
+La app detecta zonas repetidas:
+
+Zona A: donde lo vieron más
+
+Zona B: segundo punto recurrente
+
+Zona C: tercero (si existe)
+
+Esto evita que el dueño “corra al azar”.
+
+3) Búsqueda por cuadrantes (modo coordinación)
+
+La app permite:
+
+poner una grilla encima del mapa
+
+marcar cuadrantes como:
+
+“asignado”
+
+“en búsqueda”
+
+“completado”
+
+Esto sirve si hay:
+
+familia
+
+vecinos
+
+voluntarios
+
+4) Avistamiento útil (no “lo vi por ahí”)
+
+Cuando alguien reporta AVISTADO, PETTODO pide:
+
+ubicación exacta
+
+hora exacta (o aproximada)
+
+foto (si puede)
+
+nota rápida:
+
+“iba hacia el norte”
+
+“estaba asustado”
+
+“tenía collar rojo”
+
+Esto alimenta el heatmap y los clusters.
+
+1.6 Difusión (flyer + kit compartir)
+Qué produce la app automáticamente
+
+Flyer PNG para WhatsApp / Instagram
+
+Flyer PDF para imprimir
+
+El flyer contiene:
+
+foto grande
+
+PERDIDO/ENCONTRADO visible
+
+zona + fecha
+
+rasgos clave
+
+QR + link
+
+Kit compartir
+
+copy sugerido
+
+link corto
+
+botón compartir
+
+Por qué esto importa
+La gente comparte más cuando está listo.
+Menos fricción = más difusión.
+
+1.7 Contacto seguro, antiestafa y devolución
+Chat interno (regla base)
+
+El contacto inicial es dentro de PETTODO.
+
+No necesitas dar tu WhatsApp o dirección.
+
+Antiestafa antes de “ENCONTRADO serio”
+
+Para marcar un ENCONTRADO resguardado como real:
+
+PETTODO pide varias fotos obligatorias (ángulos diferentes)
+
+el dueño puede revisar esas fotos
+
+se puede pedir Prueba de vida (foto/video en vivo)
+
+QR como “evidencia fuerte”
+
+Si el perro tiene QR PETTODO en el collar:
+
+es prueba directa de que:
+
+el perro existe
+
+pertenece a un perfil de dueño
+
+reduce muchísimo el fraude
+
+Recompensas (sin pagos en la app)
+
+PETTODO no procesa pagos.
+PETTODO sí permite:
+
+publicar “recompensa ofrecida” (si el dueño decide)
+
+coordinar conversación
+
+Regla estricta
+
+recompensa solo después de entrega
+
+entrega solo en punto seguro aliado
+
+si alguien pide depósito antes: se marca como sospechoso
+
+Devolución solo en puntos seguros aliados
+
+Flujo:
+
+Encontrador propone punto aliado (o el dueño propone)
+
+Se acuerda horario y ventana
+
+Se confirma por chat
+
+Check-in simple en el lugar
+
+1.8 Veterinarias aliadas (sin carga operativa)
+
+Las veterinarias sirven como:
+
+lugares seguros para devolver
+
+“infraestructura de confianza”
+
+Lo que NO se les pide:
+
+crear casos
+
+gestionar chats
+
+operar como central
+
+1.9 Seguimiento y limpieza (ciclo de vida)
+Estados del caso
+
+Activo (visible y con alertas)
+
+En proceso (con conversaciones o acciones)
+
+Resuelto (cerrado)
+
+Pausado por inactividad (no aparece por defecto)
+
+Expirado (solo con filtro)
+
+Archivado (solo búsqueda explícita)
+
+Match activo 10 días
+
+Cuando la IA detecta match fuerte y hay interacción:
+
+Match Activo 10 días
+
+recordatorios día 7 y 9
+
+día 10: match expira (pierde prioridad)
+
+Caso activo 30 días
+
+visible por defecto 30 días
+
+si no hay actividad, pasa a expirado/pausado para no ensuciar el mapa
+
+ÁREA 2 — Identificación Canina (QR + ficha) — ultra detallado
+Objetivo del área
+
+Que cualquier perro con collar pueda volver a casa incluso si:
+
+el dueño aún no reportó perdido
+
+nadie quiere “rescatar”, solo quiere avisar
+
+Qué incluye la ficha
+
+fotos claras
+
+rasgos únicos
+
+instrucciones rápidas (“miedoso”, “no perseguir”, etc.)
+
+zona aproximada del hogar
+
+contacto del dueño (protegido)
+
+Flujo de escaneo QR
+
+Persona escanea QR
+
+Abre ficha del perro
+
+Ve:
+
+“este perro tiene dueño”
+
+instrucciones
+
+Botón “mostrar contacto”
+
+requiere captcha simple
+
+rate limit (anti-scraping)
+
+Botón “lo vi / lo encontré”
+
+reporta ubicación aproximada y hora
+
+manda alerta al dueño
+
+Esto convierte al QR en un “puente” inmediato entre desconocidos sin exponer datos masivamente.
+
+ÁREA 3 — Gestor de Mascotas (vida diaria) — ultra detallado
+Objetivo del área
+
+Que el dueño tenga un “centro de control” de su mascota, y que esos datos:
+
+alimenten el QR
+
+alimenten el matching
+
+permitan reportar perdido con 1 click
+
+Módulos internos
+3.1 Perfil completo de mascota
+
+fotos buenas (las mejores fotos que tendrá la app para matching)
+
+rasgos únicos
+
+información de identificación (chip, placa, etc.)
+
+documentos (carnet, certificados)
+
+3.2 Alimentación y rutina
+
+horario de comida
+
+porciones
+
+checklist diario:
+
+“comió”
+
+“tomó agua”
+
+“paseó”
+
+notas: cambios, reacciones, etc.
+
+3.3 Vacunas
+
+calendario recomendado (según configuración)
+
+historial de vacunas
+
+recordatorios
+
+3.4 Recordatorios y calendario del usuario
+
+Dos opciones:
+
+recordatorios dentro de la app
+
+“agregar al calendario” (Google/Apple)
+
+3.5 Botón de emergencia
+
+“Reportar perdido” desde la ficha:
+
+crea caso PERDIDO ya con fotos/rasgos cargados
+
+reduce el tiempo crítico
+
+ÁREA 4 — Educación y Asistente IA (curado) — ultra detallado
+Objetivo del área
+
+Dar ayuda confiable:
+
+en emergencia (qué hacer hoy)
+
+en vida diaria (cuidado, entrenamiento)
+sin dar consejos peligrosos ni reemplazar veterinario.
+
+Componentes
+4.1 Biblioteca curada
+
+Artículos estructurados y claros:
+
+“qué hacer si se perdió”
+
+prevención
+
+entrenamiento seguro
+
+cuidado general
+
+4.2 Asistente IA con límites
+
+responde con base curada
+
+cuando es tema médico/riesgoso:
+
+recomienda veterinario
+
+evita instrucciones peligrosas
+
+4.3 Guía por imagen/video (práctica)
+
+En vez de diagnosticar:
+
+ayuda con cosas operativas:
+
+“cómo sacar mejores fotos”
+
+“cómo poner arnés”
+
+“cómo leer una placa”
+
+y si detecta riesgo: deriva
+
+ÁREA 5 — Comunidades y Eventos (masivo) — ultra detallado
+Objetivo del área
+
+Crear “vida” alrededor de mascotas:
+
+comunidades por zona/interés
+
+eventos masivos reales
+
+notificaciones útiles
+y al mismo tiempo:
+
+evitar spam, phishing y eventos falsos
+
+5.1 Comunidades
+Creación
+
+Solo usuarios verificados (SMS) pueden crear comunidad.
+
+Roles
+
+Miembro: participa
+
+Moderador: administra reglas, elimina spam
+
+Organizador: puede publicar anuncios/eventos dentro de esa comunidad
+
+Funciones típicas
+
+posts
+
+comentarios
+
+avisos importantes
+
+calendario comunitario (si aplica)
+
+reportar contenido
+
+5.2 Moderación automática por IA
+
+La IA revisa:
+
+spam repetitivo
+
+phishing/enlaces peligrosos
+
+contenido ilegal o riesgoso
+
+Acciones:
+
+cuarentena automática
+
+aviso a moderadores
+
+strikes al usuario
+
+Los moderadores hacen la decisión final cuando hay dudas.
+
+5.3 Eventos masivos (distintos a play dates)
+Qué es un evento masivo
+
+caminata comunitaria
+
+carrera
+
+campaña ciudadana
+
+feria, etc.
+
+Sistema de confianza: Tick IA + Tick Comunidad
+
+Tick IA
+
+valida coherencia:
+
+fecha/hora/lugar
+
+fuente real y consistente
+
+contactos y páginas con señales de confianza
+
+PETTODO siempre muestra la fuente exacta para que el usuario la verifique
+
+Tick Comunidad (ponderado)
+No es “conteo simple”.
+Pesa más si confirma:
+
+usuario verificado
+
+usuario con antigüedad
+
+usuario con reputación alta
+
+Mientras más confirmaciones confiables, más “real” se ve.
+
+Organizador oficial (si representa organización)
+
+Si alguien publica como organización/encargado:
+
+requiere verificación estricta (SMS + ID + selfie)
+
+sus eventos pueden aparecer como “organizador verificado”
+
+ÁREA 6 — Perros Comunitarios (callejeros) — ultra detallado
+Objetivo del área
+
+Mapear perros de barrio sin confundirlos con emergencias.
+
+Reducir falsos positivos (gente creyendo que “encontró” un perro que en realidad vive ahí).
+
+Coordinar ayuda cuando un comunitario está herido o en necesidad.
+
+Manejar disputas (“ese comunitario es mi perro perdido”) con cuidado.
+
+Componentes
+6.1 Registro comunitario
+
+Un usuario crea ficha del perro comunitario:
+
+fotos 2–5
+
+zona habitual (centro + radio)
+
+rasgos, tamaño, temperamento
+
+estado físico
+
+flags: herido/flaco/agresivo
+
+6.2 Avistamientos “lo vi hoy”
+
+Otros usuarios pueden registrar:
+
+ubicación + hora
+
+foto opcional
+
+nota (“cojea”, “tiene collar”, etc.)
+Esto crea un timeline y patrones reales.
+
+6.3 Deduplicación
+
+La IA sugiere si:
+
+ya existe un comunitario igual cerca
+
+para evitar 10 fichas del mismo perro
+
+6.4 Integración con emergencia
+
+Si alguien reporta ENCONTRADO y coincide fuerte con comunitario:
+
+la app lo avisa como “probable comunitario”
+
+reduce notificaciones innecesarias
+
+6.5 Disputa de propiedad
+
+Si alguien reclama “es mi perro”:
+
+se abre estado “en disputa”
+
+pide evidencia (fotos antiguas, rasgos)
+
+contacto seguro (sin exponer domicilios)
+
+si se valida: se enlaza a un caso PERDIDO
+
+6.6 Visibilidad
+
+comunitarios siempre con prioridad visual menor
+
+no deben tapar emergencias
+
+ÁREA 7 — Paseadores Verificados — ultra detallado
+Objetivo del área
+
+Conectar dueños con paseadores confiables.
+Sin procesar pagos en la app; solo coordinación.
+Seguridad alta porque hay riesgo real (personas, domicilios, perros).
+
+Componentes
+7.1 Perfil del paseador
+
+Incluye:
+
+zonas de servicio (mapa + radio)
+
+disponibilidad (agenda)
+
+tamaños aceptados
+
+tipo de servicio:
+
+individual
+
+grupal
+
+visita
+
+tarifas referenciales
+
+reglas (correa/bozal, etc.)
+
+experiencia/certificados (opcional)
+
+7.2 Verificación estricta
+
+Para aparecer públicamente:
+
+SMS + ID + selfie
+Estados:
+
+en revisión
+
+verificado
+
+suspendido
+
+7.3 Flujo de solicitud
+
+Dueño elige paseador
+
+Envía solicitud:
+
+zona aproximada
+
+horario
+
+detalles del perro (reactivo, tamaño, etc.)
+
+Paseador acepta/rechaza
+
+Si acepta:
+
+chat habilitado
+
+coordinación de punto/hora
+
+7.4 Sesiones y reputación
+
+reseñas solo si hubo sesión real
+
+métricas: puntualidad, cancelaciones, reportes
+
+7.5 Incidentes y strikes
+
+reportes de conducta
+
+strikes acumulables
+
+incidentes graves → suspensión inmediata
+
+7.6 Seguridad adicional recomendada
+
+opción “primer encuentro en punto seguro”
+
+límites para cuentas nuevas (no tomar 20 clientes día 1)
+
+ÁREA 8 — Play Dates (usuario a usuario) — ultra detallado
+Objetivo del área
+
+Encuentros pequeños entre dueños (1 a 1 o grupos chicos) para socialización.
+No es evento masivo.
+Debe ser simple, seguro y compatible.
+
+Componentes
+8.1 Perfil del perro para compatibilidad
+
+tamaño/edad
+
+temperamento
+
+reactividad
+
+sociabilidad
+
+estilo de juego
+
+notas (miedo a motos, etc.)
+
+vacunas (si el usuario decide compartir)
+
+8.2 Crear play date
+
+El usuario define:
+
+lugar público
+
+fecha/hora
+
+cupos (1 a 1 o pequeño grupo)
+
+requisitos (tamaño/reactividad, etc.)
+
+modo:
+
+abierto
+
+con aprobación
+
+8.3 Participación y verificación
+
+base: SMS
+
+si hay señales de riesgo o abuso, puede escalar a verificación estricta
+
+8.4 Seguridad y reputación
+
+checklist previo
+
+reportar incidente
+
+bloquear usuarios
+
+reputación por participación sana
+
+
+
+GOAL (WHAT TO DO NOW)
+Convert the UI prototype into a “functional local-first demo” that actually works inside Replit WITHOUT backend complexity:
+- Add real client-side persistence (localStorage) for key entities (cases, pets, sightings, care logs, basic user verification state).
+- Add real QR generation for pet profiles + show the QR in QR screens and in the flyer (no placeholder).
+- Replace map placeholders in the most important screens with a working map (Leaflet + OpenStreetMap) for pins + privacy radius circles (keep it simple; no full heatmap unless trivial).
+- Keep “AI matching” as a deterministic demo algorithm (no real ML): rank by distance + recency + simple attribute similarity; show reasons.
+
+DELIVERABLES (MUST SHIP IN THIS RUN)
+1) IMPLEMENTATION
+   A. Local-first data layer:
+      - Create a typed storage module (e.g., src/app/data/storage.ts) that:
+        - defines schemas/types for: Pet, Case (Lost/Found/Sighted), Sighting, CareLog, UserVerificationState
+        - loads/saves to localStorage
+        - supports seed demo data + reset
+      - Wire AppContext (or the relevant store) to read/write from this storage so data persists after refresh.
+
+   B. Real QR generation:
+      - Use a lightweight QR library (React-friendly).
+      - Generate a QR representing a stable URL/route in the app (e.g., /qr/public/:petId).
+      - Replace QR placeholders in QR screens and flyer preview with the real QR image.
+
+   C. Working maps (minimum viable):
+      - Use Leaflet with OSM tiles.
+      - Implement:
+        - A reusable Map component that supports pins for cases + optional radius circle (for Found privacy).
+        - Use it in the most visible Emergency map/list screens and Found privacy screen.
+      - Keep existing UI layout; just swap placeholder map internals.
+
+   D. Matching (deterministic demo):
+      - Implement a pure function that ranks matches using:
+        - distance (if coordinates exist)
+        - time recency
+        - size/color/traits overlap (from existing fields)
+      - Output “reasons” strings already used in UI.
+
+2) DOCUMENTATION UPDATES (REQUIRED)
+   - Append a new section to docs/EXECUTION_LOG.md:
+     - Run Date: today
+     - Iteration 9 — Local-first Functionality (Replit)
+     - Bullet what changed (persistence, QR, maps, matching)
+     - Note any limitations (e.g., localStorage size, no backend)
+   - If you find any Replit limits relevant, add docs/REPLIT_LIMITS.md (short bullets, official-source summary only).
+
+3) QA / SAFETY CHECK (REQUIRED)
+   - Update docs/QA_SELFCHECK.md with checks that confirm:
+     - refresh persistence works
+     - QR renders and routes open
+     - map renders and pins show
+     - Emergency/Daily switch still works
+
+4) GIT HYGIENE (REQUIRED)
+   - Work in small commits:
+     - “feat: local-first storage + seed/reset”
+     - “feat: real QR generation for pets + flyer”
+     - “feat: leaflet maps for emergency + found privacy”
+     - “feat: deterministic match ranking”
+     - “docs: execution log + selfcheck”
+   - Use the Replit Git panel to Push to origin/main when finished.
+
+PROCESS (HOW YOU MUST WORK)
+Step 0 — Baseline check
+- Run the app and click through the key flows to confirm nothing is broken before changes.
+
+Step 1 — Plan (short)
+- Output a 10–15 line plan listing exactly what you will implement in this run (only the deliverables above).
+
+Step 2 — Implement incrementally
+- After each major part (storage / QR / map / matching), run a quick smoke test and commit.
+
+Step 3 — Update docs
+- Append Iteration 9 in Execution Log and update QA selfcheck.
+
+Step 4 — Final verification
+- Confirm:
+  - No route broken
+  - No console errors
+  - Refresh keeps key data
+  - QR works
+  - Maps render
+
+STOP CONDITIONS (SO YOU DON’T WASTE CREDITS)
+- If any step risks breaking the router/navigation: STOP and propose the smallest alternative.
+- If a dependency is heavy or causes build issues: STOP and propose a lighter option.
+- If time/effort expands beyond the MVP deliverables: STOP after completing at least storage + QR + docs.
+
+NOW START:
+1) Read docs/EXECUTION_LOG.md and docs/QA_SELFCHECK.md.
+2) Inspect current AppContext/state + where demoData.ts is used.
+3) Print your short plan.
+4) Begin Step 2.

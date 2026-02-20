@@ -7,8 +7,10 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { StatusChip, FreshnessBadge, ConfidenceBadge, MatchReasonTag, DirectionChip } from '../../components/pettodo/Badges';
 import { useNavigate } from 'react-router';
-import { Layers, Filter, MapPin, Camera, Clock, MessageSquare, Flag, AlertTriangle, Eye } from 'lucide-react';
+import { Layers, MapPin, Clock, MessageSquare, Flag, AlertTriangle, Eye } from 'lucide-react';
 import { LOST_CASE, MATCHES, LUNA } from '../../data/demoData';
+import { useApp } from '../../context/AppContext';
+import { rankMatches } from '../../utils/matching';
 
 // EMG_14
 export function EMG_14() {
@@ -99,6 +101,18 @@ export function EMG_15() {
 // EMG_16
 export function EMG_16() {
   const nav = useNavigate();
+  const { store } = useApp();
+  const lostCase = store.cases.find(c => c.type === 'lost' && c.status === 'active') ?? store.cases[0];
+  const ranked = rankMatches(lostCase, store.cases);
+  const displayMatches = ranked.length > 0 ? ranked.map((r, i) => ({
+    id: i + 1,
+    confidence: r.confidence,
+    reasons: r.reasons,
+    location: r.case.location,
+    time: r.case.time,
+    status: r.case.type as 'found' | 'sighted',
+  })) : MATCHES;
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_16_MatchingIA_Top10" />
@@ -106,10 +120,10 @@ export function EMG_16() {
       <div className="flex-1 p-4 flex flex-col gap-3">
         <Banner type="warning" text="Possible match (AI doesn't confirm)" />
         <h3 className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Top matches for Luna</h3>
-        <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Ranked by AI confidence. Tap to compare side by side.</p>
+        <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Ranked by distance, recency, and traits. Tap to compare.</p>
 
         <div className="flex flex-col gap-2">
-          {MATCHES.map((m) => (
+          {displayMatches.map((m) => (
             <MatchCard key={m.id} {...m} onClick={() => nav('/emg/matching-compare')} />
           ))}
         </div>

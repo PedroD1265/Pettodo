@@ -157,6 +157,53 @@ February 19, 2026
   - Added "Calendar" button to `EVT_02` (Event Detail) and `PD_05` (Play Date Detail).
   - Implemented modal with "Google Calendar" and "Download .ics" options.
 
+### Iteration 9 — Local-first Functionality (Replit)
+
+**Run Date:** February 20, 2026
+
+#### A. Local-first Data Layer (`src/app/data/storage.ts`)
+- Created typed schemas: `Pet`, `Case`, `Sighting`, `CareLog`, `UserVerificationState`, `EntityStore`
+- Implemented `loadEntityStore()`, `saveEntityStore()`, `resetEntityStore()`, `generateId()` using `localStorage` key `pettodo_entities_v1`
+- Seeded demo data: Luna's pet profile, lost case (Central Park coords), 2 sightings, 3 found/sighted cases for matching
+- Extended `AppContext` with `store`, `addPet`, `addCase`, `addSighting`, `addCareLog`, `resetStore` — all auto-save to localStorage on change
+
+#### B. Real QR Generation
+- Installed `qrcode.react@4.2.0`
+- Replaced `QrCode` icon placeholders with `<QRCodeSVG>` in:
+  - `FlyerShareKit.tsx` — flyer preview now includes a real scannable QR (points to `pettodo.app/case/CASE-2026-0219`)
+  - `QRH_01` (QR Hub main screen) — 168px real QR for Luna (`pettodo.app/pet/pet-luna-001`)
+  - `QRH_04` (Share & Download) — 136px real QR
+
+#### C. Working Maps (Leaflet + OpenStreetMap)
+- Installed `leaflet@1.9.4`, `react-leaflet@4.2.1` (React 18 compatible), `@types/leaflet`
+- Added Leaflet CSS import to `src/styles/index.css`
+- Created `PettodoMap` component in `MapComponents.tsx`:
+  - `MapContainer` + OpenStreetMap tiles + `RecenterMap` helper
+  - Emoji-based custom `DivIcon` per pin type (📍 lost, ✅ found, 👁️ sighted, 🏥 safe)
+  - Popup on click with label + time + privacy note
+  - Optional `Circle` for found-privacy radius (dashed, 8% opacity)
+- `MapPlaceholder` is now a backward-compatible wrapper around `PettodoMap`
+- Automatically applies to all 7 screens that import `MapPlaceholder` (EMG_03, EMG_08-13, EMG_14-20, EMG_21-25, EMG_26-31, CMT, SRV)
+
+#### D. Deterministic Match Ranking (`src/app/utils/matching.ts`)
+- Pure function `rankMatches(lostCase, candidates)` scores matches by:
+  - **Distance** (Haversine formula, 30 pts max for <0.5 km)
+  - **Recency** (30 pts max for <2 hours)
+  - **Size match** (20 pts)
+  - **Color overlap** (10 pts per shared color)
+  - **Trait overlap** (5 pts per shared trait)
+- Outputs `reasons[]` strings: "near your area", "very recent sighting", "similar size", "similar color", "matching feature"
+- Confidence capped at 95% (honest uncertainty)
+- Wired into `EMG_16` — pulls live cases from `store`, falls back to static MATCHES if none
+
+#### Limitations
+- localStorage max ~5MB; no real image storage (emoji placeholders)
+- QR codes point to demo URLs (not live)
+- Map tiles require internet (no offline cache)
+- Matching is deterministic; no real image ML
+
+---
+
 ### Iteration 8 — Emergency Navigation Fix + Case Actions
 - **Navigation (AppBar.tsx)**:
   - Updated back button logic to prefer `navigate(-1)` (history back).

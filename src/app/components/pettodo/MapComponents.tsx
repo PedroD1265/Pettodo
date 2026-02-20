@@ -1,5 +1,166 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, Eye, Heart, Cross } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix Leaflet's default icon path issue with bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const LOST_ICON = new L.DivIcon({
+  className: '',
+  html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">📍</div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 24],
+});
+
+const FOUND_ICON = new L.DivIcon({
+  className: '',
+  html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">✅</div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 24],
+});
+
+const SIGHTED_ICON = new L.DivIcon({
+  className: '',
+  html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">👁️</div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 24],
+});
+
+const SAFE_ICON = new L.DivIcon({
+  className: '',
+  html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">🏥</div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 24],
+});
+
+function iconFor(type: string) {
+  if (type === 'lost') return LOST_ICON;
+  if (type === 'found') return FOUND_ICON;
+  if (type === 'sighted') return SIGHTED_ICON;
+  return SAFE_ICON;
+}
+
+export interface PettodoPin {
+  id: string;
+  lat: number;
+  lng: number;
+  type: 'lost' | 'found' | 'sighted' | 'safe';
+  label: string;
+  time?: string;
+  privacyRadius?: number;
+}
+
+function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  React.useEffect(() => {
+    map.setView([lat, lng]);
+  }, [lat, lng, map]);
+  return null;
+}
+
+export interface PettodoMapProps {
+  height?: number;
+  centerLat?: number;
+  centerLng?: number;
+  zoom?: number;
+  pins?: PettodoPin[];
+  showPrivacyCircle?: boolean;
+  privacyRadius?: number;
+}
+
+export function PettodoMap({
+  height = 220,
+  centerLat = 40.7741,
+  centerLng = -73.9715,
+  zoom = 14,
+  pins = [],
+  showPrivacyCircle = false,
+  privacyRadius = 300,
+}: PettodoMapProps) {
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ height, border: '1px solid var(--gray-200)', position: 'relative', zIndex: 0 }}
+    >
+      <MapContainer
+        center={[centerLat, centerLng]}
+        zoom={zoom}
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <RecenterMap lat={centerLat} lng={centerLng} />
+        {pins.map(pin => (
+          <React.Fragment key={pin.id}>
+            <Marker position={[pin.lat, pin.lng]} icon={iconFor(pin.type)}>
+              <Popup>
+                <strong>{pin.label}</strong>
+                {pin.time && <><br />{pin.time}</>}
+                {pin.type === 'found' && (
+                  <><br /><span style={{ fontSize: 11, color: '#888' }}>Approximate area only</span></>
+                )}
+              </Popup>
+            </Marker>
+            {pin.type === 'found' && pin.privacyRadius && (
+              <Circle
+                center={[pin.lat, pin.lng]}
+                radius={pin.privacyRadius}
+                pathOptions={{ color: '#16a34a', fillColor: '#16a34a', fillOpacity: 0.08, dashArray: '6 4' }}
+              />
+            )}
+          </React.Fragment>
+        ))}
+        {showPrivacyCircle && (
+          <Circle
+            center={[centerLat, centerLng]}
+            radius={privacyRadius}
+            pathOptions={{ color: '#dc2626', fillColor: '#dc2626', fillOpacity: 0.08, dashArray: '6 4' }}
+          />
+        )}
+      </MapContainer>
+    </div>
+  );
+}
+
+const DEMO_PINS: PettodoPin[] = [
+  { id: 'lost-luna', lat: 40.7741, lng: -73.9715, type: 'lost', label: 'Luna — Lost', time: 'Today 6:30 PM' },
+  { id: 'found-1', lat: 40.7751, lng: -73.9705, type: 'found', label: 'Dog Found', time: '2 hours ago', privacyRadius: 300 },
+  { id: 'sighted-1', lat: 40.7820, lng: -73.9715, type: 'sighted', label: 'Dog Sighted', time: '5 hours ago' },
+  { id: 'safe-1', lat: 40.7730, lng: -73.9650, type: 'safe', label: 'San Martín Vet (Safe Point)' },
+];
+
+export function MapPlaceholder({ children, height = 220, pins, centerLat, centerLng, zoom, showPrivacyCircle, privacyRadius }: {
+  children?: React.ReactNode;
+  height?: number;
+  pins?: PettodoPin[];
+  centerLat?: number;
+  centerLng?: number;
+  zoom?: number;
+  showPrivacyCircle?: boolean;
+  privacyRadius?: number;
+}) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <PettodoMap
+        height={height}
+        centerLat={centerLat ?? 40.7741}
+        centerLng={centerLng ?? -73.9715}
+        zoom={zoom ?? 14}
+        pins={pins ?? DEMO_PINS}
+        showPrivacyCircle={showPrivacyCircle}
+        privacyRadius={privacyRadius}
+      />
+      {children}
+    </div>
+  );
+}
 
 const PIN_TYPES = [
   { icon: '📍', color: 'var(--red-primary)', label: 'Lost', desc: 'Dog reported lost' },
@@ -37,28 +198,6 @@ export function MapLegend() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-export function MapPlaceholder({ children, height = 220 }: { children?: React.ReactNode; height?: number }) {
-  return (
-    <div
-      className="relative rounded-xl overflow-hidden flex items-center justify-center"
-      style={{ background: 'var(--green-bg)', height, border: '1px solid var(--gray-200)' }}
-    >
-      <div className="absolute inset-0 flex items-center justify-center opacity-20">
-        <MapPin size={64} style={{ color: 'var(--gray-400)' }} />
-      </div>
-      {/* Simulated pins */}
-      <div className="absolute top-1/3 left-1/3 text-lg">📍</div>
-      <div className="absolute top-1/2 right-1/3 text-lg">✅</div>
-      <div className="absolute bottom-1/3 left-1/2 text-sm">👁️</div>
-      <div className="absolute top-1/4 right-1/4 text-xs opacity-60">🐕</div>
-      <div className="absolute bottom-1/4 left-1/4 text-sm">🏥</div>
-      {/* Approximate circle */}
-      <div className="absolute w-32 h-32 rounded-full border-2 border-dashed opacity-40" style={{ borderColor: 'var(--red-primary)', background: 'rgba(220,38,38,0.05)' }} />
-      {children}
     </div>
   );
 }

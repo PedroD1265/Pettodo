@@ -5,8 +5,9 @@ import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate } from 'react-router';
 import { LUNA } from '../../data/demoData';
-import { QrCode, Download, Share2, Printer, Shield, Eye, Lock, AlertTriangle, Copy, Facebook, Instagram, MessageCircle } from 'lucide-react';
+import { Download, Share2, Printer, Shield, Eye, Lock, AlertTriangle, Copy, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 
 // QRH_01
 export function QRH_01() {
@@ -19,8 +20,8 @@ export function QRH_01() {
         <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Luna's QR Tag</h3>
         <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>Anyone who scans this code can see Luna's public profile and help her get home.</p>
 
-        <div className="w-48 h-48 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '2px solid var(--gray-200)' }}>
-          <QrCode size={100} style={{ color: 'var(--gray-900)' }} />
+        <div className="w-48 h-48 rounded-2xl flex items-center justify-center p-3" style={{ background: 'var(--white)', border: '2px solid var(--gray-200)' }}>
+          <QRCodeSVG value="https://pettodo.app/pet/pet-luna-001" size={168} level="M" />
         </div>
 
         <div className="flex gap-2 w-full">
@@ -145,8 +146,8 @@ https://pettodo.app/qr/LUNA123`;
       <AppBar title="Share & Download" showBack backTo="/qr/hub" />
       <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
         <div className="flex flex-col items-center gap-2">
-           <div className="w-40 h-40 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gray-100)' }}>
-             <QrCode size={80} style={{ color: 'var(--gray-900)' }} />
+           <div className="w-40 h-40 rounded-2xl flex items-center justify-center p-2" style={{ background: 'var(--white)', border: '2px solid var(--gray-200)' }}>
+             <QRCodeSVG value="https://pettodo.app/pet/pet-luna-001" size={136} level="M" />
            </div>
            <p className="text-[11px] text-center px-3 py-1.5 rounded-lg" style={{ background: 'var(--gray-100)', color: 'var(--gray-500)' }}>
              Anti-scrape note: Contact info requires captcha verification

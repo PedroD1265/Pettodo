@@ -4,8 +4,11 @@ import { Btn } from './Buttons';
 import { Banner } from './Banners';
 import { Modal } from './Modals';
 import { toast } from 'sonner';
-import { Image, FileText, Download, Share2, Copy, Link, Shield, QrCode, X } from 'lucide-react';
+import { Image, FileText, Download, Share2, Copy, Link, Shield, X } from 'lucide-react';
 import { downloadFlyerPNG, downloadFlyerPDF } from '../../utils/flyerDownload';
+import { QRCodeSVG } from 'qrcode.react';
+
+const QR_URL = `https://pettodo.app/case/${LOST_CASE.id}`;
 
 export const FlyerPreview = React.forwardRef<HTMLDivElement, { type?: 'lost' | 'found' }>(
   ({ type = 'lost' }, ref) => {
@@ -59,10 +62,10 @@ export const FlyerPreview = React.forwardRef<HTMLDivElement, { type?: 'lost' | '
           </p>
         </div>
 
-        {/* QR */}
+        {/* Real QR Code */}
         <div className="flex flex-col items-center gap-1">
-          <div className="w-24 h-24 rounded-xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
-            <QrCode size={48} style={{ color: 'var(--gray-400)' }} />
+          <div className="w-24 h-24 rounded-xl flex items-center justify-center p-2" style={{ background: 'var(--white)', border: '1px solid var(--gray-200)' }}>
+            <QRCodeSVG value={QR_URL} size={80} level="M" />
           </div>
           <p className="text-[10px]" style={{ color: 'var(--gray-400)' }}>Scan to report a sighting</p>
           <p className="text-[11px]" style={{ color: 'var(--info)', fontWeight: 500 }}>pettodo.app/case/{LOST_CASE.id}</p>

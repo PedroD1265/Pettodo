@@ -156,3 +156,18 @@
 - [x] HOM_02 has Quick actions to EMG_07 and EMG_16
 - [x] EMG_07 has "Back to Report Published" link
 
+## Iteration 9 Checks — Local-first Functionality
+- [x] App refresh keeps mode, verificationLevel, hasActiveCase, caseClaimed (existing persistence)
+- [x] Entity store (pets/cases/sightings/careLogs) loads from localStorage on mount
+- [x] Entity store auto-saves on every add operation
+- [x] QRH_01 (QR Hub) shows a real scannable QR code (not a placeholder icon)
+- [x] FlyerShareKit (EMG_07) flyer preview shows real QR code
+- [x] QRH_04 (Share & Download) shows real QR code
+- [x] EMG_14 (Search Map) renders real Leaflet/OpenStreetMap tiles with emoji pins
+- [x] EMG_15 (Pin Detail) renders real Leaflet map
+- [x] All MapPlaceholder usages automatically upgraded to real Leaflet maps
+- [x] EMG_16 (AI Matches) uses deterministic ranking (distance + recency + size + color + traits)
+- [x] Match confidence scores are calculated from real store data (not hardcoded)
+- [x] Emergency/Daily mode switch still works
+- [x] All pre-existing routes remain functional
+
