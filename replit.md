@@ -31,7 +31,7 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `HOM_04.tsx`: real notifications from store with filter tabs (All/Emergency/Daily) + read/unread states
   - `DLY_screens.tsx`: DLY_02 Add Pet modal form (real); DLY_04 file upload → storageDemo → addDocument
   - `EMG_21_to_25.tsx`: EMG_23 real chat with controlled input, send, 1.2s auto-reply, scroll-to-bottom
-  - `SRV_screens.tsx`: SRV_01 category tabs (Walkers/Grooming/Daycare/Training) filtering store.providers
+  - `SRV_screens.tsx`: SRV_01 category tabs (Walkers/Grooming/Daycare/Training) filtering store.providers; SRV_02-09 fully dynamic — provider lookup via ?id= param, category-aware forms/labels/rules/incidents, providerId propagation through location state chain
   - `docs/INTEGRATIONS.md`: 6 providers, security rules, migration checklist
 - 2026-02-20: Iteration 9 — Local-first Functionality
   - `src/app/data/storage.ts`: typed entity store (Pet, Case, Sighting, CareLog) with localStorage persistence + seed demo data
