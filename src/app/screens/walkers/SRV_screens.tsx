@@ -144,7 +144,7 @@ export function SRV_01() {
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="SRV_01_WalkerMarketplace_MapListFilters" />
-      <AppBar title={CAT_TITLES[cat] ?? 'Services'} showBack />
+      <AppBar title={CAT_TITLES[cat] ?? 'Services'} showBack backTo="/home-daily" />
       <div className="flex-1 flex flex-col">
 
         <div className="flex px-4 py-2 gap-1.5 overflow-x-auto" style={{ borderBottom: '1px solid var(--gray-200)' }}>
