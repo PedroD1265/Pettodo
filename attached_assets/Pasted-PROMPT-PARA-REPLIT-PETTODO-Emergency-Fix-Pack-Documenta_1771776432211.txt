@@ -1,0 +1,137 @@
+PROMPT PARA REPLIT — PETTODO (Emergency Fix Pack + Documentation Update)
+
+Contexto
+- PETTODO es una app React + TypeScript + Vite, con documentación viva en:
+  - docs/EXECUTION_LOG.md
+  - docs/QA_SELFCHECK.md
+  - docs/INTERACTION_AUDIT.md
+- Tooling ya está resuelto (build OK, preview OK). NO tocar ese scope.
+- Objetivo: aplicar fixes de confiabilidad/validación en flujos críticos (Emergency first) y documentar la iteración con exactitud.
+
+Objetivo general (2 líneas)
+Corregir issues vigentes P0/P1 sin introducir features nuevas ni breaking changes.
+Actualizar docs para reflejar exactamente el comportamiento real y dejar trazabilidad de la iteración.
+
+---------------------------------------
+A) CAMBIOS DE CÓDIGO (prioridad)
+---------------------------------------
+
+P0 (crítico)
+
+1) Fix: Deep link roto en notificación (/emg/matches)
+- Archivo: src/app/data/storage.ts
+- Problema: notif-001 usa linkTo '/emg/matches' pero la ruta no existe; existe '/emg/matching-top10'.
+- Cambio:
+  - Cambiar notif-001.linkTo de '/emg/matches' a '/emg/matching-top10'
+- Criterio de aceptación:
+  - HOM_04 (Notifications): tap en “New sighting near Luna” navega a pantalla válida (matching).
+
+2) Fix: resetStore() debe limpiar persistencia REAL (no solo recargar)
+- Archivo: src/app/context/AppContext.tsx
+- Evidencia: existe resetEntityStore() en src/app/data/storage.ts pero resetStore() usa loadEntityStore().
+- Cambio:
+  - En resetStore() llamar resetEntityStore() para borrar localStorage y resembrar seed.
+  - Sincronizar estado React del store con el resultado reseteado (setStore).
+- Criterio de aceptación:
+  - Crear dato (sighting/document/chat) → Reset Demo → Reload → vuelve a seed, sin residuos.
+
+3) Fix: EMG_02 debe exigir mínimo 1 foto antes de avanzar
+- Archivo: src/app/screens/emergency/EMG_02.tsx
+- Problema: copy dice requerido, pero “Next: Location” siempre navega.
+- Cambio:
+  - CTA “Next: Location” debe estar disabled cuando !hasPhotos.
+  - Mantener el mensaje “Better photos improve match accuracy” y el aviso de requisito.
+- Criterio de aceptación:
+  - Sin fotos: no avanza.
+  - Con >=1 foto: avanza.
+
+P1 (importante)
+
+4) Fix: QRP_03 validación condicional por tipo (found/sighted)
+- Archivo: src/app/screens/qr-public/QRP_screens.tsx (QRP_03)
+- Problema: handleSubmit valida solo reportType y permite envíos sin campos mínimos.
+- Reglas mínimas:
+  - reportType = found: phone + location obligatorios
+  - reportType = sighted: location obligatorio
+- Implementación:
+  - Agregar estado de errores por campo (ej. phoneError/locationError).
+  - Si falla: NO llamar addSighting() / no avanzar; mostrar error inline + toast resumen.
+  - Si pasa: mantener payload, confirmación y redirect actuales.
+- Criterio de aceptación:
+  - Found sin phone/location: bloquea envío y muestra errores.
+  - Sighted sin location: bloquea envío y muestra errores.
+  - Datos válidos: envía igual que antes.
+
+P2 (solo si es seguro y rápido)
+5) Optional: evitar regresión de rutas hardcoded
+- Si es rápido:
+  - Crear constantes de rutas (ej. src/app/routes/constants.ts) y usarlo al menos en notif-001.
+- NO hacer refactor masivo.
+
+---------------------------------------
+B) PRUEBAS MÍNIMAS (obligatorias)
+---------------------------------------
+
+1) Build:
+- Ejecutar `npm run build` y confirmar exit 0.
+
+2) Smoke manual (documentar resultados):
+- HOM_04: tap en “New sighting near Luna” → abre /emg/matching-top10.
+- Reset Demo: crear un dato → reset → reload → store vuelve a seed (sin residuos).
+- EMG_02: sin fotos no avanza; con 1 foto avanza.
+- QRP_03: validaciones found/sighted se cumplen (bloquea y muestra errores cuando faltan campos).
+
+---------------------------------------
+C) DOCUMENTACIÓN (obligatorio, estilo existente)
+---------------------------------------
+
+Actualizar/añadir documentación en el MISMO estilo y nivel de detalle de los docs actuales.
+
+1) docs/EXECUTION_LOG.md
+- Agregar una nueva sección al final:
+
+Iteration 13 — Emergency Fix Pack (Deep Links + Reset + Validation)
+Run Date: February 22, 2026
+
+Incluir:
+- Objetivo general (1 párrafo).
+- Cambios por archivo:
+  - storage.ts: notif-001 linkTo corregido
+  - AppContext.tsx: resetStore usa resetEntityStore (limpia persistencia real)
+  - EMG_02.tsx: gate de foto mínima (disabled Next)
+  - QRP_screens.tsx: validación condicional found/sighted
+- “Key Decisions” si aplica (ej. “gate temprano en EMG_02 para data quality”).
+- “Known Limits” (ej. “validación solo mínima; no normalización E.164 por ahora” si es verdad).
+
+2) docs/QA_SELFCHECK.md
+- Actualizar checklist donde corresponda para reflejar comportamiento real:
+  - Public QR (QRP_03): ahora found exige phone+location, sighted exige location.
+  - LOST flow: EMG_02 now blocks Next without photo.
+- Agregar 2-4 bullets bajo “Iteration 13 Checks” (nuevo bloque al final) con verificación explícita.
+
+3) docs/INTERACTION_AUDIT.md
+- Añadir entradas nuevas o actualizar las existentes para reflejar:
+  - HOM_04 notification tap navega a ruta válida (match screen).
+  - QRP_03 Submit Report ahora bloquea si faltan campos mínimos según reportType (y muestra errores inline + toast).
+  - EMG_02 Next ahora se bloquea sin foto (no es “dead interaction”, es “guarded interaction”).
+
+IMPORTANTE (regla de exactitud):
+- Todo lo que se documente debe coincidir con el código real.
+- Si un campo queda opcional en código, NO declararlo como requerido en docs.
+
+---------------------------------------
+D) ENTREGA REQUERIDA EN LA RESPUESTA
+---------------------------------------
+En tu respuesta final devuelve:
+
+1) Resumen de cambios (bullet list).
+2) Lista de archivos tocados (paths exactos).
+3) Resultado de `npm run build` (OK o error).
+4) Smoke tests: pasos + resultado (OK/FAIL).
+5) Documentación: qué se actualizó en cada doc (EXECUTION_LOG / QA_SELFCHECK / INTERACTION_AUDIT).
+
+Reglas estrictas
+- Emergency first.
+- No inventar features.
+- Evitar breaking changes.
+- Mantener la arquitectura demo/integration existente.

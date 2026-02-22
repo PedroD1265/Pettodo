@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { INITIAL_COMMUNITY_DOG_SIGHTINGS, INITIAL_COMMUNITY_DOG_CARE_RECORDS } from '../data/demoData';
 import { loadPersistedState, savePersistedState } from '../utils/localStorage';
 import {
-  loadEntityStore, saveEntityStore, EntityStore,
+  loadEntityStore, saveEntityStore, resetEntityStore, EntityStore,
   Pet, Case, Sighting, CareLog, generateId, Settings,
   AppNotification, ChatMessage, DemoDocument, BookingRequest,
 } from '../data/storage';
@@ -140,7 +140,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const resetStore = () => {
-    const fresh = loadEntityStore();
+    const fresh = resetEntityStore();
     setStore(fresh);
   };
 

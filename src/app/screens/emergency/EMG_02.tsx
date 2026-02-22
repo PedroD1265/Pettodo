@@ -31,12 +31,12 @@ export default function EMG_02() {
         <PhotoUploadGrid onQualitiesChange={setQualities} />
 
         <div className="mt-auto flex flex-col gap-2">
-          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-location')}>
+          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-location')} disabled={!hasPhotos}>
             Next: Location
           </Btn>
           {!hasPhotos && (
-            <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
-              At least 1 photo is required for publishing
+            <p className="text-[11px] text-center" style={{ color: 'var(--red-primary)' }}>
+              Add at least 1 photo before continuing
             </p>
           )}
         </div>

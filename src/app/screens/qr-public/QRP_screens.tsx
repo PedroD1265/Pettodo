@@ -193,9 +193,11 @@ export function QRP_03() {
   const [location, setLocation] = useState('');
   const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<{ location?: string; phone?: string }>({});
 
   const handleSelectType = (type: 'found' | 'sighted') => {
     setReportType(type);
+    setErrors({});
     if (type === 'found') {
       toast('Great — you have the dog! Fill in the details below and submit.');
     } else {
@@ -208,6 +210,19 @@ export function QRP_03() {
       toast('Please select whether you have the dog or spotted it.');
       return;
     }
+    const newErrors: { location?: string; phone?: string } = {};
+    if (!location.trim()) {
+      newErrors.location = 'Location is required';
+    }
+    if (reportType === 'found' && !phone.trim()) {
+      newErrors.phone = 'Phone number is required so the owner can reach you';
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please fill in the required fields.');
+      return;
+    }
+    setErrors({});
     addSighting({
       caseId: 'CASE-2026-0219',
       lat: 40.7741 + (Math.random() - 0.5) * 0.01,
@@ -286,14 +301,17 @@ export function QRP_03() {
         </div>
 
         <div>
-          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Where? (optional)</label>
+          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: errors.location ? 'var(--red-primary)' : 'var(--gray-700)' }}>
+            Where? {reportType ? '(required)' : '(optional)'}
+          </label>
           <input
             className="w-full px-3 py-2.5 rounded-xl"
-            style={{ background: 'var(--gray-100)', minHeight: 48 }}
+            style={{ background: 'var(--gray-100)', minHeight: 48, border: errors.location ? '1px solid var(--red-primary)' : 'none' }}
             placeholder="Location or address"
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            onChange={(e) => { setLocation(e.target.value); setErrors(prev => ({ ...prev, location: undefined })); }}
           />
+          {errors.location && <p className="text-[11px] mt-0.5" style={{ color: 'var(--red-primary)' }}>{errors.location}</p>}
         </div>
 
         <div>
@@ -304,14 +322,17 @@ export function QRP_03() {
         </div>
 
         <div>
-          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Your phone (to be contacted)</label>
+          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: errors.phone ? 'var(--red-primary)' : 'var(--gray-700)' }}>
+            Your phone {reportType === 'found' ? '(required)' : '(optional)'}
+          </label>
           <input
             className="w-full px-3 py-2.5 rounded-xl"
-            style={{ background: 'var(--gray-100)', minHeight: 48 }}
+            style={{ background: 'var(--gray-100)', minHeight: 48, border: errors.phone ? '1px solid var(--red-primary)' : 'none' }}
             placeholder="+1 (555) ..."
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: undefined })); }}
           />
+          {errors.phone && <p className="text-[11px] mt-0.5" style={{ color: 'var(--red-primary)' }}>{errors.phone}</p>}
         </div>
 
         <Btn variant="primary" fullWidth onClick={handleSubmit}>Submit Report</Btn>

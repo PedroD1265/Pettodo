@@ -1,0 +1,228 @@
+REPLIT PROMPT — PETTODO (Emergency Fixes + Daily Home Cleanup + Pet Profile Health & Feeding + QR Scan Camera/Photo) + Documentation
+
+Context
+- PETTODO is a React + TypeScript + Vite app with living docs:
+  - docs/EXECUTION_LOG.md
+  - docs/QA_SELFCHECK.md
+  - docs/INTERACTION_AUDIT.md
+  - (and docs/INTEGRATIONS.md exists for provider switches)
+- Tooling is already OK (build and preview). Do NOT change build/preview tooling in this task.
+- Priority: Emergency reliability first, then Daily UX + Pet Profile upgrades.
+- Must update docs to match code exactly.
+
+Overall goal (2 lines)
+Fix remaining P0/P1 issues in critical Emergency/Public QR flows without breaking existing routes.
+Enhance Daily mode by removing redundant Home tiles and upgrading Pet Profile with Health + Feeding (science-based guidance) PLUS certificate import via QR scan (camera + photo) and file/photo upload—implemented in a way that is “integration-ready” for later real providers with minimal changes.
+
+========================================================
+A) EMERGENCY FIXES (P0/P1 — DO FIRST)
+========================================================
+
+P0-1) Fix broken notification deep link (/emg/matches)
+- File: src/app/data/storage.ts
+- Change: notif-001.linkTo '/emg/matches' -> '/emg/matching-top10'
+- Acceptance: HOM_04 tap “New sighting near Luna” navigates correctly.
+
+P0-2) Fix resetStore() to truly clear persisted data
+- File: src/app/context/AppContext.tsx
+- Change:
+  - resetStore() must call resetEntityStore() (clear localStorage + reseed)
+  - sync React state with the reset result
+- Acceptance: create data -> reset -> reload -> no residue; seed restored.
+
+P0-3) Enforce minimum 1 photo in EMG_02 before advancing
+- File: src/app/screens/emergency/EMG_02.tsx
+- Change: disable “Next: Location” when !hasPhotos; keep guidance copy.
+- Acceptance: cannot advance without photos; can with >=1 photo.
+
+P1-1) QRP_03 conditional validation by reportType
+- File: src/app/screens/qr-public/QRP_screens.tsx (QRP_03)
+- Rules:
+  - found: phone + location required
+  - sighted: location required
+- Implement inline errors + summary toast; block submit on failure; preserve behavior on success.
+
+========================================================
+B) DAILY HOME CLEANUP (P1)
+========================================================
+
+P1-2) Remove redundant Daily Home quick tiles row (My Pets / QR ID / Vaccines / Learn)
+- File: src/app/screens/home/HOM_01.tsx
+- Change: remove the tile row; keep layout clean and intentional.
+- Acceptance: HOM_01 looks clean; navigation still available via bottom nav and pet cards.
+
+========================================================
+C) PET PROFILE UPGRADES (Health + Feeding) — INSIDE DLY_03
+========================================================
+
+Goal
+Inside Pet Profile (DLY_03), add two sections BEFORE the red “Report <Pet> as Lost” button:
+- Health (Vaccines, Medications, Conditions, Certificates/Documents)
+- Feeding (Preset food, logs, reminders) + transparent science-based guidance and alerts
+
+Constraints
+- Prefer NO new routes. Use sections + modals inside existing Pet Profile screen.
+- Local-first persistence via EntityStore (localStorage).
+- Must be “integration-ready”: keep parsing/validation in a small module/service so future provider hookup is minimal.
+
+--------------------------------------------------------
+C1) DATA MODEL + STORE (local-first)
+--------------------------------------------------------
+
+Update src/app/data/storage.ts with minimal new entities:
+- VaccineRecord { id, petId, name, dateGivenISO, nextDueISO?, notes?, createdAt }
+- MedicationRecord { id, petId, name, dosageOrInstructions?, startDateISO, endDateISO?, notes?, createdAt }
+- HealthCondition { id, petId, name, notes?, createdAt }
+- PetHealthDocument {
+    id, petId,
+    title,
+    kind: 'photo'|'file'|'qr',
+    url?,              // object URL for uploaded file/photo
+    sizeKB?,
+    issuedDateISO?,
+    notes?,
+    createdAt,
+    qrRaw?,            // raw decoded QR text if kind='qr'
+    qrParsed?          // parsed object (safe JSON) if available
+  }
+- FeedingPreset { petId, foodName, kcalPer100g?, notes? }
+- FeedingLog { id, petId, timeISO, foodName, grams?, notes?, createdAt }
+- FeedingReminder { id, petId, timeHHMM, enabled, createdAt }
+
+Seed requirements
+- Seed Luna so “Upcoming reminder: Distemper booster — Mar 20, 2026” remains meaningful (either via a VaccineRecord nextDue or compatible reminder logic).
+
+Ensure loadEntityStore() initializes these fields safely.
+Ensure resetEntityStore() clears and re-seeds correctly.
+
+--------------------------------------------------------
+C2) APP CONTEXT METHODS (minimal)
+--------------------------------------------------------
+
+Update src/app/context/AppContext.tsx with small helper methods using existing updateStore/save pattern:
+- addVaccineRecord, addMedicationRecord, addHealthCondition, addPetHealthDocument
+- setFeedingPreset, addFeedingLog, addFeedingReminder
+
+--------------------------------------------------------
+C3) PET PROFILE UI (DLY_03) — add Health + Feeding sections BEFORE “Report Lost”
+--------------------------------------------------------
+
+Primary screen: DLY_03 in src/app/screens/daily/DLY_screens.tsx (or where Pet Profile lives)
+
+Health section
+- Vaccines: list + “Add vaccine” modal (name required, date required, next due optional, notes optional)
+  - Show status chip: Up to date / Due soon (<=14 days) / Overdue
+- Medications: list + “Add medication” modal (name req, start date req, end date opt)
+- Conditions: list + “Add condition” modal
+- Certificates & Documents:
+  - CTA “Add certificate/document” opens a modal with 4 actions:
+    A) Scan QR with camera
+    B) Scan QR from photo (upload image and decode)
+    C) Upload photo (image/*) to attach without decoding
+    D) Upload file (PDF + images) to attach without decoding
+  - Persist items as PetHealthDocument.
+
+--------------------------------------------------------
+C4) QR scanning (Camera + Photo) — Demo now, Integration-ready later
+--------------------------------------------------------
+
+Implement QR scanning in a dedicated utility/module so future provider hookup is minimal:
+- New file suggestion: src/app/utils/qr.ts (or src/app/utils/qrDecode.ts)
+
+Requirements
+1) Camera scan (live)
+- Use a well-supported browser QR library (choose one) that supports getUserMedia scanning.
+- Render a simple camera preview panel inside a modal.
+- On successful decode:
+  - show a “Preview” step displaying:
+    - decoded text
+    - if it’s a URL, show hostname + path and a safety warning (no auto-open)
+  - allow user to “Save to Pet” (creates PetHealthDocument kind='qr', stores qrRaw and qrParsed if parseable)
+
+2) Scan from photo
+- Allow image upload (PNG/JPG).
+- Decode QR from the image using the same library if supported, or an image QR decoder.
+- Same Preview -> Save flow.
+
+3) Integration-ready structure (minimal future changes)
+- Add a function:
+  - parseQrPayload(qrRaw): { type, providerName?, certificateId?, url?, issuedDate? } | null
+- For now, keep parsing conservative:
+  - if URL: store url string and parsed fields if recognizable
+  - if text: store raw; parse JSON if it is valid JSON
+- Add TODO comments for future:
+  - “If qrRaw is a URL that requires server-side resolution, call backend endpoint /api/cert/resolve”
+  - DO NOT implement real provider calls now; just keep the shape ready.
+
+Security
+- Never auto-open decoded URLs.
+- If later you need to fetch URL content, plan to do it server-side (to avoid CORS and to keep allowlists).
+
+--------------------------------------------------------
+C5) Feeding Advisor (science-based guidance + small alerts)
+--------------------------------------------------------
+
+Inside Feeding section, add a lightweight “Feeding Advisor” card.
+- Use weightKg if available; if missing, show “Add weight to get estimates.”
+- Transparent estimate:
+  - RER = 70 * (weightKg ^ 0.75)
+  - Daily = RER * factor (dropdown: Typical adult default=1.6; Weight loss=1.0; Active=2.0)
+  - If kcalPer100g is set in preset, compute recommended grams/day.
+- Provide safe micro-alerts:
+  - If today’s logged grams > target by 10%: “Likely over target today” + tip
+  - If <60% late-day: “Low intake today” + tip
+- Add small disclaimer: “Estimates only. Consult a vet for medical concerns.”
+
+========================================================
+D) MINIMUM TESTING (REQUIRED)
+========================================================
+1) npm run build exits 0
+2) Smoke:
+- Notification tap opens /emg/matching-top10
+- Reset clears persistence after reload
+- EMG_02 photo gate works
+- QRP_03 validations work
+- HOM_01 tiles removed and layout clean
+- DLY_03:
+  - Add vaccine persists after reload
+  - Add health doc (photo/file) persists after reload
+  - Scan QR (camera OR photo) produces preview and saves a PetHealthDocument
+  - Set feeding preset + log feeding persists after reload
+
+========================================================
+E) DOCUMENTATION UPDATES (REQUIRED)
+========================================================
+
+1) docs/EXECUTION_LOG.md
+Append:
+Iteration 13 — Emergency Fixes + Pet Profile Health/Feeding + QR Certificate Import
+Run Date: February 22, 2026
+Include exact changes grouped (Emergency, Daily Home, Health, Feeding, QR scan).
+
+2) docs/QA_SELFCHECK.md
+Add “Iteration 13 Checks” at the end (explicit bullets):
+- EMG_02 gate
+- QRP_03 rules
+- HOM_01 tiles removed
+- Pet Profile Health actions persist
+- QR scan camera + photo works (preview + save)
+- Feeding preset/log + advisor renders when weight exists
+
+3) docs/INTERACTION_AUDIT.md
+Add/update entries:
+- DLY_03 Health + Feeding CTAs are real local-first actions (or clearly marked demo-only if any)
+- EMG_02 and QRP_03 are guarded interactions
+- HOM_01 removal introduces no dead interactions
+
+Accuracy rule
+- Only document what the code truly does.
+
+========================================================
+F) REQUIRED OUTPUT
+========================================================
+Return:
+- Summary of changes
+- Modified files list
+- Build result
+- Smoke test results
+- Doc updates summary per file

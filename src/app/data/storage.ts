@@ -305,7 +305,7 @@ const SEED_NOTIFICATIONS: AppNotification[] = [
     type: 'sighting',
     createdAt: Date.now() - 1000 * 60 * 15,
     read: false,
-    linkTo: '/emg/matches',
+    linkTo: '/emg/matching-top10',
   },
   {
     id: 'notif-002',
