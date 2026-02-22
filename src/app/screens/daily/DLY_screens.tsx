@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { appConfig } from '../../config/appConfig';
 import { useServices } from '../../services/index';
 import { PawPrint, QrCode, Syringe, FileText, Calendar, Clock, Check, AlertTriangle, ChevronRight, Utensils, Upload } from 'lucide-react';
+import { HealthSection } from '../../components/pettodo/HealthSection';
+import { FeedingSection } from '../../components/pettodo/FeedingSection';
 
 // DLY_01
 export function DLY_01() {
@@ -221,6 +223,14 @@ export function DLY_03() {
           <span className="text-[13px] ml-auto" style={{ color: 'var(--green-primary)', fontWeight: 500 }}>
             <Syringe size={14} className="inline mr-1" />Vaccines up to date
           </span>
+        </div>
+
+        <div className="border-t pt-4 mt-1" style={{ borderColor: 'var(--gray-200)' }}>
+          <HealthSection />
+        </div>
+
+        <div className="border-t pt-4 mt-1" style={{ borderColor: 'var(--gray-200)' }}>
+          <FeedingSection />
         </div>
 
         <Btn variant="destructive" fullWidth onClick={() => nav('/daily/report-lost', { state: { prefilled: true } })} icon={<AlertTriangle size={16} />}>

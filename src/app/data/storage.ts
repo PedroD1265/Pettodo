@@ -157,6 +157,74 @@ export interface BookingRequest {
   createdAt: number;
 }
 
+export interface VaccineRecord {
+  id: string;
+  petId: string;
+  name: string;
+  dateGivenISO: string;
+  nextDueISO?: string;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface MedicationRecord {
+  id: string;
+  petId: string;
+  name: string;
+  dosageOrInstructions?: string;
+  startDateISO: string;
+  endDateISO?: string;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface HealthCondition {
+  id: string;
+  petId: string;
+  name: string;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface PetHealthDocument {
+  id: string;
+  petId: string;
+  title: string;
+  kind: 'photo' | 'file' | 'qr';
+  url?: string;
+  sizeKB?: number;
+  issuedDateISO?: string;
+  notes?: string;
+  createdAt: number;
+  qrRaw?: string;
+  qrParsed?: Record<string, unknown>;
+}
+
+export interface FeedingPreset {
+  petId: string;
+  foodName: string;
+  kcalPer100g?: number;
+  notes?: string;
+}
+
+export interface FeedingLog {
+  id: string;
+  petId: string;
+  timeISO: string;
+  foodName: string;
+  grams?: number;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface FeedingReminder {
+  id: string;
+  petId: string;
+  timeHHMM: string;
+  enabled: boolean;
+  createdAt: number;
+}
+
 export interface EntityStore {
   pets: Pet[];
   cases: Case[];
@@ -169,6 +237,13 @@ export interface EntityStore {
   documents: DemoDocument[];
   providers: Provider[];
   bookingRequests: BookingRequest[];
+  vaccineRecords: VaccineRecord[];
+  medicationRecords: MedicationRecord[];
+  healthConditions: HealthCondition[];
+  healthDocuments: PetHealthDocument[];
+  feedingPresets: FeedingPreset[];
+  feedingLogs: FeedingLog[];
+  feedingReminders: FeedingReminder[];
 }
 
 const SEED_PET: Pet = {
@@ -453,6 +528,98 @@ const SEED_PROVIDERS: Provider[] = [
   },
 ];
 
+const SEED_VACCINE_RECORDS: VaccineRecord[] = [
+  {
+    id: 'vax-001',
+    petId: 'pet-luna-001',
+    name: 'Rabies',
+    dateGivenISO: '2026-01-15',
+    nextDueISO: '2027-01-15',
+    notes: 'Annual booster',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 38,
+  },
+  {
+    id: 'vax-002',
+    petId: 'pet-luna-001',
+    name: 'Distemper booster',
+    dateGivenISO: '2025-03-20',
+    nextDueISO: '2026-03-20',
+    notes: 'Due in March 2026',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 340,
+  },
+  {
+    id: 'vax-003',
+    petId: 'pet-luna-001',
+    name: 'Bordetella',
+    dateGivenISO: '2025-09-10',
+    nextDueISO: '2026-09-10',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 165,
+  },
+];
+
+const SEED_MEDICATION_RECORDS: MedicationRecord[] = [
+  {
+    id: 'med-001',
+    petId: 'pet-luna-001',
+    name: 'Heartguard Plus',
+    dosageOrInstructions: '1 chewable tablet monthly',
+    startDateISO: '2025-06-01',
+    notes: 'Heartworm prevention',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 200,
+  },
+];
+
+const SEED_HEALTH_CONDITIONS: HealthCondition[] = [];
+
+const SEED_HEALTH_DOCUMENTS: PetHealthDocument[] = [];
+
+const SEED_FEEDING_PRESETS: FeedingPreset[] = [
+  {
+    petId: 'pet-luna-001',
+    foodName: 'Premium Adult Kibble',
+    kcalPer100g: 350,
+    notes: 'Mixed with a bit of wet food',
+  },
+];
+
+const SEED_FEEDING_LOGS: FeedingLog[] = [
+  {
+    id: 'feed-001',
+    petId: 'pet-luna-001',
+    timeISO: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+    foodName: 'Premium Adult Kibble',
+    grams: 150,
+    notes: 'Morning meal',
+    createdAt: Date.now() - 1000 * 60 * 60 * 8,
+  },
+  {
+    id: 'feed-002',
+    petId: 'pet-luna-001',
+    timeISO: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    foodName: 'Premium Adult Kibble',
+    grams: 130,
+    notes: 'Evening meal',
+    createdAt: Date.now() - 1000 * 60 * 60 * 2,
+  },
+];
+
+const SEED_FEEDING_REMINDERS: FeedingReminder[] = [
+  {
+    id: 'fremind-001',
+    petId: 'pet-luna-001',
+    timeHHMM: '08:00',
+    enabled: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
+  },
+  {
+    id: 'fremind-002',
+    petId: 'pet-luna-001',
+    timeHHMM: '18:00',
+    enabled: true,
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
+  },
+];
+
 const DEFAULTS: EntityStore = {
   pets: [SEED_PET],
   cases: [SEED_CASE, ...SEED_FOUND_CASES],
@@ -465,6 +632,13 @@ const DEFAULTS: EntityStore = {
   documents: [],
   providers: SEED_PROVIDERS,
   bookingRequests: [],
+  vaccineRecords: SEED_VACCINE_RECORDS,
+  medicationRecords: SEED_MEDICATION_RECORDS,
+  healthConditions: SEED_HEALTH_CONDITIONS,
+  healthDocuments: SEED_HEALTH_DOCUMENTS,
+  feedingPresets: SEED_FEEDING_PRESETS,
+  feedingLogs: SEED_FEEDING_LOGS,
+  feedingReminders: SEED_FEEDING_REMINDERS,
 };
 
 export function loadEntityStore(): EntityStore {
@@ -487,6 +661,13 @@ export function loadEntityStore(): EntityStore {
       documents: Array.isArray(parsed.documents) ? parsed.documents : [],
       providers: Array.isArray(parsed.providers) && parsed.providers.length > 0 ? parsed.providers : DEFAULTS.providers,
       bookingRequests: Array.isArray(parsed.bookingRequests) ? parsed.bookingRequests : [],
+      vaccineRecords: Array.isArray(parsed.vaccineRecords) ? parsed.vaccineRecords : DEFAULTS.vaccineRecords,
+      medicationRecords: Array.isArray(parsed.medicationRecords) ? parsed.medicationRecords : DEFAULTS.medicationRecords,
+      healthConditions: Array.isArray(parsed.healthConditions) ? parsed.healthConditions : DEFAULTS.healthConditions,
+      healthDocuments: Array.isArray(parsed.healthDocuments) ? parsed.healthDocuments : DEFAULTS.healthDocuments,
+      feedingPresets: Array.isArray(parsed.feedingPresets) ? parsed.feedingPresets : DEFAULTS.feedingPresets,
+      feedingLogs: Array.isArray(parsed.feedingLogs) ? parsed.feedingLogs : DEFAULTS.feedingLogs,
+      feedingReminders: Array.isArray(parsed.feedingReminders) ? parsed.feedingReminders : DEFAULTS.feedingReminders,
     };
   } catch {
     return DEFAULTS;

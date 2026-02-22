@@ -1,0 +1,160 @@
+CONTINUE ITERATION 13 — Pet Profile Health + Feeding + QR Certificates (BUDGET-AWARE, NO DOC FILE EDITS)
+
+Context
+- Iteration 13 P0/P1 fixes are already done (deep link, resetStore, EMG_02 photo gate, QRP_03 validation, HOM_01 tiles removed).
+- Remaining work is ONLY the deferred Pet Profile upgrades (C1–C5).
+- IMPORTANT: To reduce cost, DO NOT modify any docs/*.md files in the repo. Instead, output the exact Markdown sections I should paste manually (Option 1).
+
+Budget rules
+- Agent uses usage/effort-based billing, so keep scope tight and phased. Stop if budget looks insufficient. :contentReference[oaicite:2]{index=2}
+- Make a checkpoint at the start of each phase so rollback is easy. :contentReference[oaicite:3]{index=3}
+
+Goal
+Upgrade Pet Profile (DLY_03) so that inside Luna’s profile we have:
+- A “Health” section (vaccines, meds, conditions, certificates/docs)
+- A “Feeding” section (preset + logs + simple reminders) + a transparent “Feeding Advisor”
+- Certificates support: upload photo + upload file + QR import via camera scan + scan-from-photo
+All implemented as local-first (EntityStore/localStorage) and “integration-ready” for later minimal changes.
+
+Constraints
+- Prefer NO new routes. Everything should live inside the existing Pet Profile (DLY_03) screen before the red “Report Lost” button.
+- Keep existing routing and 100-screen structure stable.
+- No real external provider calls yet; add TODO hooks where needed.
+- Security: NEVER auto-open decoded QR URLs; only show a preview and allow saving. If future resolution is needed, note it should be server-side. (Also: do not put secrets in VITE_* env vars since they end up in the client bundle.) :contentReference[oaicite:4]{index=4}
+
+========================================================
+PHASE C1 — Data Model Extensions (MUST DO FIRST)
+========================================================
+Edit: src/app/data/storage.ts
+
+Add minimal domain types + store fields (keep naming consistent with existing patterns):
+- VaccineRecord { id, petId, name, dateGivenISO, nextDueISO?, notes?, createdAt }
+- MedicationRecord { id, petId, name, dosageOrInstructions?, startDateISO, endDateISO?, notes?, createdAt }
+- HealthCondition { id, petId, name, notes?, createdAt }
+- PetHealthDocument { id, petId, title, kind:'photo'|'file'|'qr', url?, sizeKB?, issuedDateISO?, notes?, createdAt, qrRaw?, qrParsed? }
+- FeedingPreset { petId, foodName, kcalPer100g?, notes? }
+- FeedingLog { id, petId, timeISO, foodName, grams?, notes?, createdAt }
+- FeedingReminder { id, petId, timeHHMM, enabled, createdAt }
+
+Update EntityStore to include:
+- vaccineRecords: VaccineRecord[]
+- medicationRecords: MedicationRecord[]
+- healthConditions: HealthCondition[]
+- healthDocuments: PetHealthDocument[]
+- feedingPresets: FeedingPreset[] (or map by petId)
+- feedingLogs: FeedingLog[]
+- feedingReminders: FeedingReminder[]
+
+Seed requirements (keep demo coherent)
+- Add seeded data for Luna so the existing “Upcoming reminder: Distemper booster — Mar 20, 2026” remains meaningful.
+  - Either: a VaccineRecord with nextDueISO = 2026-03-20
+  - Or: a reminder record that Home can still use (but prefer VaccineRecord nextDue since we’re formalizing Health).
+
+Ensure loadEntityStore() initializes safely and resetEntityStore() clears + reseeds correctly.
+
+========================================================
+PHASE C2 — AppContext Methods
+========================================================
+Edit: src/app/context/AppContext.tsx
+
+Add minimal methods using existing updateStore/saveEntityStore patterns:
+- addVaccineRecord()
+- addMedicationRecord()
+- addHealthCondition()
+- addHealthDocument()
+- upsertFeedingPreset(petId, preset)
+- addFeedingLog()
+- addFeedingReminder()
+
+Keep changes minimal; no refactors outside needed wiring.
+
+========================================================
+PHASE C3 — Pet Profile UI (DLY_03)
+========================================================
+Edit the Pet Profile screen (likely in src/app/screens/daily/DLY_screens.tsx), keeping the same route and overall structure.
+
+Placement requirement
+- Insert Health + Feeding sections BEFORE the red “Report <Pet> as Lost” button.
+
+Health section UI
+- Vaccines list + “Add vaccine” modal (required: name, dateGiven; optional: nextDue, notes)
+  - Show status chip: Up to date / Due soon (<=14 days) / Overdue (based on nextDueISO).
+- Medications list + “Add medication” modal
+- Conditions list + “Add condition” modal
+- Certificates & Documents:
+  - Button “Add certificate/document” opens a modal with:
+    A) Scan QR with camera (live)
+    B) Scan QR from photo (upload image)
+    C) Upload photo (image/*) (attach without decoding)
+    D) Upload file (PDF + images) (attach without decoding)
+  - All saves create PetHealthDocument entries and persist.
+
+Feeding section UI
+- Preset: set default food (foodName required; kcalPer100g optional; notes optional)
+- “Log feeding now”: modal with time=now, foodName prefilled from preset (editable), grams optional, notes optional
+- Show latest 5 logs
+- Simple reminders (1–2 times HH:MM) stored locally (no OS scheduling)
+
+========================================================
+PHASE C4 — QR Scanning Utility (camera + photo)
+========================================================
+Create a small utility module:
+- Suggested file: src/app/utils/qrDecode.ts
+
+Implement:
+- decodeQrFromCamera(): uses getUserMedia + canvas loop + qr decode library (prefer lightweight).
+- decodeQrFromImage(file): image -> canvas -> decode
+- parseQrPayload(qrRaw): conservative parser:
+  - if URL: return { type:'url', url, host }
+  - if JSON: parse and return object
+  - else: return { type:'text', text }
+UI flow (required)
+- Always show a Preview step (decoded content + safety warning).
+- Never auto-open URLs.
+- Saving creates PetHealthDocument { kind:'qr', qrRaw, qrParsed, title }.
+
+Integration-ready TODOs (no implementation now)
+- Add TODO: “If certificate URLs need resolution, do server-side /api/cert/resolve with allowlist.”
+
+========================================================
+PHASE C5 — Feeding Advisor (transparent estimate + light alerts)
+========================================================
+Inside Feeding section, add a “Feeding Advisor” card:
+- Use weightKg if available; if missing show “Add weight to get estimates.”
+- Transparent math:
+  - RER = 70 * (weightKg ^ 0.75)
+  - DailyCalories = RER * factor (dropdown: Typical adult default=1.6; Weight loss=1.0; Active=2.0)
+  - If preset kcalPer100g exists, compute grams/day
+- Alerts:
+  - If today’s logged grams > target by 10%: “Likely over target today” + gentle tip
+  - If <60% by late day: “Low intake today” + tip
+- Add disclaimer: “Estimate only. Consult a vet for medical concerns.”
+
+========================================================
+Testing (minimum)
+========================================================
+- npm run build must exit 0
+- Smoke:
+  - DLY_03: add vaccine persists after reload
+  - add doc (photo/file) persists after reload
+  - QR scan preview -> save persists after reload
+  - feeding preset + log persists after reload
+  - feeding advisor renders with weight present
+
+========================================================
+Documentation output (Option 1 — NO repo edits)
+========================================================
+Do NOT edit docs/*.md.
+Instead, in your final reply output 4 separate Markdown blocks I can paste manually:
+1) EXECUTION_LOG.md — “Iteration 14 (or 13b) — Pet Profile Health + Feeding + QR Certificates”
+2) QA_SELFCHECK.md — new checks for Health/Feeding/QR scan
+3) INTERACTION_AUDIT.md — new real interactions + guarded behaviors
+4) ITERATION_PROGRESS.md — updated “what’s done / what remains”
+
+Final response format
+- Summary of changes
+- Files modified (paths)
+- npm run build result
+- Smoke test results
+- The 4 Markdown blocks for manual pasting (docs)
+- If budget ran out: stop immediately and report exactly where you stopped + what remains

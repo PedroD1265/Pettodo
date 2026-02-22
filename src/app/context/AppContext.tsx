@@ -5,6 +5,8 @@ import {
   loadEntityStore, saveEntityStore, resetEntityStore, EntityStore,
   Pet, Case, Sighting, CareLog, generateId, Settings,
   AppNotification, ChatMessage, DemoDocument, BookingRequest,
+  VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument,
+  FeedingPreset, FeedingLog, FeedingReminder,
 } from '../data/storage';
 
 export type AppMode = 'emergency' | 'daily';
@@ -58,6 +60,16 @@ interface AppState {
   addDocument: (doc: Omit<DemoDocument, 'id' | 'createdAt'>) => DemoDocument;
   // Bookings
   addBookingRequest: (req: Omit<BookingRequest, 'id' | 'createdAt'>) => BookingRequest;
+  // Health
+  addVaccineRecord: (r: Omit<VaccineRecord, 'id' | 'createdAt'>) => VaccineRecord;
+  addMedicationRecord: (r: Omit<MedicationRecord, 'id' | 'createdAt'>) => MedicationRecord;
+  addHealthCondition: (c: Omit<HealthCondition, 'id' | 'createdAt'>) => HealthCondition;
+  addHealthDocument: (d: Omit<PetHealthDocument, 'id' | 'createdAt'>) => PetHealthDocument;
+  // Feeding
+  upsertFeedingPreset: (petId: string, preset: Omit<FeedingPreset, 'petId'>) => void;
+  addFeedingLog: (l: Omit<FeedingLog, 'id' | 'createdAt'>) => FeedingLog;
+  addFeedingReminder: (r: Omit<FeedingReminder, 'id' | 'createdAt'>) => FeedingReminder;
+  updateFeedingReminder: (id: string, partial: Partial<FeedingReminder>) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -186,6 +198,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return newReq;
   };
 
+  const addVaccineRecord = (r: Omit<VaccineRecord, 'id' | 'createdAt'>): VaccineRecord => {
+    const rec: VaccineRecord = { ...r, id: generateId('vax'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, vaccineRecords: [...s.vaccineRecords, rec] }));
+    return rec;
+  };
+
+  const addMedicationRecord = (r: Omit<MedicationRecord, 'id' | 'createdAt'>): MedicationRecord => {
+    const rec: MedicationRecord = { ...r, id: generateId('med'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, medicationRecords: [...s.medicationRecords, rec] }));
+    return rec;
+  };
+
+  const addHealthCondition = (c: Omit<HealthCondition, 'id' | 'createdAt'>): HealthCondition => {
+    const rec: HealthCondition = { ...c, id: generateId('cond'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, healthConditions: [...s.healthConditions, rec] }));
+    return rec;
+  };
+
+  const addHealthDocument = (d: Omit<PetHealthDocument, 'id' | 'createdAt'>): PetHealthDocument => {
+    const rec: PetHealthDocument = { ...d, id: generateId('hdoc'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, healthDocuments: [...s.healthDocuments, rec] }));
+    return rec;
+  };
+
+  const upsertFeedingPreset = (petId: string, preset: Omit<FeedingPreset, 'petId'>) => {
+    updateStore(s => {
+      const idx = s.feedingPresets.findIndex(p => p.petId === petId);
+      const updated = [...s.feedingPresets];
+      if (idx >= 0) {
+        updated[idx] = { ...updated[idx], ...preset, petId };
+      } else {
+        updated.push({ ...preset, petId });
+      }
+      return { ...s, feedingPresets: updated };
+    });
+  };
+
+  const addFeedingLog = (l: Omit<FeedingLog, 'id' | 'createdAt'>): FeedingLog => {
+    const rec: FeedingLog = { ...l, id: generateId('feed'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, feedingLogs: [...s.feedingLogs, rec] }));
+    return rec;
+  };
+
+  const addFeedingReminder = (r: Omit<FeedingReminder, 'id' | 'createdAt'>): FeedingReminder => {
+    const rec: FeedingReminder = { ...r, id: generateId('fremind'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, feedingReminders: [...s.feedingReminders, rec] }));
+    return rec;
+  };
+
+  const updateFeedingReminder = (id: string, partial: Partial<FeedingReminder>) => {
+    updateStore(s => ({
+      ...s,
+      feedingReminders: s.feedingReminders.map(r => r.id === id ? { ...r, ...partial } : r),
+    }));
+  };
+
   const toggleMode = () => setMode(m => m === 'emergency' ? 'daily' : 'emergency');
 
   useEffect(() => {
@@ -221,6 +289,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addChatMessage, getThreadMessages,
       addDocument,
       addBookingRequest,
+      addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument,
+      upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder,
     }}>
       {children}
     </AppContext.Provider>

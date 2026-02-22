@@ -16,6 +16,14 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-02-22: Iteration 14 — Pet Profile Health + Feeding + QR Certificates
+  - `storage.ts`: Added 7 new entity types (VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument, FeedingPreset, FeedingLog, FeedingReminder) + EntityStore extensions + seed data for Luna
+  - `AppContext.tsx`: Added 8 CRUD methods (addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument, upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder)
+  - `HealthSection.tsx`: New component — vaccines list w/ status chips (Up to date/Due soon/Overdue), medications, conditions, certificates/documents (photo, file, QR import)
+  - `FeedingSection.tsx`: New component — preset management, feeding log, reminders, Feeding Advisor (RER formula, calorie targets, over/under alerts)
+  - `qrDecode.ts`: QR scanning utility using qr-scanner lib — camera + photo decode, safe payload parser (URL/JSON/text), never auto-opens URLs
+  - `DLY_screens.tsx`: DLY_03 updated — Health + Feeding sections inserted before "Report Lost" button
+  - Package added: `qr-scanner` (lightweight QR decode)
 - 2026-02-22: Iteration 13 — Critical Fixes + Home Cleanup
   - `storage.ts`: Fixed notif-001 deep link (`/emg/matches` → `/emg/matching-top10`)
   - `AppContext.tsx`: Fixed resetStore() to call resetEntityStore() (clears localStorage properly)
