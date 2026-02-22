@@ -1,0 +1,91 @@
+CONTINUE WITH ITERATION 13 — BUDGET MODE (I ONLY HAVE ~$2 LEFT)
+
+Important budget constraint
+- I currently have about $2 of Replit credits remaining.
+- Replit Agent usage is effort-based and billable, so you MUST limit scope to what fits the remaining budget.
+- If you estimate the remaining budget is not enough for the full iteration, DO NOT attempt everything. Instead:
+  1) Finish the highest priority items first
+  2) Stop
+  3) Document exactly what was completed and what remains
+
+Goal
+Proceed with Iteration 13, Emergency-first, but in “budget mode”:
+- Complete P0 items first.
+- Only continue to P1/P2 if you still have budget.
+- Keep all work integration-ready (clean structure + TODOs) so future work requires minimal changes.
+
+========================================================
+PHASE 1 — P0 (MUST COMPLETE IF AT ALL POSSIBLE)
+========================================================
+
+P0-1) Fix broken notification deep link
+- File: src/app/data/storage.ts
+- Change notif-001.linkTo from '/emg/matches' -> '/emg/matching-top10'
+- Verify: tapping “New sighting near Luna” navigates to a valid route.
+
+P0-2) Fix resetStore() to truly clear persistence
+- File: src/app/context/AppContext.tsx
+- Change resetStore() to call resetEntityStore() (not loadEntityStore()), then sync React state with the reset result.
+- Verify: create data -> reset -> reload -> returns to seed with no residue.
+
+P0-3) Enforce minimum 1 photo in EMG_02
+- File: src/app/screens/emergency/EMG_02.tsx
+- Disable “Next: Location” when !hasPhotos; keep existing guidance copy.
+- Verify: cannot advance without photo; can with >= 1 photo.
+
+P1-1) QRP_03 conditional validation (only if budget allows after P0)
+- File: src/app/screens/qr-public/QRP_screens.tsx
+- found => require phone + location
+- sighted => require location
+- Show inline errors + summary toast; block submit on failure; preserve behavior on success.
+
+========================================================
+PHASE 2 — ONLY IF BUDGET REMAINS AFTER PHASE 1
+========================================================
+
+P1) Daily Home cleanup
+- Remove redundant quick tiles row (My Pets / QR ID / Vaccines / Learn) from HOM_01.
+- Keep layout spacing clean.
+
+P2) Pet Profile upgrades (Health + Feeding) — DO NOT start unless you still have enough budget
+- Add “Health” + “Feeding” sections inside Pet Profile (DLY_03) before “Report Lost”.
+- If budget is low, do ONLY the data-model scaffolding + UI placeholders (sections + modals),
+  and leave clear TODOs for full functionality.
+- QR certificate import (camera + photo) is OPTIONAL under budget constraints:
+  - If you can’t implement camera+photo scanning safely within budget, add UI options and
+    stub functions (parseQrPayload, decodeQrFromCamera, decodeQrFromImage) with TODOs,
+    and document exactly what’s missing.
+
+========================================================
+DOCUMENTATION IS REQUIRED (NO MATTER WHERE YOU STOP)
+========================================================
+
+Update existing docs to match code EXACTLY:
+- docs/EXECUTION_LOG.md (append “Iteration 13 — …”)
+- docs/QA_SELFCHECK.md (add “Iteration 13 Checks”)
+- docs/INTERACTION_AUDIT.md (add/update entries for guarded interactions and fixes)
+
+ALSO add a progress doc so we can resume easily:
+- Create docs/ITERATION_13_PROGRESS.md containing:
+  - Completed items (with file paths)
+  - Remaining items (clear checklist)
+  - “Stopped due to budget constraint” note if you had to stop early
+  - Exact steps to resume later with minimal changes
+
+========================================================
+TESTING (DO THE MINIMUM YOU CAN AFFORD)
+========================================================
+
+- Run: npm run build (must pass)
+- Smoke test at least the P0 items you completed.
+
+========================================================
+FINAL RESPONSE FORMAT (MANDATORY)
+========================================================
+Return:
+1) Summary of changes
+2) Files modified (exact paths)
+3) npm run build result
+4) Smoke test results (OK/FAIL)
+5) Docs updated (what changed in each doc)
+6) If you stopped early: where you stopped + what remains (in docs/ITERATION_13_PROGRESS.md)

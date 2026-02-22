@@ -5,7 +5,7 @@ import { PetCard } from '../../components/pettodo/Cards';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { LUNA } from '../../data/demoData';
-import { PawPrint, QrCode, Syringe, BookOpen, Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap } from 'lucide-react';
+import { Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap } from 'lucide-react';
 
 export default function HOM_01() {
   const nav = useNavigate();
@@ -18,26 +18,6 @@ export default function HOM_01() {
       <ScreenLabel name="HOM_01_Home_Daily_NoActiveCase" />
       <AppBar title="PETTODO" showBack={false} />
       <div className="flex-1 p-4 flex flex-col gap-4">
-
-        {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { icon: <PawPrint size={20} />, label: 'My Pets', path: '/daily/pet-list' },
-            { icon: <QrCode size={20} />, label: 'QR ID', path: '/qr/hub' },
-            { icon: <Syringe size={20} />, label: 'Vaccines', path: '/daily/vaccines' },
-            { icon: <BookOpen size={20} />, label: 'Learn', path: '/education/library' },
-          ].map((a) => (
-            <button
-              key={a.label}
-              onClick={() => nav(a.path)}
-              className="flex flex-col items-center gap-1 py-3 rounded-xl"
-              style={{ background: 'var(--green-bg)', color: 'var(--green-dark)', minHeight: 44 }}
-            >
-              {a.icon}
-              <span className="text-[10px]" style={{ fontWeight: 600 }}>{a.label}</span>
-            </button>
-          ))}
-        </div>
 
         {/* Pet */}
         <div>

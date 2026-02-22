@@ -327,3 +327,37 @@
 - [x] No unused import warnings break the build
 - [x] No console errors on smoke-tested routes
 
+---
+
+## Iteration 13 Checks
+
+### A. P0-1 Notification Deep Link
+- [x] `notif-001.linkTo` is `/emg/matching-top10` (valid route)
+- [x] Tapping "New sighting near Luna" in HOM_04 navigates to matching results screen
+
+### B. P0-2 resetStore() Persistence
+- [x] `resetStore()` calls `resetEntityStore()` which clears localStorage and returns DEFAULTS
+- [x] React state syncs to fresh seed data after reset
+
+### C. P0-3 EMG_02 Photo Gate
+- [x] "Next: Location" button has `disabled={!hasPhotos}`
+- [x] Red warning text shown when no photos uploaded
+- [x] Button enables when >= 1 photo is added
+
+### D. P1-1 QRP_03 Validation
+- [x] "Found" report requires phone + location (inline errors if missing)
+- [x] "Sighted" report requires location only
+- [x] Validation errors show red borders + text below fields
+- [x] Labels update dynamically: "(required)" vs "(optional)"
+- [x] Errors clear on user input in respective field
+- [x] Summary toast on validation failure
+
+### E. P1-2 HOM_01 Quick Tiles Removed
+- [x] 4-tile row (My Pets / QR ID / Vaccines / Learn) removed from home screen
+- [x] Unused icon imports cleaned up
+- [x] Layout spacing remains clean
+
+### F. Build & Runtime (IT13)
+- [x] `npm run build` exits 0
+- [x] No TypeScript errors or warnings
+

@@ -762,3 +762,52 @@ Estos 3 son una quirk de TypeScript strict mode con `key` como prop especial de 
 - AI demo: keyword-search over Education articles only, no LLM
 - Integration stubs: never activated in DEMO mode; require `VITE_APP_MODE=integration` + respective `VITE_*_PROVIDER` env vars
 
+---
+
+### Iteration 13 — Critical Fixes + Home Cleanup
+
+**Date:** February 22, 2026
+
+#### P0-1: Fix Notification Deep Link
+- `src/app/data/storage.ts`: Changed `notif-001.linkTo` from `/emg/matches` to `/emg/matching-top10`
+- Previously navigated to non-existent route; now lands on the AI matching results screen
+
+#### P0-2: Fix resetStore() Persistence Bug
+- `src/app/context/AppContext.tsx`: Changed `resetStore()` to call `resetEntityStore()` instead of `loadEntityStore()`
+- Previously, reset only re-read localStorage (which still had stale data); now clears localStorage and returns fresh seed data
+
+#### P0-3: EMG_02 Photo Upload Gate
+- `src/app/screens/emergency/EMG_02.tsx`: Added `disabled={!hasPhotos}` to "Next: Location" button
+- Error text changed to red with clearer wording: "Add at least 1 photo before continuing"
+- Prevents advancing in the lost-dog report flow without at least 1 photo
+
+#### P1-1: QRP_03 Conditional Validation
+- `src/app/screens/qr-public/QRP_screens.tsx`: Added form validation to public QR report
+- "Found" reports require both location and phone number
+- "Sighted" reports require location only
+- Inline error messages with red borders; summary toast on validation failure
+- Labels dynamically update to show "(required)" vs "(optional)" based on report type
+- Errors clear when user types in the respective field
+
+#### P1-2: HOM_01 Quick Tiles Cleanup
+- `src/app/screens/home/HOM_01.tsx`: Removed redundant 4-tile quick actions row (My Pets / QR ID / Vaccines / Learn)
+- These features are accessible via Pet Profile, QR Hub, and other dedicated screens
+- Cleaned up unused icon imports (PawPrint, QrCode, Syringe, BookOpen)
+
+#### Files Modified (IT13)
+
+| File | Change |
+|---|---|
+| `src/app/data/storage.ts` | Fixed notif-001 linkTo route |
+| `src/app/context/AppContext.tsx` | resetStore() now calls resetEntityStore() |
+| `src/app/screens/emergency/EMG_02.tsx` | Photo gate: disabled button + red warning |
+| `src/app/screens/qr-public/QRP_screens.tsx` | Conditional validation with inline errors |
+| `src/app/screens/home/HOM_01.tsx` | Removed redundant quick tiles row |
+
+#### Not Completed (IT13 — Budget Constraint)
+
+- Pet Profile upgrades (Health + Feeding sections in DLY_03) — deferred
+- QR certificate import (camera + photo scanning) — deferred
+- Feeding advisor feature — deferred
+- See `docs/ITERATION_13_PROGRESS.md` for detailed resume checklist
+

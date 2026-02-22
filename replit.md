@@ -16,6 +16,14 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-02-22: Iteration 13 — Critical Fixes + Home Cleanup
+  - `storage.ts`: Fixed notif-001 deep link (`/emg/matches` → `/emg/matching-top10`)
+  - `AppContext.tsx`: Fixed resetStore() to call resetEntityStore() (clears localStorage properly)
+  - `EMG_02.tsx`: Added photo gate — disabled "Next: Location" when no photos uploaded
+  - `QRP_screens.tsx`: Added conditional validation to QRP_03 (location required; phone required for "found")
+  - `HOM_01.tsx`: Removed redundant quick tiles row (My Pets / QR ID / Vaccines / Learn)
+  - Deferred: Pet profile health/feeding upgrades, QR scanning, feeding advisor (budget constraint)
+  - See `docs/ITERATION_13_PROGRESS.md` for resume checklist
 - 2026-02-20: Iteration 12 — Integration-Ready Architecture
   - `src/app/config/appConfig.ts`: reads 7 VITE_* env vars; DEMO/INTEGRATION mode switch
   - `.env.example`: 7 safe placeholder vars with inline comments

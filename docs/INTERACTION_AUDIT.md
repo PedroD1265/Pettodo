@@ -138,3 +138,30 @@ All 5 simulator buttons check `appConfig.mode === 'demo'` before activating. In 
 | Geo | NYC lookup table | Google Maps Platform |
 | AI | keyword Education search | Gemini API (backend proxy) |
 
+---
+
+## Iteration 13 — Guarded Interactions & Fixes
+
+### Fixed Interactions
+
+| # | Screen | Route | Control | Issue | Fix |
+|---|---|---|---|---|---|
+| F1 | HOM_04 | `/home-notifications` | notif-001 tap | Navigated to `/emg/matches` (invalid route) | Changed `linkTo` to `/emg/matching-top10` |
+| F2 | DemoControls | (panel) | Reset Demo button | `resetStore()` called `loadEntityStore()` — re-read stale localStorage | Now calls `resetEntityStore()` — clears storage + returns DEFAULTS |
+| F3 | EMG_02 | `/emg/lost-photos` | "Next: Location" button | Could advance without any photos | Added `disabled={!hasPhotos}` gate + red warning text |
+
+### New Guarded Interactions (IT13)
+
+| # | Screen | Route | Control | Guard | Behavior |
+|---|---|---|---|---|---|
+| G1 | QRP_03 | `/public/qr-report` | Submit Report button | Requires location (always) + phone (if "found") | Inline errors + summary toast; blocks submit |
+| G2 | QRP_03 | `/public/qr-report` | Location input | Shows "(required)" label when report type selected | Red border + error text when empty on submit |
+| G3 | QRP_03 | `/public/qr-report` | Phone input | Shows "(required)" only for "found" type | Red border + error text when empty for "found" reports |
+| G4 | EMG_02 | `/emg/lost-photos` | "Next: Location" button | `disabled` when `qualities.length === 0` | Grayed out + red warning text below |
+
+### Removed UI (IT13)
+
+| Screen | Route | Element | Reason |
+|---|---|---|---|
+| HOM_01 | `/home-daily` | Quick tiles row (My Pets / QR ID / Vaccines / Learn) | Redundant — features accessible via other navigation paths |
+
