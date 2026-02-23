@@ -6,7 +6,7 @@ import {
   Pet, Case, Sighting, CareLog, generateId, Settings,
   AppNotification, ChatMessage, DemoDocument, BookingRequest,
   VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument,
-  FeedingPreset, FeedingLog, FeedingReminder,
+  FeedingPreset, FeedingLog, FeedingReminder, WeightLog,
 } from '../data/storage';
 
 export type AppMode = 'emergency' | 'daily';
@@ -70,6 +70,14 @@ interface AppState {
   addFeedingLog: (l: Omit<FeedingLog, 'id' | 'createdAt'>) => FeedingLog;
   addFeedingReminder: (r: Omit<FeedingReminder, 'id' | 'createdAt'>) => FeedingReminder;
   updateFeedingReminder: (id: string, partial: Partial<FeedingReminder>) => void;
+  // CRUD extensions
+  updateHealthCondition: (id: string, patch: Partial<HealthCondition>) => void;
+  deleteHealthCondition: (id: string) => void;
+  deleteHealthDocument: (id: string) => void;
+  deleteMedicationRecord: (id: string) => void;
+  deleteVaccineRecord: (id: string) => void;
+  // Weight
+  addWeightLog: (w: Omit<WeightLog, 'id' | 'createdAt'>) => WeightLog;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -254,6 +262,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateHealthCondition = (id: string, patch: Partial<HealthCondition>) => {
+    updateStore(s => ({
+      ...s,
+      healthConditions: s.healthConditions.map(c => c.id === id ? { ...c, ...patch } : c),
+    }));
+  };
+
+  const deleteHealthCondition = (id: string) => {
+    updateStore(s => ({ ...s, healthConditions: s.healthConditions.filter(c => c.id !== id) }));
+  };
+
+  const deleteHealthDocument = (id: string) => {
+    updateStore(s => {
+      const doc = s.healthDocuments.find(d => d.id === id);
+      if (doc?.url && doc.url.startsWith('blob:')) {
+        try { URL.revokeObjectURL(doc.url); } catch {}
+      }
+      return { ...s, healthDocuments: s.healthDocuments.filter(d => d.id !== id) };
+    });
+  };
+
+  const deleteMedicationRecord = (id: string) => {
+    updateStore(s => ({ ...s, medicationRecords: s.medicationRecords.filter(m => m.id !== id) }));
+  };
+
+  const deleteVaccineRecord = (id: string) => {
+    updateStore(s => ({ ...s, vaccineRecords: s.vaccineRecords.filter(v => v.id !== id) }));
+  };
+
+  const addWeightLog = (w: Omit<WeightLog, 'id' | 'createdAt'>): WeightLog => {
+    const rec: WeightLog = { ...w, id: generateId('wlog'), createdAt: Date.now() };
+    updateStore(s => ({ ...s, weightLogs: [...s.weightLogs, rec] }));
+    return rec;
+  };
+
   const toggleMode = () => setMode(m => m === 'emergency' ? 'daily' : 'emergency');
 
   useEffect(() => {
@@ -291,6 +334,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addBookingRequest,
       addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument,
       upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder,
+      updateHealthCondition, deleteHealthCondition, deleteHealthDocument, deleteMedicationRecord, deleteVaccineRecord,
+      addWeightLog,
     }}>
       {children}
     </AppContext.Provider>

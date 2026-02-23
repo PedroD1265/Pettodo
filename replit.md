@@ -16,6 +16,14 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-02-23: Iteration 15 — CRUD Extensions, Weight Advisor, Feeding Gauge, UX Polish
+  - `storage.ts`: Added WeightLog entity type + SEED_WEIGHT_LOGS (3 entries for Luna) + EntityStore extended + loadEntityStore backward-compatible
+  - `AppContext.tsx`: Added 6 new CRUD methods (updateHealthCondition, deleteHealthCondition, deleteHealthDocument, deleteMedicationRecord, deleteVaccineRecord, addWeightLog)
+  - `HealthSection.tsx`: Full CRUD — edit/delete for conditions, delete for vaccines/medications/documents with confirmation modal; Weight Advisor section with mini bar chart + trend (stable/up/down)
+  - `FeedingSection.tsx`: Feeding Advisor redesigned — gauge bar (progress bar with green/yellow/red status), cleaner layout, BookOpen link to education, removed raw formula display
+  - `DLY_screens.tsx`: DLY_03 — Feeding + Health sections now collapsible (chevron toggle); Feeding first, Health second; supports ?expandFeeding=1 query param for deep linking from home
+  - `HOM_01.tsx`: Added "Next feeding" card below vaccine reminder — shows next upcoming enabled reminder time, taps to pet profile with feeding auto-expanded
+  - `AppBar.tsx`: Added safe back navigation — sessionStorage-based history tracking, loop detection, fallback to home if shallow or looping
 - 2026-02-22: Iteration 14 — Pet Profile Health + Feeding + QR Certificates
   - `storage.ts`: Added 7 new entity types (VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument, FeedingPreset, FeedingLog, FeedingReminder) + EntityStore extensions + seed data for Luna
   - `AppContext.tsx`: Added 8 CRUD methods (addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument, upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder)

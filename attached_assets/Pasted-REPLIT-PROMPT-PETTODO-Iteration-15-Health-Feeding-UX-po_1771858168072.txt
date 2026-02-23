@@ -1,0 +1,216 @@
+REPLIT PROMPT — PETTODO Iteration 15 (Health/Feeding UX polish + CRUD + Home reminders + Advisor redesign + Back-loop fix)
+Language: English
+Mode: Keep current DEMO/INTEGRATION separation. No breaking changes. No new routes unless explicitly allowed below.
+
+IMPORTANT RULE (Cost control)
+- DO NOT edit docs/*.md files in the repo.
+- Instead, at the end, output the exact Markdown blocks I should paste into:
+  1) docs/EXECUTION_LOG.md
+  2) docs/QA_SELFCHECK.md
+  3) docs/INTERACTION_AUDIT.md
+  4) docs/ITERATION_15_PROGRESS.md (new)
+
+HIGH-LEVEL GOAL
+Improve Daily Pet Profile Health + Feeding so it feels production-ready:
+- Full CRUD where required (edit/delete conditions; delete docs; same for meds)
+- Collapse/expand sections (Feeding and Health)
+- Add Home reminder for next feeding (like next vaccine reminder)
+- Replace Feeding Advisor “formula view” with a clean gauge + Learn link + personalized report
+- Add Weight Advisor with time-series tracking (only if enough data; otherwise show basic guidance)
+- Fix back-button “ping-pong loop” risk across flows with a global safeBack heuristic
+
+========================================================
+P0 — MUST DO (Core UX + Data Safety)
+========================================================
+
+P0-1) Health CRUD parity (requested)
+Target screen: DLY_03 Pet Profile (Health section)
+
+Required actions:
+A) CONDITIONS
+- Must support: Add + Edit + Delete
+- Edit: tap an edit icon (pencil) on a condition row -> modal prefilled -> Save updates persisted
+- Delete: trash icon -> confirm -> remove persisted
+
+B) CERTIFICATES & DOCUMENTS
+- Must support: Delete uploaded/saved documents (photo/file/qr)
+- Delete: trash icon -> confirm -> remove persisted
+- If document has object URL, revoke it on delete to avoid memory leaks
+
+C) MEDICATIONS
+- Must support: Add + Delete (minimum)
+- (Nice-to-have if quick) Edit as well using the same modal pattern
+
+D) VACCINES (optional parity)
+- If quick and low risk, add Delete for vaccine records too; otherwise leave as-is
+
+Implementation notes:
+- If CRUD methods do not exist yet in AppContext, add them with minimal changes:
+  - updateHealthCondition(id, patch)
+  - deleteHealthCondition(id)
+  - deleteHealthDocument(id)
+  - deleteMedicationRecord(id)
+  - (optional) deleteVaccineRecord(id)
+- Ensure persistence survives reload (EntityStore/localStorage)
+
+Acceptance:
+- Add/edit/delete condition works and persists after reload
+- Delete document works and persists after reload
+- Delete medication works and persists after reload
+
+--------------------------------------------------------
+
+P0-2) Global Back Button loop prevention (critical)
+Problem: Some flows ping-pong between two screens when pressing back.
+
+Goal:
+- Implement a generic safeBack() strategy in AppBar so back never oscillates indefinitely.
+
+Minimum implementation:
+- Track last N visited paths (N=4) in sessionStorage (or in-memory if easier).
+- On back press:
+  1) If history is shallow (idx==0 or no safe back), go to correct mode home:
+     - /home-daily if Daily mode
+     - /home-emergency if Emergency mode
+  2) If loop detected (current path equals path from 2 steps ago OR pattern A->B->A),
+     then navigate to a sensible fallback:
+     - Daily screens fallback: /home-daily or /daily/pet-list depending on current module
+     - Emergency screens fallback: /home-emergency or /emg/report-published if active case
+- Keep existing behavior for normal cases.
+
+Also do a quick scan:
+- Search for screens using custom backTo props or explicit navigate(-1)
+- Fix the worst offenders if you find any obvious ping-pong pairs.
+
+Acceptance:
+- Back button cannot bounce between 2 pages more than once; it falls back to a stable parent/home.
+
+========================================================
+P1 — SHOULD DO (Collapsible sections + Home “Next feeding”)
+========================================================
+
+P1-1) Collapsible “Feeding” and “Health” sections inside Pet Profile
+Target: DLY_03 Pet Profile (the screen that now shows Health + Feeding)
+
+Requirements:
+- Feeding should appear BEFORE Health
+- Both sections should be collapsed by default
+- Header row shows:
+  - icon + title (Feeding / Health)
+  - chevron arrow
+- Tap header toggles expand/collapse
+- Preserve layout: sections appear BEFORE the red “Report <Pet> as Lost” button
+
+Acceptance:
+- On first load, you see only headers (Feeding first, then Health)
+- Expand shows all current content exactly as before
+- Collapse hides content cleanly
+
+--------------------------------------------------------
+
+P1-2) Home screen: show “Next feeding” reminder card
+Target: Daily Home (HOM_01)
+
+Requirement:
+- Add a “Next feeding” reminder card on Home.
+- Placement: between Luna’s pet card and the existing “Upcoming reminder” (vaccine) card.
+- The existing “Upcoming reminder” (vaccine next due) stays.
+- The “Next feeding” should be derived from FeedingReminders + current time:
+  - Find the next enabled reminder timeHHMM after now; if none, take the first enabled reminder for next day.
+  - If no reminders enabled, show a subtle empty state (“No feeding reminders set” + CTA link to Pet Profile).
+
+CTA behavior:
+- Tapping “Next feeding” card navigates to /daily/pet-profile and auto-expands Feeding section.
+
+Acceptance:
+- Home shows next feeding time reliably
+- Works after reload
+- CTA goes to Pet Profile and expands Feeding
+
+========================================================
+P2 — NICE-TO-HAVE (Advisor redesign + Learn + Weight Advisor tracking)
+========================================================
+
+P2-1) Feeding Advisor redesign (no formulas on UI)
+Target: Feeding section in Pet Profile
+
+Replace the formula text block with:
+- A clean “intake gauge”:
+  - Under target
+  - Healthy range
+  - Over target
+- Use the existing RER/target calculation internally, but display only:
+  - Today’s intake vs target (e.g., “380g today / 280g target”)
+  - Status label (Under / Healthy / Over)
+  - One short recommendation line
+
+Learn integration:
+- Add a “Learn” book icon button on the advisor card.
+- On tap:
+  - Navigate to Education article route: /education/article/:id
+  - Create a new Education article id (e.g. “feeding-basics”) if needed.
+  - Pass petId as a query param (?petId=pet-luna-001).
+  - On the article detail screen, if petId is present, render a “Personalized summary” section at top:
+    - Pet name, weight, activity factor
+    - Target calories/day and/or grams/day (if kcal/100g exists)
+    - Safety disclaimer
+  - Do NOT add external API calls; this is demo-local.
+
+Acceptance:
+- Advisor shows gauge + status, no raw formula text
+- Learn icon opens a real educational page
+- Article shows a personalized summary if petId exists
+
+--------------------------------------------------------
+
+P2-2) Weight Advisor (attractive but serious) + tracking over time
+Goal:
+- Add weight logs and a “Weight Advisor” card (Health section or separate card near Feeding advisor).
+
+Data model:
+- Add WeightLog { id, petId, dateISO, weightKg, note?, createdAt }
+- Store in EntityStore and persist.
+
+UI:
+- “Add weight” button opens modal to log weightKg + date (default today) + optional note.
+- If fewer than 3 logs:
+  - show basic guidance only (“Add a few weigh-ins to see trends”)
+- If 3+ logs:
+  - show a simple trend view (mini chart or trend line using basic div bars) + trend label:
+    - “Trending up / down / stable” based on last 2-3 entries
+  - show “Healthy pace” guidance (non-medical): slow change is safer; consult a vet if rapid changes.
+
+Acceptance:
+- Weight logs persist after reload
+- Trend appears only when enough data exists
+- UI looks clean and consistent with tokens
+
+========================================================
+TESTING (REQUIRED)
+========================================================
+1) npm run build (must exit 0)
+
+2) Smoke tests:
+- Pet Profile:
+  - Add/edit/delete condition persists
+  - Delete document persists and URL is revoked
+  - Add/delete medication persists
+  - Collapse/expand Feeding and Health works
+- Home:
+  - Next feeding card appears and links correctly (auto-expands Feeding)
+- Back button:
+  - Try 2–3 known loop-prone areas; confirm safe fallback triggers (no ping-pong)
+
+========================================================
+FINAL OUTPUT FORMAT (MANDATORY)
+========================================================
+Return:
+1) Summary of changes
+2) Files modified (exact paths)
+3) npm run build result
+4) Smoke test results (OK/FAIL)
+5) Markdown blocks for manual doc updates:
+   - EXECUTION_LOG.md (Iteration 15 entry)
+   - QA_SELFCHECK.md (Iteration 15 checks)
+   - INTERACTION_AUDIT.md (new interactions + guarded behaviors)
+   - ITERATION_15_PROGRESS.md (what’s done / what remains)

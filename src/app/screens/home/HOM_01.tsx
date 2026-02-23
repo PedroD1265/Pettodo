@@ -1,15 +1,30 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { PetCard } from '../../components/pettodo/Cards';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { LUNA } from '../../data/demoData';
-import { Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap } from 'lucide-react';
+import { Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap, Utensils } from 'lucide-react';
+
+function getNextFeedingTime(reminders: { timeHHMM: string; enabled: boolean }[]): string | null {
+  const enabled = reminders.filter(r => r.enabled).sort((a, b) => a.timeHHMM.localeCompare(b.timeHHMM));
+  if (enabled.length === 0) return null;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  for (const r of enabled) {
+    const [h, m] = r.timeHHMM.split(':').map(Number);
+    if (h * 60 + m > nowMins) return r.timeHHMM;
+  }
+  return enabled[0].timeHHMM + ' (tomorrow)';
+}
 
 export default function HOM_01() {
   const nav = useNavigate();
-  const { setMode } = useApp();
+  const { setMode, store } = useApp();
+
+  const petReminders = store.feedingReminders.filter(r => r.petId === 'pet-luna-001');
+  const nextFeeding = useMemo(() => getNextFeedingTime(petReminders), [petReminders]);
 
   React.useEffect(() => { setMode('daily'); }, []);
 
@@ -30,6 +45,17 @@ export default function HOM_01() {
           <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Upcoming reminder</p>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--green-dark)' }}>Distemper booster — Mar 20, 2026</p>
         </div>
+
+        {/* Next feeding */}
+        {nextFeeding && (
+          <button onClick={() => nav('/daily/pet-profile?expandFeeding=1')} className="w-full p-3 rounded-xl text-left flex items-center gap-3" style={{ background: 'var(--info-bg, #eff6ff)', border: '1px solid var(--info-soft, #dbeafe)' }}>
+            <Utensils size={18} style={{ color: 'var(--info, #2563eb)' }} />
+            <div>
+              <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--info-dark, #1e40af)' }}>Next feeding</p>
+              <p className="text-[12px]" style={{ color: 'var(--info, #2563eb)' }}>{nextFeeding}</p>
+            </div>
+          </button>
+        )}
 
         {/* Community */}
         <div>

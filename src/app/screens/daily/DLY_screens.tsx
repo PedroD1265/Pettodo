@@ -7,7 +7,7 @@ import { Btn } from '../../components/pettodo/Buttons';
 import { Modal } from '../../components/pettodo/Modals';
 import { TimelineView } from '../../components/pettodo/Timeline';
 import { FreshnessBadge } from '../../components/pettodo/Badges';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { LUNA, VACCINES, FEEDING } from '../../data/demoData';
 import { toast } from 'sonner';
@@ -181,6 +181,11 @@ export function DLY_02() {
 // DLY_03
 export function DLY_03() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const autoExpandFeeding = searchParams.get('expandFeeding') === '1';
+  const [feedingOpen, setFeedingOpen] = useState(autoExpandFeeding);
+  const [healthOpen, setHealthOpen] = useState(false);
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="DLY_03_PetProfile_Complete" />
@@ -225,12 +230,26 @@ export function DLY_03() {
           </span>
         </div>
 
-        <div className="border-t pt-4 mt-1" style={{ borderColor: 'var(--gray-200)' }}>
-          <HealthSection />
+        {/* Collapsible Feeding (first) */}
+        <div className="border-t mt-1" style={{ borderColor: 'var(--gray-200)' }}>
+          <button onClick={() => setFeedingOpen(!feedingOpen)} className="w-full flex items-center justify-between py-3">
+            <span className="text-[15px] flex items-center gap-2" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>
+              <Utensils size={16} style={{ color: 'var(--green-primary)' }} /> Feeding
+            </span>
+            <ChevronRight size={18} style={{ color: 'var(--gray-400)', transform: feedingOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+          {feedingOpen && <FeedingSection />}
         </div>
 
-        <div className="border-t pt-4 mt-1" style={{ borderColor: 'var(--gray-200)' }}>
-          <FeedingSection />
+        {/* Collapsible Health (second) */}
+        <div className="border-t mt-1" style={{ borderColor: 'var(--gray-200)' }}>
+          <button onClick={() => setHealthOpen(!healthOpen)} className="w-full flex items-center justify-between py-3">
+            <span className="text-[15px] flex items-center gap-2" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>
+              <Syringe size={16} style={{ color: 'var(--red-dark)' }} /> Health
+            </span>
+            <ChevronRight size={18} style={{ color: 'var(--gray-400)', transform: healthOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+          {healthOpen && <HealthSection />}
         </div>
 
         <Btn variant="destructive" fullWidth onClick={() => nav('/daily/report-lost', { state: { prefilled: true } })} icon={<AlertTriangle size={16} />}>

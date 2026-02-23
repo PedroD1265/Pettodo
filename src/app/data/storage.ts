@@ -225,6 +225,15 @@ export interface FeedingReminder {
   createdAt: number;
 }
 
+export interface WeightLog {
+  id: string;
+  petId: string;
+  dateISO: string;
+  weightKg: number;
+  note?: string;
+  createdAt: number;
+}
+
 export interface EntityStore {
   pets: Pet[];
   cases: Case[];
@@ -244,6 +253,7 @@ export interface EntityStore {
   feedingPresets: FeedingPreset[];
   feedingLogs: FeedingLog[];
   feedingReminders: FeedingReminder[];
+  weightLogs: WeightLog[];
 }
 
 const SEED_PET: Pet = {
@@ -620,6 +630,12 @@ const SEED_FEEDING_REMINDERS: FeedingReminder[] = [
   },
 ];
 
+const SEED_WEIGHT_LOGS: WeightLog[] = [
+  { id: 'wlog-001', petId: 'pet-luna-001', dateISO: '2025-12-01', weightKg: 17.5, createdAt: Date.now() - 1000 * 60 * 60 * 24 * 84 },
+  { id: 'wlog-002', petId: 'pet-luna-001', dateISO: '2026-01-05', weightKg: 17.8, createdAt: Date.now() - 1000 * 60 * 60 * 24 * 49 },
+  { id: 'wlog-003', petId: 'pet-luna-001', dateISO: '2026-02-10', weightKg: 18.0, note: 'Post-vet visit', createdAt: Date.now() - 1000 * 60 * 60 * 24 * 13 },
+];
+
 const DEFAULTS: EntityStore = {
   pets: [SEED_PET],
   cases: [SEED_CASE, ...SEED_FOUND_CASES],
@@ -639,6 +655,7 @@ const DEFAULTS: EntityStore = {
   feedingPresets: SEED_FEEDING_PRESETS,
   feedingLogs: SEED_FEEDING_LOGS,
   feedingReminders: SEED_FEEDING_REMINDERS,
+  weightLogs: SEED_WEIGHT_LOGS,
 };
 
 export function loadEntityStore(): EntityStore {
@@ -668,6 +685,7 @@ export function loadEntityStore(): EntityStore {
       feedingPresets: Array.isArray(parsed.feedingPresets) ? parsed.feedingPresets : DEFAULTS.feedingPresets,
       feedingLogs: Array.isArray(parsed.feedingLogs) ? parsed.feedingLogs : DEFAULTS.feedingLogs,
       feedingReminders: Array.isArray(parsed.feedingReminders) ? parsed.feedingReminders : DEFAULTS.feedingReminders,
+      weightLogs: Array.isArray(parsed.weightLogs) ? parsed.weightLogs : DEFAULTS.weightLogs,
     };
   } catch {
     return DEFAULTS;
