@@ -811,3 +811,42 @@ Estos 3 son una quirk de TypeScript strict mode con `key` como prop especial de 
 - Feeding advisor feature — deferred
 - See `docs/ITERATION_13_PROGRESS.md` for detailed resume checklist
 
+
+# Iteration 14 — Pet Profile Health + Feeding + QR Certificates
+
+## Date: 2026-02-22
+
+### Phase C1 — Data Model Extensions
+- Added 7 new interfaces: VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument, FeedingPreset, FeedingLog, FeedingReminder
+- Extended EntityStore with 7 new array fields
+- Added seed data: 3 vaccine records (Rabies, Distemper booster, Bordetella), 1 medication (Heartguard Plus), 1 feeding preset (Premium Adult Kibble, 350 kcal/100g), 2 feeding logs, 2 reminders (08:00, 18:00)
+- Updated loadEntityStore() with backward-compatible fallbacks for all new fields
+- resetEntityStore() correctly clears and reseeds new fields
+
+### Phase C2 — AppContext Methods
+- Added 8 CRUD methods: addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument, upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder
+- All follow existing updateStore/saveEntityStore patterns
+
+### Phase C3 — Pet Profile UI (DLY_03)
+- Created HealthSection.tsx component with: vaccines list + status chips, medications list, conditions list, certificates/documents list, add modals for each
+- Created FeedingSection.tsx component with: preset management, log feeding, recent logs (last 5), reminders with on/off toggle
+- Inserted both sections into DLY_03 before "Report Lost" button
+- No new routes added
+
+### Phase C4 — QR Scanning Utility
+- Created src/app/utils/qrDecode.ts with parseQrPayload(), decodeQrFromImage(), createQrScanner()
+- Integrated into HealthSection: camera scan + scan from photo
+- QR Preview modal shows decoded content with security notice, NEVER auto-opens URLs
+- Save creates PetHealthDocument with kind:'qr', qrRaw, qrParsed
+
+### Phase C5 — Feeding Advisor
+- Integrated into FeedingSection as a card
+- RER = 70 * (weightKg ^ 0.75), DailyCalories = RER * factor
+- Activity level dropdown: Weight loss (1.0x), Typical adult (1.6x), Active (2.0x)
+- Alerts: "Likely over target today" if >110%, "Low intake today" if <60% after 4 PM
+- Disclaimer: "Estimate only. Consult a vet for medical concerns."
+- Shows "Add weight to get estimates" if weight missing
+
+### Build Result
+- npm run build: exit 0
+- Package added: qr-scanner

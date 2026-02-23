@@ -95,3 +95,24 @@
 6. Update documentation files after completing all items
 
 **Estimated effort:** ~45-60 minutes of agent time for remaining items
+
+
+# Iteration 14 Progress — Pet Profile Health + Feeding + QR Certificates
+
+## Completed
+- [x] C1: Data Model Extensions (storage.ts) — 7 types, EntityStore, seed data, safe load/reset
+- [x] C2: AppContext Methods — 8 CRUD methods
+- [x] C3: Pet Profile UI (DLY_03) — HealthSection + FeedingSection before Report Lost
+- [x] C4: QR Scanning Utility — camera + photo decode, preview, never auto-open
+- [x] C5: Feeding Advisor — RER formula, activity factor, alerts, vet disclaimer
+- [x] Build verification — npm run build exit 0
+- [x] replit.md updated
+
+## What Remains / Future Work
+- OS-level push notifications for feeding reminders (requires integration)
+- Server-side QR certificate URL resolution with domain allowlist
+- Multi-pet support (currently hardcoded to Luna / pet-luna-001)
+- Document viewer for uploaded photos/files
+- Export health records as PDF
+
+

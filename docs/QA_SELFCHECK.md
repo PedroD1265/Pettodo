@@ -361,3 +361,37 @@
 - [x] `npm run build` exits 0
 - [x] No TypeScript errors or warnings
 
+
+
+# QA Self-Check — Iteration 14
+
+## Health Section
+- [x] DLY_03: Vaccines list shows seed data (Rabies, Distemper booster, Bordetella) with correct status chips
+- [x] Add vaccine: name + dateGiven required; nextDue + notes optional; persists after reload
+- [x] Add medication: name + startDate required; persists after reload
+- [x] Add condition: name required; persists after reload
+- [x] Certificates: "Add certificate/document" opens modal with 4 options (camera QR, photo QR, upload photo, upload file)
+- [x] Upload photo: saves PetHealthDocument with kind:'photo'; persists
+- [x] Upload file: saves PetHealthDocument with kind:'file'; persists
+- [x] QR from photo: decodes QR, shows preview modal, user can save or discard
+- [x] QR camera: opens camera stream, decodes QR, shows preview, never auto-opens URLs
+
+## Feeding Section
+- [x] Feeding preset shows seed data (Premium Adult Kibble, 350 kcal/100g)
+- [x] Edit preset: saves changes; persists
+- [x] Log feeding: foodName required; time=now; grams optional; persists
+- [x] Recent logs show last 5 entries with time, food, grams
+- [x] Reminders: 2 seed reminders (08:00, 18:00); toggle on/off; add new reminder
+
+## Feeding Advisor
+- [x] Shows calorie estimate when weight is present (18 kg → RER ~453 kcal)
+- [x] Activity level dropdown changes estimate
+- [x] Target grams/day calculated when preset has kcalPer100g
+- [x] Over-target alert shows when today's grams > target * 1.1
+- [x] Under-target alert shows after 4 PM if < 60% of target
+- [x] Vet disclaimer displayed
+- [x] "Add weight to get estimates" shown if weight missing
+
+## Persistence
+- [x] All new entity types survive page reload (localStorage)
+- [x] resetStore() clears and reseeds all new fields correctly
