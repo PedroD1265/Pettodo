@@ -850,3 +850,39 @@ Estos 3 son una quirk de TypeScript strict mode con `key` como prop especial de 
 ### Build Result
 - npm run build: exit 0
 - Package added: qr-scanner
+
+## Iteration 15 — CRUD Extensions, Weight Advisor, Feeding Gauge, UX Polish
+
+### Date: 2026-02-23
+
+### What shipped (validated against code)
+- **Health CRUD extensions**
+  - Added condition edit flow (`updateHealthCondition`) and delete flow (`deleteHealthCondition`) with shared confirmation modal.
+  - Added delete flows for vaccines, medications, and health documents with confirmation modal.
+  - On health document delete, blob URLs are revoked (`URL.revokeObjectURL`) when `doc.url` starts with `blob:`.
+- **Weight Advisor**
+  - Added `WeightLog` entity and `weightLogs` collection in `EntityStore`.
+  - Seeded 3 Luna weight logs.
+  - Added `addWeightLog` action and Weight Advisor UI in `HealthSection` with mini bar chart and simple trend indicator (up/down/stable from last 3 logs).
+- **Feeding Advisor redesign**
+  - Replaced formula-heavy block with gauge/progress view showing `today grams / target grams`, status label, and recommendation.
+  - Target still derived from RER × activity factor and kcal/100g preset.
+- **Pet Profile collapsibles + deep-link expand**
+  - In `DLY_03`, Feeding section is first and Health second.
+  - Both sections are collapsed by default unless query param `expandFeeding=1` is present.
+  - Chevron rotates on expansion state.
+- **Daily Home next-feeding reminder card**
+  - Added next-feeding card in `HOM_01` using enabled reminders only.
+  - Card deep-links to `/daily/pet-profile?expandFeeding=1` to auto-expand Feeding.
+  - If no enabled reminders exist, card is hidden.
+- **Safe back navigation guard**
+  - `AppBar` now tracks recent pathnames in `sessionStorage` and uses loop detection + shallow-history detection.
+  - If a loop/shallow case is detected, app navigates to mode/path fallback instead of `navigate(-1)`.
+
+### Build and validation snapshot
+- `npm run build` passed (Vite build success).
+- Bundle-size warning remains (existing optimization debt).
+
+### Known limitations / not implemented exactly as spec wording
+- Deep-link key is implemented as `expandFeeding=1` (not `expand=feeding`).
+- Safe-back loop detector is heuristic (3-step A/B/A pattern), not a full navigation graph.

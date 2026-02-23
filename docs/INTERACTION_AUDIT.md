@@ -165,3 +165,21 @@ All 5 simulator buttons check `appConfig.mode === 'demo'` before activating. In 
 |---|---|---|---|
 | HOM_01 | `/home-daily` | Quick tiles row (My Pets / QR ID / Vaccines / Learn) | Redundant — features accessible via other navigation paths |
 
+
+## Iteration 15 — Guarded/Real Interactions
+
+| Screen | Route | Interaction | Type | Behavior | Guard/Notes |
+|---|---|---|---|---|---|
+| DLY_03 / HealthSection | `/daily/pet-profile` | Edit condition (pencil) | Real local-first | Opens condition modal prefilled; save calls `updateHealthCondition()` | Requires non-empty condition name |
+| DLY_03 / HealthSection | `/daily/pet-profile` | Delete condition (trash) | Real local-first | Opens confirm modal; delete calls `deleteHealthCondition()` | Destructive confirmation required |
+| DLY_03 / HealthSection | `/daily/pet-profile` | Delete document (trash) | Real local-first | Opens confirm modal; delete calls `deleteHealthDocument()` | Blob URLs revoked for local object URLs |
+| DLY_03 / HealthSection | `/daily/pet-profile` | Delete medication (trash) | Real local-first | Opens confirm modal; delete calls `deleteMedicationRecord()` | Destructive confirmation required |
+| DLY_03 / HealthSection | `/daily/pet-profile` | Delete vaccine (trash) | Real local-first | Opens confirm modal; delete calls `deleteVaccineRecord()` | Destructive confirmation required |
+| DLY_03 | `/daily/pet-profile` | Toggle Feeding section | UI state | Chevron + section body toggle | Default collapsed unless `expandFeeding=1` |
+| DLY_03 | `/daily/pet-profile` | Toggle Health section | UI state | Chevron + section body toggle | Default collapsed |
+| HOM_01 | `/home-daily` | Tap "Next feeding" card | Navigate + deep-link | Navigates to `/daily/pet-profile?expandFeeding=1` | Card hidden when no enabled reminders |
+| App-wide AppBar | multiple | Back button with loop guard | Guarded navigation | Uses recent pathname history + shallow index check; may route to fallback home/list | Prevents ping-pong loops for repeated back patterns |
+
+### Interaction classification
+- **Real local-first:** CRUD actions mutate `EntityStore` via `AppContext` and persist via existing storage pipeline.
+- **Guarded behavior:** destructive actions require confirmation; back navigation has anti-loop guard.

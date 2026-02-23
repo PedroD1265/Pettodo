@@ -395,3 +395,38 @@
 ## Persistence
 - [x] All new entity types survive page reload (localStorage)
 - [x] resetStore() clears and reseeds all new fields correctly
+## Iteration 15 Checks
+
+- [x] **Health CRUD**
+  - [x] Condition edit available and updates persisted store
+  - [x] Condition delete available via confirmation modal
+  - [x] Medication delete available via confirmation modal
+  - [x] Vaccine delete available via confirmation modal
+- [x] **Documents delete**
+  - [x] Delete action available via confirmation modal
+  - [x] Blob URL revoke path present on delete (`blob:` URLs)
+- [x] **Weight advisor + persistence**
+  - [x] `WeightLog` schema added to storage model
+  - [x] Seed data contains 3 Luna logs
+  - [x] Add-weight action writes to store and persists
+  - [x] Backward-compatible load fallback for missing `weightLogs`
+- [x] **Feeding gauge + thresholds**
+  - [x] Gauge/progress UI rendered (today vs target)
+  - [x] Threshold labels present (`under`/`healthy`/`over`)
+  - [x] Recommendation text logic present
+- [x] **Collapsible sections + deep link**
+  - [x] Feeding before Health in DLY_03
+  - [x] Both collapsed by default
+  - [x] Query param `expandFeeding=1` auto-expands Feeding
+- [x] **Home next feeding card**
+  - [x] Card renders only when enabled reminders exist
+  - [x] Card navigates to Pet Profile with Feeding expanded
+- [x] **safeBack loop prevention**
+  - [x] Session history tracking in `sessionStorage`
+  - [x] Loop + shallow-history fallback logic present
+- [x] **Build pass**
+  - [x] `npm run build` exit code 0
+
+### Notes
+- Query param naming differs from spec phrasing: implemented key is `expandFeeding=1` (functional), not `expand=feeding`.
+- Manual device-level back-stack smoke pass still recommended for edge browser history states.
