@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { INITIAL_COMMUNITY_DOG_SIGHTINGS, INITIAL_COMMUNITY_DOG_CARE_RECORDS } from '../data/demoData';
-import { loadPersistedState, savePersistedState, resetPersistedState } from '../utils/localStorage';
+import { loadPersistedState, savePersistedState } from '../utils/localStorage';
 import {
   loadEntityStore, saveEntityStore, resetEntityStore, EntityStore,
   Pet, Case, Sighting, CareLog, generateId, Settings,
@@ -162,15 +162,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const resetStore = () => {
     const fresh = resetEntityStore();
     setStore(fresh);
-    resetPersistedState();
-    setMode('daily');
-    setHasActiveCase(false);
-    setCaseClaimed(false);
-    setVerificationLevel('none');
-    setStrictStatus('not_started');
-    setDemoTimeOffset(0);
-    setCommunityDogSightings(INITIAL_COMMUNITY_DOG_SIGHTINGS);
-    setCommunityDogCareRecords(INITIAL_COMMUNITY_DOG_CARE_RECORDS);
   };
 
   const updateSettings = (patch: Partial<Settings>) => {

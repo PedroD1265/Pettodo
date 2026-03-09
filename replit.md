@@ -16,10 +16,6 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
-- 2026-03-09: Demo Hub — Demo launcher screen at /demo route
-  - `src/app/screens/demo/DemoHub.tsx`: New standalone screen with 4 scenario buttons (Daily Care, Lost Pet Emergency, AI Assisted Match, Community Dogs) + Reset Demo Data action
-  - `routes.tsx`: Added /demo route as standalone (no AppShell wrapper) for clean presentation entry point
-  - Uses existing resetStore, existing routes, existing Btn component, existing design tokens
 - 2026-02-23: Iteration 15 — CRUD Extensions, Weight Advisor, Feeding Gauge, UX Polish
   - `storage.ts`: Added WeightLog entity type + SEED_WEIGHT_LOGS (3 entries for Luna) + EntityStore extended + loadEntityStore backward-compatible
   - `AppContext.tsx`: Added 6 new CRUD methods (updateHealthCondition, deleteHealthCondition, deleteHealthDocument, deleteMedicationRecord, deleteVaccineRecord, addWeightLog)
