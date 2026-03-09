@@ -51,3 +51,11 @@ export function savePersistedState(state: PersistedState): void {
     // silently fail
   }
 }
+
+export function resetPersistedState(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // silently fail
+  }
+}

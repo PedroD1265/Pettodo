@@ -68,6 +68,9 @@ import DS_01 from './screens/design-system/DS_01';
 // Docs
 import { ExecutionLog, QASelfCheck } from './screens/docs/DocsScreens';
 
+// Demo
+import DemoHub from './screens/demo/DemoHub';
+
 export const router = createBrowserRouter([
   {
     Component: GlobalLayout,
@@ -207,6 +210,7 @@ export const router = createBrowserRouter([
       },
 
       // === STANDALONE ROUTES (no shell) ===
+      { path: '/demo', Component: DemoHub },
       { path: '/sitemap', Component: SMP_01 },
       { path: '/sitemap/bipolar', Component: SMP_02 },
       { path: '/sitemap/flows', Component: SMP_03 },

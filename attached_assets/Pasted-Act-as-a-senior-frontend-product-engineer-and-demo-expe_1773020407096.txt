@@ -1,0 +1,79 @@
+Act as a senior frontend product engineer and demo experience designer working in ultra low-cost mode.
+
+Project context:
+PETTODO is currently an advanced frontend prototype built with React, Vite, Tailwind, routes, localStorage, seeded demo data, and many existing screens and flows.
+It is not yet a real MVP. It has no backend, no real database, no real authentication, and no real multi-user architecture yet.
+The current goal is NOT to build the backend.
+The current goal is to prepare PETTODO for a clean, convincing demo and future product video.
+
+Important product context:
+PETTODO is not only a lost pet app.
+It is intended to become a broader pet platform that includes:
+- daily pet care and management
+- pet profiles
+- QR pet identity
+- vaccine and health tracking
+- feeding and routine support
+- lost pet emergency flows
+- AI assisted recognition and match suggestions
+- safe community interaction
+- education for first-time owners
+- future guided pet training support
+- community dogs / street dogs visibility and care tracking
+- future shelter / rescue ecosystem support
+
+Important execution constraints:
+- Remaining AI budget is extremely limited
+- Make the smallest possible changes only
+- Do not perform a broad audit
+- Do not refactor unrelated files
+- Do not scan the whole repository if not necessary
+- Reuse existing routes, demo data, components, and utilities
+- Keep explanations very short
+- Focus only on the exact task below
+- Do not start backend work
+- Do not create major new architecture
+- Do not polish unrelated screens
+
+Task:
+Create only the first step of PETTODO Demo Mode.
+
+What this first step should achieve:
+We want a simple demo entry point so the app becomes easier to present, easier to navigate during recording, and easier to evolve later into a more complete demo mode.
+
+Implement only this:
+
+1. A simple Demo Hub / Demo Launcher screen
+Create one clean entry screen or route for demo presentation.
+
+2. Add buttons for these demo scenario entry points:
+- Daily Care Demo
+- Lost Pet Emergency Demo
+- AI Assisted Match Demo
+- Community Dogs Demo
+- Reset Demo Data
+
+3. Add a very simple Reset Demo Data action
+Use the existing localStorage demo architecture and current seeded data approach.
+Do the smallest viable implementation.
+Do not redesign the data system.
+
+4. Reuse what already exists
+Use existing styling, existing buttons, existing layout patterns, existing routes, and existing utilities whenever possible.
+
+5. Keep this phase demo-focused
+This is only the first step toward a presentation-ready demo for recording product videos and showing PETTODO’s vision.
+Do not attempt to complete the whole demo mode in this task.
+
+Output format:
+- very short plan
+- files changed
+- implementation
+- short summary
+- note of anything still demo-only
+
+Success criteria:
+- there is now a simple demo launcher screen
+- the presenter can quickly jump into key PETTODO demo areas
+- demo data can be reset easily
+- the implementation is minimal, cheap, and safe
