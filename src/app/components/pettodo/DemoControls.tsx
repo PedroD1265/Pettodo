@@ -8,26 +8,7 @@ import { makeInboundMessage } from '../../services/demo/chatDemo';
 import { generateId } from '../../data/storage';
 
 export function DemoControlsFab() {
-  const { showDemoControls, setShowDemoControls } = useApp();
-
-  return (
-    <button
-      onClick={() => setShowDemoControls(!showDemoControls)}
-      className="fixed z-40 flex items-center justify-center rounded-full"
-      style={{
-        bottom: 72,
-        right: 8,
-        width: 36,
-        height: 36,
-        background: 'var(--gray-900)',
-        color: 'var(--white)',
-        opacity: 0.5,
-        boxShadow: 'var(--shadow-md)',
-      }}
-    >
-      <Settings size={16} />
-    </button>
-  );
+  return null;
 }
 
 export function DemoControlsPanel() {

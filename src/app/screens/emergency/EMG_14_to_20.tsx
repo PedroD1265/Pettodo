@@ -11,6 +11,7 @@ import { Layers, MapPin, Clock, MessageSquare, Flag, AlertTriangle, Eye } from '
 import { LOST_CASE, MATCHES, LUNA } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
 import { rankMatches } from '../../utils/matching';
+import { getDogPhoto, getMatchPhoto } from '../../data/dogPhotos';
 
 // EMG_14
 export function EMG_14() {
@@ -123,8 +124,8 @@ export function EMG_16() {
         <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Ranked by distance, recency, and traits. Tap to compare.</p>
 
         <div className="flex flex-col gap-2">
-          {displayMatches.map((m) => (
-            <MatchCard key={m.id} {...m} onClick={() => nav('/emg/matching-compare')} />
+          {displayMatches.map((m, i) => (
+            <MatchCard key={m.id} {...m} photoIndex={i} onClick={() => nav('/emg/matching-compare')} />
           ))}
         </div>
 
@@ -160,16 +161,12 @@ export function EMG_17() {
 
         <div className="flex gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-full aspect-square rounded-xl flex items-center justify-center" style={{ background: 'var(--red-bg)' }}>
-              <span className="text-4xl">🐕</span>
-            </div>
+            <img src={getDogPhoto('luna')} alt="Luna" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--red-bg)' }} />
             <StatusChip status="lost" />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Luna (yours)</span>
           </div>
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-full aspect-square rounded-xl flex items-center justify-center" style={{ background: 'var(--green-bg)' }}>
-              <span className="text-4xl">🐕</span>
-            </div>
+            <img src={getMatchPhoto(0)} alt="Match" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--green-bg)' }} />
             <StatusChip status="found" />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Match #{m.id}</span>
           </div>
@@ -230,9 +227,7 @@ export function EMG_18() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--red-bg)' }}>
-            <span className="text-3xl">🐕</span>
-          </div>
+          <img src={getDogPhoto('luna')} alt="Luna" className="w-16 h-16 rounded-xl object-cover" style={{ background: 'var(--red-bg)' }} />
           <div>
             <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Luna</h3>
             <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{LUNA.breed} · {LUNA.description}</p>
@@ -289,9 +284,7 @@ export function EMG_19() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--green-bg)' }}>
-            <span className="text-3xl">🐕</span>
-          </div>
+          <img src={getDogPhoto('found')} alt="Found dog" className="w-16 h-16 rounded-xl object-cover" style={{ background: 'var(--green-bg)' }} />
           <div>
             <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Found Dog</h3>
             <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Medium, brown with white chest</p>

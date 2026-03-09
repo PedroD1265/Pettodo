@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { COMMUNITY_DOGS } from '../../data/demoData';
 import { MapPin, Plus, Camera, AlertTriangle, Clock, FileText, Shield, X, CheckCircle, Syringe, Utensils } from 'lucide-react';
+import { getCommunityDogPhoto } from '../../data/dogPhotos';
 import { toast } from 'sonner';
 
 // CMT_01
@@ -157,9 +158,7 @@ export function CMT_03() {
         
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'var(--warning-bg)' }}>
-            <span className="text-3xl">🐕‍🦺</span>
-          </div>
+          <img src={getCommunityDogPhoto('Buddy')} alt="Buddy" className="w-16 h-16 rounded-xl object-cover" style={{ background: 'var(--warning-bg)' }} />
           <div>
             <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Buddy</h3>
             <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Medium, brown, friendly · Central Park East</p>

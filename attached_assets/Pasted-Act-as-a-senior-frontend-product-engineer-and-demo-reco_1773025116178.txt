@@ -1,0 +1,115 @@
+Act as a senior frontend product engineer and demo recording polish specialist working in ultra low-cost mode.
+
+Project context:
+PETTODO is an advanced frontend prototype built with React, Vite, Tailwind, localStorage seeded demo data, Leaflet maps, QR flows, and many existing screens.
+It is not yet a real MVP and this task is NOT about backend, auth, database, or architecture.
+The current goal is to make the app ready to begin recording the main demo flows.
+
+Important product context:
+PETTODO is not only a lost pet app.
+It is meant to communicate a broader product vision including:
+- daily pet care and management
+- pet profiles
+- QR identity
+- vaccine and health tracking
+- feeding and routines
+- emergency lost pet flows
+- AI assisted recognition and match suggestions
+- safe community interaction and recovery
+- education for owners
+- community dogs / street dogs visibility and care tracking
+- future shelter / rescue ecosystem support
+
+Current recording readiness assessment:
+The app is almost ready to record.
+The main remaining gaps are small demo-cosmetic issues that make the product look like a developer prototype instead of a polished demo.
+
+Critical execution constraints:
+- Remaining AI budget is very limited
+- Make the smallest possible changes only
+- Do not perform a broad audit
+- Do not refactor unrelated files
+- Do not scan the whole repo unless required
+- Reuse existing components, routes, styles, and demo data
+- Do not start backend work
+- Do not redesign the app
+- Do not polish unrelated screens
+- Keep explanations very short
+- Focus only on the exact demo recording fixes below
+
+Main objective:
+Apply one final short round of demo polish so PETTODO is ready to begin recording the flows.
+
+Implement only these fixes, in this exact priority order:
+
+1. Hide ScreenLabel debug bars globally
+The current ScreenLabel debug bars make the app look like a dev prototype during recording.
+Apply the smallest safe solution.
+Best option: gate ScreenLabel behind a demo/presentation flag or simply make it return null during recording mode.
+Do not break anything else.
+
+2. Fix Leaflet CSS import for Replit build reliability
+Ensure Leaflet CSS is imported in the correct place so the project builds reliably on Replit.
+If Leaflet CSS is currently imported in a CSS file in a way that can break Replit build, move it to the correct JS/TS import location.
+Keep the change minimal.
+
+3. Add a direct Demo Hub entry for Community + Safe Recovery
+Add a 5th scenario card to the Demo Hub so the presenter can directly open this flow without manual navigation.
+Use the most appropriate existing route, such as:
+- /emg/chat
+or
+- /communities/home
+Choose the most demo-friendly route already available in the app.
+
+4. Hide or minimize DemoControls FAB for recording
+The floating demo controls icon should not distract during recording.
+Apply the smallest safe solution:
+- hide it by default in recording/presentation mode
+or
+- gate it behind a config flag
+or
+- make it much less visible if hiding is risky
+Prefer the smallest implementation.
+
+5. Improve the visual quality of AI Match and Community Dogs with simple placeholder dog images
+The matching flow currently loses impact because it shows emoji/generic avatars instead of dog photos.
+Apply a lightweight visual improvement using the cheapest safe option:
+- reuse existing local image assets if available
+- otherwise use a few stable placeholder dog images already in the project if they exist
+- otherwise use a minimal local fallback approach that does not require backend work
+Do not build any real AI
+Do not create a large asset system
+Focus only on the screens directly needed for recording:
+- main pet profile visual if applicable
+- AI match cards / compare cards
+- community dog list or detail cards that appear in recording
+
+Important boundaries:
+- Do not touch backend
+- Do not add new architecture
+- Do not refactor AppContext
+- Do not clean unrelated dependencies
+- Do not modify flows that are already working unless directly needed for these recording fixes
+- Do not add optional enhancements unless they are essential for the 5 demo flows
+
+Target recording flows:
+1. Daily Care
+2. Lost Pet Emergency
+3. AI Assisted Match
+4. Community + Safe Recovery
+5. Community Dogs / Social Impact
+
+Success criteria:
+- debug bars no longer appear in recording
+- Leaflet still works and builds cleanly in Replit
+- Demo Hub now includes Community + Safe Recovery
+- demo controls no longer distract in recording
+- AI Match and Community Dogs look more convincing visually
+- PETTODO is ready to start recording the flows
+
+Output format:
+- very short plan
+- files changed
+- implementation
+- short summary
+- note of anything still demo-only

@@ -16,10 +16,19 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-03-09: Demo Recording Polish
+  - `ScreenLabel.tsx`: Returns null — debug bars hidden globally for clean recording
+  - `DemoControls.tsx`: FAB hidden (returns null) — no floating gear icon during recording
+  - `DemoHub.tsx`: Added 5th scenario card "Community + Safe Recovery" (→ /emg/chat)
+  - `dogPhotos.ts`: New helper — stable Unsplash placeholder dog photos for match/community screens
+  - `Cards.tsx`: MatchCard and CommunityDogCard now show real dog photos instead of emoji/icons
+  - `EMG_14_to_20.tsx`: Compare (EMG_17), Lost detail (EMG_18), Found detail (EMG_19) use dog photos
+  - `CMT_screens.tsx`: Community dog detail (CMT_03) uses dog photo
+  - `main.tsx`: Leaflet CSS imported in JS entry (moved from CSS @import for Replit build reliability)
+  - `index.css`: Removed `@import 'leaflet/dist/leaflet.css'`
 - 2026-03-09: Demo Hub — Demo launcher screen at /demo route
-  - `src/app/screens/demo/DemoHub.tsx`: New standalone screen with 4 scenario buttons (Daily Care, Lost Pet Emergency, AI Assisted Match, Community Dogs) + Reset Demo Data action
+  - `src/app/screens/demo/DemoHub.tsx`: Standalone screen with 5 scenario buttons + Reset Demo Data
   - `routes.tsx`: Added /demo route as standalone (no AppShell wrapper) for clean presentation entry point
-  - Uses existing resetStore, existing routes, existing Btn component, existing design tokens
 - 2026-02-23: Iteration 15 — CRUD Extensions, Weight Advisor, Feeding Gauge, UX Polish
   - `storage.ts`: Added WeightLog entity type + SEED_WEIGHT_LOGS (3 entries for Luna) + EntityStore extended + loadEntityStore backward-compatible
   - `AppContext.tsx`: Added 6 new CRUD methods (updateHealthCondition, deleteHealthCondition, deleteHealthDocument, deleteMedicationRecord, deleteVaccineRecord, addWeightLog)

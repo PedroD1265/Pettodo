@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { Btn } from '../../components/pettodo/Buttons';
 import { toast } from 'sonner';
 import {
-  PawPrint, AlertTriangle, Cpu, Heart, RotateCcw, Play,
+  PawPrint, AlertTriangle, Cpu, Heart, RotateCcw, Play, Users,
 } from 'lucide-react';
 
 const SCENARIOS = [
@@ -31,6 +31,14 @@ const SCENARIOS = [
     path: '/emg/matching-top10',
     color: 'var(--info, #2563eb)',
     bg: 'var(--info-bg, #eff6ff)',
+  },
+  {
+    label: 'Community + Safe Recovery',
+    desc: 'Chat, verification, safe meetup',
+    icon: <Users size={20} />,
+    path: '/emg/chat',
+    color: 'var(--green-dark, #166534)',
+    bg: 'var(--green-soft, #dcfce7)',
   },
   {
     label: 'Community Dogs Demo',

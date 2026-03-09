@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { StatusChip, FreshnessBadge, ConfidenceBadge, VerificationBadge, EventTrustBadge, MatchReasonTag, NewAccountBadge } from './Badges';
 import { MapPin, Camera, Clock, Users, QrCode, Syringe, Shield, Star, AlertTriangle } from 'lucide-react';
+import { getMatchPhoto, getCommunityDogPhoto } from '../../data/dogPhotos';
 
 function CardShell({ children, onClick, className = '' }: { children: ReactNode; onClick?: () => void; className?: string }) {
   return (
@@ -190,12 +191,11 @@ export function CommunityDogCard({ name, lastSeen, location, onClick }: {
   location: string;
   onClick?: () => void | Promise<void>;
 }) {
+  const photoUrl = getCommunityDogPhoto(name);
   return (
-    <CardShell onClick={onClick} className="opacity-80">
+    <CardShell onClick={onClick}>
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--warning-bg)' }}>
-          <span className="text-lg">🐕‍🦺</span>
-        </div>
+        <img src={photoUrl} alt={name} className="w-11 h-11 rounded-full object-cover shrink-0" style={{ background: 'var(--warning-bg)' }} />
         <div className="flex-1">
           <p className="text-[14px]" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>{name}</p>
           <span className="text-[11px]" style={{ color: 'var(--gray-400)' }}>Last seen: {lastSeen} · {location}</span>
@@ -234,19 +234,19 @@ export function SafePointCard({ name, hours, distance, trusted, onClick }: {
   );
 }
 
-export function MatchCard({ confidence, reasons, location, time, onClick }: {
+export function MatchCard({ confidence, reasons, location, time, onClick, photoIndex = 0 }: {
   confidence: number;
   reasons: string[];
   location: string;
   time: string;
   onClick?: () => void | Promise<void>;
+  photoIndex?: number;
 }) {
+  const photoUrl = getMatchPhoto(photoIndex);
   return (
     <CardShell onClick={onClick}>
       <div className="flex items-start gap-3">
-        <div className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--gray-100)' }}>
-          <Camera size={24} style={{ color: 'var(--gray-400)' }} />
-        </div>
+        <img src={photoUrl} alt="Dog" className="w-16 h-16 rounded-xl object-cover shrink-0" style={{ background: 'var(--gray-100)' }} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ConfidenceBadge value={confidence} />
