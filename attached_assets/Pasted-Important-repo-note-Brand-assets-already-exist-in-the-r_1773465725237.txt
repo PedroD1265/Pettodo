@@ -1,0 +1,131 @@
+Important repo note:
+Brand assets already exist in the repo.
+Use the existing files first.
+Do not regenerate or replace branding assets unless strictly necessary for technical integration.
+Focus the work on redesigning the UI, not recreating brand files.
+
+Act as a senior product designer + UI systems designer + frontend refactorer for PETTODO.
+
+This is a formal Wave 1 redesign task for the PETTODO web app.
+
+Read and follow these docs as source of truth first:
+- MASTER_CONTEXT.md
+- CURRENT_STATE.md
+- WEBAPP_REPLIT.md
+- SCREEN_ROUTE_MAP.md
+- BRAND_SYSTEM.md
+- PRD_MVP_WEBAPP.md
+- DECISION_LOG.md
+
+Important rules:
+- Do not reinvent the product.
+- Do not reopen closed decisions unless you find a real contradiction.
+- Use attached screenshots only as visual reference.
+- If screenshots and docs conflict, docs win.
+- Do not invent new features.
+- Do not mix backend/auth/persistence/database work into this task.
+- This wave is design/UI/navigation/surface-focused only.
+- PETTODO must feel more premium, sober, modern, and real-product.
+- PETTODO must feel less cartoonish, less toy-like, and less like a generic marketplace app.
+- Daily/Emergency must remain functional product logic, but should not feel like two separate brands.
+- Respect mobile-first behavior.
+
+Primary design goal:
+Create a strong first premium redesign iteration for the main webapp shell and the most visible primary surfaces.
+
+In scope:
+- authenticated app shell
+- header/top area
+- Daily/Emergency switch treatment
+- bottom navigation
+- home/dashboard primary layout
+- pet summary / identity cards
+- QR/status card
+- reminder/action cards
+- community/services entry cards that already exist
+- shared UI tokens for colors, spacing, radius, border, shadow, button hierarchy, chips, icon containers, list rows
+- typography hierarchy refinement
+- official logo and favicon integration
+
+Out of scope:
+- backend
+- auth
+- persistence
+- database
+- storage
+- AI/matching implementation
+- moderation implementation
+- protected contact implementation
+- new modules
+- new product logic
+- new features
+- route structure rewrite
+
+Protected rules:
+- Do not redesign the logo.
+- Do not invent alternative branding.
+- Use the uploaded official PETTODO assets as the visual brand reference together with BRAND_SYSTEM.md.
+- Do not hardcode unofficial final brand hex values unless they are clearly extracted from approved artwork or already defined in docs.
+- Red should remain alert/status only, not the primary brand color.
+- Do not break route clarity between animal profile, case, match result, public flows, authenticated flows, and trust-sensitive flows.
+- Do not create UI claims that imply demo-only capabilities are already fully real.
+
+Visual direction to target:
+- cleaner
+- calmer
+- more confident
+- premium but not forced-luxury
+- trustworthy and structured first
+- warm and caring second
+- modern mobile-first product UI
+- lighter visual noise
+- better whitespace
+- better hierarchy
+- better cards and surfaces
+- less childish icon treatment
+- more coherent navigation
+- more serious product shell
+
+Branding assets:
+Use the existing uploaded assets from the current repo structure.
+
+Current available asset paths:
+- /public/brand/pettodo-logo-primary.png
+- /public/brand/pettodo-logo-black.png
+- /public/brand/pettodo-symbol-primary.png
+- /public/brand/pettodo-symbol-black.png
+- /public/favicon-base.png
+- /public/favicon.ico
+- /public/favicon-32x32.png
+- /public/favicon-16x16.png
+- /public/apple-touch-icon.png
+- /public/android-chrome-192x192.png
+- /public/android-chrome-512x512.png
+
+If needed for browser/PWA integration, you may create:
+- /public/site.webmanifest
+
+Usage rules:
+- Use the full horizontal PETTODO logo in the main app shell/header and other medium/large brand surfaces.
+- Use the symbol-only asset for favicon, app icon, browser icon, and small compact brand surfaces.
+- Do not use the symbol-only asset as the main replacement for the primary header wordmark unless space is truly too small.
+- Keep branding clean and restrained.
+
+Implementation expectations:
+1. Audit the current app shell and primary visible screens.
+2. Create or refine a UI token layer for colors, surfaces, radii, spacing, shadows, borders, and text hierarchy.
+3. Redesign the main app shell and the primary visible home surfaces first.
+4. Keep the product recognizable as PETTODO.
+5. Keep existing flows functional.
+6. Improve visual quality without adding fake complexity.
+7. Prioritize the mobile authenticated experience first.
+
+If the repo structure differs, adapt to the real codebase.
+Do not spend time inventing missing systems that are outside this wave.
+
+At the end, report back with:
+- what files/components/layouts you changed
+- what visual system decisions you applied
+- what remains for Wave 2
+- whether any docs now need updating
+- any contradictions found between docs and implementation
