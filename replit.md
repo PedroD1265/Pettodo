@@ -27,9 +27,23 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - **Backend token verification**: `server/middleware/verifyToken.ts` validates Firebase ID tokens via Admin SDK
 - **Public routes NOT guarded**: /public/*, /auth/sign-in, /sitemap/*, /design-system, /execution-log, /qa-selfcheck
 
+## Database
+- **PostgreSQL**: Replit-managed PostgreSQL (fallback to DATABASE_URL if PG* env vars are absent)
+- **Connection**: `server/db.ts` — uses PG* env vars first, then DATABASE_URL
+- **Schema**: `server/schema.sql` — `pets` table (owner_uid indexed), `imports` table (one-time import tracking)
+- **Migrations**: `server/migrate.ts` — runs schema.sql on server startup (idempotent CREATE IF NOT EXISTS)
+
 ## API Endpoints
 - `GET /api/health` — unprotected, returns `{ ok: true }`
 - `GET /api/auth/me` — protected (Bearer token), returns `{ uid, email, displayName, photoURL }`
+- `GET /api/pets` — protected, lists authenticated user's pets
+- `GET /api/pets/:id` — protected, get a specific pet owned by the user
+- `POST /api/pets` — protected, create a new pet
+- `PUT /api/pets/:id` — protected, update a pet
+- `DELETE /api/pets/:id` — protected, delete a pet
+- `POST /api/import/pets` — protected, one-time import of local pets (rejects if already imported)
+- `GET /api/import/status` — protected, check if import has been done
+- `GET /api/public/pet/:petId` — unprotected, returns safe public pet data (no owner PII)
 
 ## Workflows
 - **Start application**: `npm run dev` (Vite dev server, port 5000)
@@ -45,8 +59,20 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 
 ### Backend
 - FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (for Admin SDK token verification)
+- DATABASE_URL (PostgreSQL connection string — fallback if PG* vars are absent)
+- PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE (Replit-managed PostgreSQL, preferred)
 
 ## Recent Changes
+- 2026-03-14: PostgreSQL Persistence Phase
+  - PostgreSQL connection via Replit-managed DB (PG* env vars) with DATABASE_URL fallback
+  - Schema: `pets` table (id, owner_uid, name, breed, size, colors, marks, collar, temperament, age, weight, microchip, vaccines, last_vaccine, next_vaccine, created_at) + `imports` table
+  - Server routes: full pet CRUD (GET/POST/PUT/DELETE /api/pets), one-time import (POST /api/import/pets), import status (GET /api/import/status), public pet read (GET /api/public/pet/:petId)
+  - Frontend API client (`src/app/services/api.ts`): petApi, importApi, publicApi with auth token management
+  - AppContext: In integration mode, pet add/update/delete syncs to API; `loadPetsFromApi()` fetches pets from DB; `updatePet()` and `deletePet()` added
+  - AuthContext: `importLocalData()` method for one-time localStorage→DB import; clears localStorage and hasPendingImport after import
+  - QRP screens: Support `:petId` URL param for DB-backed public QR reads; fallback to LUNA demo data when no petId
+  - Public pet read: No owner PII exposed; microchip shows Yes/empty; hasOwner flag only
+  - Packages added: pg, @types/pg
 - 2026-03-14: Auth + Backend Foundation
   - Firebase Auth with Google Sign-In (frontend client SDK, lazy init)
   - Express API server on port 3001 with health and auth/me endpoints

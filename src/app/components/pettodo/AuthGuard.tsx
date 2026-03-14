@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
 
 export function AuthGuard() {
-  const { user, authReady, isDemo } = useAuth();
+  const { user, authReady, isDemo, hasPendingImport, importLocalData } = useAuth();
+  const { loadPetsFromApi } = useApp();
+  const didLoad = useRef(false);
+
+  useEffect(() => {
+    if (isDemo || !authReady || !user || didLoad.current) return;
+    didLoad.current = true;
+
+    (async () => {
+      if (hasPendingImport) {
+        try {
+          await importLocalData();
+        } catch (err) {
+          console.error('[AuthGuard] Import failed:', err);
+        }
+      }
+      await loadPetsFromApi();
+    })();
+  }, [isDemo, authReady, user, hasPendingImport, importLocalData, loadPetsFromApi]);
 
   if (isDemo) {
     return <Outlet />;

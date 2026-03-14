@@ -217,8 +217,11 @@ export const router = createBrowserRouter([
         Component: PublicShell,
         children: [
           { path: '/public/qr-landing', Component: QRP_01 },
+          { path: '/public/qr-landing/:petId', Component: QRP_01 },
           { path: '/public/qr-captcha', Component: QRP_02 },
+          { path: '/public/qr-captcha/:petId', Component: QRP_02 },
           { path: '/public/qr-report', Component: QRP_03 },
+          { path: '/public/qr-report/:petId', Component: QRP_03 },
         ],
       },
 

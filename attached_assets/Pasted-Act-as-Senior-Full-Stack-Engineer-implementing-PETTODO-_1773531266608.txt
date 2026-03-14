@@ -1,0 +1,98 @@
+Act as Senior Full-Stack Engineer implementing PETTODO persistence phase.
+
+Implement code. Do not redesign anything.
+
+Read these files first:
+@src/app/config/appConfig.ts
+@src/app/data/storage.ts
+@src/app/services/interfaces.ts
+@src/app/services/index.ts
+@src/app/context/AppContext.tsx
+@src/app/context/AuthContext.tsx
+@src/app/routes.tsx
+@server/index.ts
+@server/routes/auth.ts
+@package.json
+
+Context you must obey:
+- PETTODO must remain on the current Replit app base
+- Do not rebuild from zero
+- Firebase Auth and backend auth foundation are already implemented
+- This phase is about real PostgreSQL persistence using Azure Database for PostgreSQL Flexible Server
+- Do not use Supabase
+- Do not redesign UI, navigation, routes, or design system
+- Do not touch marketplace, play dates, events, push, chat, AI, moderation, or admin suite
+- Public owner data must remain protected by default
+- Public location must remain approximate
+- Keep demo mode working as explicit fallback
+- Do not implement Azure Blob in this phase
+- Do not implement protected contact relay in this phase
+
+Available env vars:
+Frontend:
+- VITE_APP_MODE
+- VITE_AUTH_PROVIDER
+- VITE_API_BASE_URL
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+
+Backend:
+- FIREBASE_PROJECT_ID
+- FIREBASE_CLIENT_EMAIL
+- FIREBASE_PRIVATE_KEY
+- DATABASE_URL
+
+Goal of this implementation phase:
+1. Connect the backend to Azure PostgreSQL using DATABASE_URL
+2. Add the minimal real schema needed for PETTODO persistence in this phase
+3. Implement real persistent pet CRUD in integration mode
+4. Add a safe one-time local-to-account import endpoint and flow
+5. Back the public QR read path with real database data where possible in this phase
+6. Keep demo mode fully working when VITE_APP_MODE=demo
+7. Do not fake persistence if database connection fails
+
+Implementation requirements:
+- Choose the smallest clean DB layer that fits the current codebase
+- Add migration files or SQL bootstrap scripts
+- Keep schema minimal and directly useful for this phase
+- Prefer UUID/string IDs without unnecessary PostgreSQL extension complexity if possible
+- Scope the data model to what is truly needed now
+- Persist pet ownership by authenticated user ID
+- Implement backend routes only for what this phase needs
+- Add repository/service boundaries cleanly so later expansion is easy
+- Do not operationalize every EntityStore table if not needed yet
+- Do not add Blob uploads, media processing, or advanced recovery workflows yet
+
+Required behavior:
+- In integration mode, authenticated users can create, read, update, and list their pets from the real database
+- Existing local demo data can be imported once into the authenticated account through a real backend endpoint
+- The import must avoid repeated duplicate imports
+- If import state needs a lightweight tracking table, add it
+- Public QR read routes must remain public
+- Public QR reads must not expose direct owner PII
+- Public location must remain approximate
+- If a pet/public profile is not yet fully representable from the current data model, implement the safest minimal read shape and report what remains for the next phase
+
+Important constraints:
+- Do not break the auth flow already implemented
+- Do not break public routes
+- Do not break demo mode
+- Do not silently swallow DB errors
+- If DATABASE_URL is missing or invalid, stop clearly and report the blocker
+- If firewall/networking blocks DB connectivity, stop clearly and report the blocker
+- Do not continue into unrelated features
+
+Expected output:
+- implement the code
+- add DB connection wiring
+- add schema/migrations/scripts
+- add the minimal backend routes needed
+- wire integration-mode pets to real persistence
+- add the one-time import endpoint/flow
+- wire public QR read to real DB-backed reads as far as safely possible in this phase
+- summarize exactly what changed
+- list new files created
+- list blockers or remaining gaps for the next phase only
