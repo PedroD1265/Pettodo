@@ -16,6 +16,14 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - `vite.config.ts` - Vite configuration
 
 ## Recent Changes
+- 2026-03-14: Wave 1 Redesign — Brand Theme + Shell + Nav + Home
+  - `theme.css`: Added Trust Blue (#2A6BB8) and Care Green (#A9E5CC) token families; brand aliases (--brand-primary, --brand-secondary, etc.); --primary remapped to blue; red demoted to alert-only; --gray-50 added
+  - `ModeSwitch.tsx`: Compact pill toggle (32px height) with white elevated active state; Daily=blue, Emergency=red text; no more giant colored pills
+  - `AppBar.tsx`: Logo (img from /brand/pettodo-logo-primary.png) on home; mode switch inline on home only; sub-pages show back+title without mode switch; white bg with bottom border; brand blue back chevron
+  - `BottomNav.tsx`: Unified single tab set (Home, Pets, QR, Community, Profile) for both modes; brand blue active state; mode-aware home path routing
+  - `AppShell.tsx`: Background changed to --gray-50 for subtle contrast
+  - `HOM_01.tsx`: Brand tokens for all cards (reminder=care-green, feeding=brand-blue); services use brand-primary icons; removed title prop from AppBar
+  - `Cards.tsx`: PetCard avatar bg=brand-secondary-soft; QR badge=brand-primary; vaccine badge=brand-secondary-dark; SafePointCard/PlayDateCard use brand tokens; CaseCard match count=brand-primary; EventCard source/progress=brand tokens
 - 2026-03-09: Demo Recording Polish
   - `ScreenLabel.tsx`: Returns null — debug bars hidden globally for clean recording
   - `DemoControls.tsx`: FAB hidden (returns null) — no floating gear icon during recording

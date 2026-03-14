@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ModeSwitch } from './ModeSwitch';
 import { ChevronLeft, Bell } from 'lucide-react';
@@ -50,12 +50,9 @@ interface AppBarProps {
 }
 
 export function AppBar({ title, showBack = false, showBell = true, backTo }: AppBarProps) {
-  const { mode, store, markNotificationRead } = useApp();
+  const { mode, store } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const isEmg = mode === 'emergency';
-  const bg = isEmg ? 'var(--red-bg)' : 'var(--green-bg)';
-  const accent = isEmg ? 'var(--red-primary)' : 'var(--green-primary)';
 
   const unreadCount = (store.notifications ?? []).filter(n => !n.read).length;
 
@@ -87,30 +84,41 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
   const isDemo = appConfig.mode === 'demo';
 
   return (
-    <div className="flex flex-col" style={{ background: bg }}>
-      <div className="flex items-center justify-center pt-2 pb-1">
-        <ModeSwitch />
-      </div>
-      <div className="flex items-center px-4 pb-2" style={{ minHeight: 44 }}>
-        {showBack && (
+    <div className="flex flex-col" style={{ background: 'var(--white)', borderBottom: '1px solid var(--gray-200)' }}>
+      <div className="flex items-center px-4 py-2" style={{ minHeight: 48 }}>
+        {showBack ? (
           <button
             onClick={handleBack}
             className="flex items-center justify-center mr-2"
-            style={{ minWidth: 44, minHeight: 44, color: accent }}
+            style={{ minWidth: 36, minHeight: 36, color: 'var(--brand-primary)' }}
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={22} />
           </button>
+        ) : (
+          <img
+            src="/brand/pettodo-logo-primary.png"
+            alt="PETTODO"
+            style={{ height: 28 }}
+            className="mr-3"
+          />
         )}
-        {title && (
-          <span className="flex-1 text-[17px] truncate" style={{ color: 'var(--gray-900)', fontWeight: 600 }}>
+
+        {title && showBack && (
+          <span className="flex-1 text-[16px] truncate mr-2" style={{ color: 'var(--gray-900)', fontWeight: 600 }}>
             {title}
           </span>
         )}
+
+        {!title && showBack && <div className="flex-1" />}
+        {!showBack && <div className="flex-1" />}
+
+        {!showBack && <ModeSwitch />}
+
         <span
           className="ml-2 px-1.5 py-0.5 rounded text-[9px] shrink-0"
           style={{
-            background: isDemo ? 'var(--gray-200)' : 'var(--info-bg)',
-            color: isDemo ? 'var(--gray-500)' : 'var(--info)',
+            background: isDemo ? 'var(--gray-100)' : 'var(--blue-bg)',
+            color: isDemo ? 'var(--gray-400)' : 'var(--brand-primary)',
             fontWeight: 700,
             letterSpacing: '0.04em',
           }}
@@ -120,16 +128,16 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
         {showBell && (
           <button
             onClick={handleBell}
-            className="flex items-center justify-center ml-2 relative"
-            style={{ minWidth: 44, minHeight: 44, color: 'var(--gray-500)' }}
+            className="flex items-center justify-center ml-1 relative"
+            style={{ minWidth: 36, minHeight: 36, color: 'var(--gray-500)' }}
           >
             <Bell size={20} />
             {unreadCount > 0 && (
               <span
                 className="absolute flex items-center justify-center rounded-full text-[9px]"
                 style={{
-                  top: 8,
-                  right: 6,
+                  top: 4,
+                  right: 2,
                   width: 16,
                   height: 16,
                   background: 'var(--red-primary)',

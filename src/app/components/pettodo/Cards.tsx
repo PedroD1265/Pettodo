@@ -46,7 +46,7 @@ export function CaseCard({ type, name, location, time, matchCount, onClick, chil
             <span className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{time}</span>
           </div>
           {matchCount !== undefined && matchCount > 0 && (
-            <span className="text-[11px] mt-1 inline-block" style={{ color: 'var(--info)', fontWeight: 500 }}>
+            <span className="text-[11px] mt-1 inline-block" style={{ color: 'var(--brand-primary)', fontWeight: 500 }}>
               {matchCount} possible matches
             </span>
           )}
@@ -71,7 +71,7 @@ export function PetCard({ name, breed, hasQR, vaccineStatus, onClick }: {
   return (
     <CardShell onClick={onClick}>
       <div className="flex items-center gap-3">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--green-soft)' }}>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--brand-secondary-soft)' }}>
           <span className="text-2xl">🐕</span>
         </div>
         <div className="flex-1">
@@ -79,12 +79,12 @@ export function PetCard({ name, breed, hasQR, vaccineStatus, onClick }: {
           <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{breed}</p>
           <div className="flex items-center gap-2 mt-1">
             {hasQR && (
-              <span className="inline-flex items-center gap-0.5 text-[10px]" style={{ color: 'var(--info)' }}>
+              <span className="inline-flex items-center gap-0.5 text-[10px]" style={{ color: 'var(--brand-primary)' }}>
                 <QrCode size={11} /> QR Active
               </span>
             )}
             {vaccineStatus && (
-              <span className="inline-flex items-center gap-0.5 text-[10px]" style={{ color: 'var(--green-primary)' }}>
+              <span className="inline-flex items-center gap-0.5 text-[10px]" style={{ color: 'var(--brand-secondary-dark)' }}>
                 <Syringe size={11} /> {vaccineStatus}
               </span>
             )}
@@ -113,12 +113,12 @@ export function EventCard({ name, date, source, verified, communityScore, onClic
         <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{date}</p>
         <div className="flex items-center gap-1">
           <span className="text-[11px]" style={{ color: 'var(--gray-500)' }}>Event source:</span>
-          <span className="text-[11px]" style={{ color: 'var(--info)', fontWeight: 500 }}>{source}</span>
+          <span className="text-[11px]" style={{ color: 'var(--brand-primary)', fontWeight: 500 }}>{source}</span>
         </div>
         {communityScore !== undefined && (
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--gray-200)' }}>
-              <div className="h-full rounded-full" style={{ width: `${communityScore}%`, background: 'var(--green-primary)' }} />
+              <div className="h-full rounded-full" style={{ width: `${communityScore}%`, background: 'var(--brand-secondary-dark)' }} />
             </div>
             <span className="text-[11px]" style={{ color: 'var(--gray-500)' }}>{communityScore}%</span>
           </div>
@@ -177,8 +177,8 @@ export function PlayDateCard({ title, participants, location, onClick }: {
           <span className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{participants} dogs attending</span>
         </div>
         <div className="flex items-center gap-1 mt-0.5">
-          <Shield size={12} style={{ color: 'var(--green-primary)' }} />
-          <span className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>Public place · Safety tips shared</span>
+          <Shield size={12} style={{ color: 'var(--brand-secondary-dark)' }} />
+          <span className="text-[11px]" style={{ color: 'var(--brand-secondary-dark)', fontWeight: 500 }}>Public place · Safety tips shared</span>
         </div>
       </div>
     </CardShell>
@@ -215,14 +215,14 @@ export function SafePointCard({ name, hours, distance, trusted, onClick }: {
   return (
     <CardShell onClick={onClick}>
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--green-soft)' }}>
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--brand-secondary-soft)' }}>
           <span className="text-lg">🏥</span>
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <p className="text-[14px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{name}</p>
             {trusted && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--green-soft)', color: 'var(--green-dark)', fontWeight: 600 }}>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-secondary-soft)', color: 'var(--brand-secondary-dark)', fontWeight: 600 }}>
                 Trusted Ally
               </span>
             )}

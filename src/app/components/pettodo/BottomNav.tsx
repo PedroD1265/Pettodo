@@ -1,22 +1,14 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNavigate, useLocation } from 'react-router';
-import { Home, Search, QrCode, Users, User, MapPin, PawPrint, BookOpen, CalendarDays } from 'lucide-react';
+import { Home, PawPrint, QrCode, Users, User } from 'lucide-react';
 
-const emergencyTabs = [
-  { icon: Home, label: 'Home', path: '/home-emergency' },
-  { icon: Search, label: 'Search', path: '/emg/entry' },
-  { icon: MapPin, label: 'Map', path: '/emg/map-layers' },
-  { icon: Users, label: 'Community', path: '/communities/home' },
-  { icon: User, label: 'Profile', path: '/profile/user' },
-];
-
-const dailyTabs = [
-  { icon: Home, label: 'Home', path: '/home-daily' },
-  { icon: PawPrint, label: 'Pets', path: '/daily/pet-list' },
-  { icon: QrCode, label: 'QR', path: '/qr/hub' },
-  { icon: BookOpen, label: 'Learn', path: '/education/library' },
-  { icon: User, label: 'Profile', path: '/profile/user' },
+const tabs = [
+  { icon: Home, label: 'Home', dailyPath: '/home-daily', emgPath: '/home-emergency' },
+  { icon: PawPrint, label: 'Pets', dailyPath: '/daily/pet-list', emgPath: '/daily/pet-list' },
+  { icon: QrCode, label: 'QR', dailyPath: '/qr/hub', emgPath: '/qr/hub' },
+  { icon: Users, label: 'Community', dailyPath: '/communities/home', emgPath: '/communities/home' },
+  { icon: User, label: 'Profile', dailyPath: '/profile/user', emgPath: '/profile/user' },
 ];
 
 export function BottomNav() {
@@ -24,8 +16,6 @@ export function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const isEmg = mode === 'emergency';
-  const tabs = isEmg ? emergencyTabs : dailyTabs;
-  const accent = isEmg ? 'var(--red-primary)' : 'var(--green-primary)';
 
   return (
     <div
@@ -33,18 +23,24 @@ export function BottomNav() {
       style={{ background: 'var(--white)', borderColor: 'var(--gray-200)', minHeight: 56 }}
     >
       {tabs.map((tab) => {
-        const active = location.pathname.startsWith(tab.path);
+        const path = isEmg ? tab.emgPath : tab.dailyPath;
+        const active = location.pathname.startsWith(path) ||
+          (tab.label === 'Home' && (location.pathname === '/home-daily' || location.pathname === '/home-emergency'));
         const Icon = tab.icon;
         return (
           <button
-            key={tab.path}
-            onClick={() => navigate(tab.path)}
+            key={tab.label}
+            onClick={() => navigate(path)}
             className="flex flex-col items-center justify-center flex-1 gap-0.5 relative"
-            style={{ minHeight: 56, minWidth: 44, color: active ? accent : 'var(--gray-400)' }}
+            style={{
+              minHeight: 56,
+              minWidth: 44,
+              color: active ? 'var(--brand-primary)' : 'var(--gray-400)',
+            }}
           >
-            <Icon size={22} />
-            <span className="text-[10px]">{tab.label}</span>
-            {tab.label === 'Search' && hasActiveCase && isEmg && (
+            <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
+            <span className="text-[10px]" style={{ fontWeight: active ? 600 : 400 }}>{tab.label}</span>
+            {tab.label === 'Home' && hasActiveCase && isEmg && (
               <span className="absolute top-2 right-1/4 w-2 h-2 rounded-full" style={{ background: 'var(--red-primary)' }} />
             )}
           </button>

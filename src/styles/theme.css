@@ -4,13 +4,25 @@
   --font-size: 16px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
 
-  /* PETTODO Emergency (Red) */
+  /* Brand — Trust Blue */
+  --blue-primary: #2A6BB8;
+  --blue-dark: #1E4F8A;
+  --blue-soft: #B3D4F7;
+  --blue-bg: #EDF4FC;
+
+  /* Brand — Care Green */
+  --care-primary: #A9E5CC;
+  --care-dark: #3DA67A;
+  --care-soft: #D4F2E4;
+  --care-bg: #F0FAF5;
+
+  /* Alert (Red) — status/alert only */
   --red-primary: #DC2626;
   --red-dark: #991B1B;
   --red-soft: #FECACA;
   --red-bg: #FEF2F2;
 
-  /* PETTODO Daily (Green) */
+  /* Legacy green (kept for non-brand semantic use) */
   --green-primary: #16A34A;
   --green-dark: #15803D;
   --green-soft: #BBF7D0;
@@ -24,6 +36,7 @@
   --gray-400: #9CA3AF;
   --gray-200: #E5E7EB;
   --gray-100: #F3F4F6;
+  --gray-50: #F9FAFB;
   --white: #FFFFFF;
 
   /* Semantic */
@@ -35,6 +48,17 @@
   --warning-bg: #FFFBEB;
   --warning-soft: #FDE68A;
   --warning-dark: #92400E;
+
+  /* Brand aliases */
+  --brand-primary: var(--blue-primary);
+  --brand-primary-dark: var(--blue-dark);
+  --brand-primary-soft: var(--blue-soft);
+  --brand-primary-bg: var(--blue-bg);
+  --brand-secondary: var(--care-primary);
+  --brand-secondary-dark: var(--care-dark);
+  --brand-secondary-soft: var(--care-soft);
+  --brand-secondary-bg: var(--care-bg);
+  --brand-accent: var(--care-dark);
 
   /* Spacing */
   --sp-1: 4px;
@@ -55,21 +79,21 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
 
-  /* Keep existing base tokens */
+  /* Base tokens — blue-forward */
   --background: var(--white);
   --foreground: var(--gray-900);
   --card: var(--white);
   --card-foreground: var(--gray-900);
   --popover: var(--white);
   --popover-foreground: var(--gray-900);
-  --primary: var(--gray-900);
+  --primary: var(--blue-primary);
   --primary-foreground: var(--white);
   --secondary: var(--gray-100);
   --secondary-foreground: var(--gray-900);
   --muted: var(--gray-100);
   --muted-foreground: var(--gray-500);
-  --accent: var(--gray-200);
-  --accent-foreground: var(--gray-900);
+  --accent: var(--blue-bg);
+  --accent-foreground: var(--blue-dark);
   --destructive: var(--red-primary);
   --destructive-foreground: var(--white);
   --border: var(--gray-200);
@@ -78,7 +102,7 @@
   --switch-background: var(--gray-400);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: var(--gray-400);
+  --ring: var(--blue-soft);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -87,12 +111,12 @@
   --radius: 0.625rem;
   --sidebar: var(--gray-100);
   --sidebar-foreground: var(--gray-900);
-  --sidebar-primary: var(--gray-900);
+  --sidebar-primary: var(--blue-primary);
   --sidebar-primary-foreground: var(--white);
-  --sidebar-accent: var(--gray-100);
-  --sidebar-accent-foreground: var(--gray-700);
+  --sidebar-accent: var(--blue-bg);
+  --sidebar-accent-foreground: var(--blue-dark);
   --sidebar-border: var(--gray-200);
-  --sidebar-ring: var(--gray-400);
+  --sidebar-ring: var(--blue-soft);
 }
 
 @theme inline {
