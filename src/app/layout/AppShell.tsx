@@ -5,7 +5,7 @@ import { DemoControlsFab, DemoControlsPanel } from '../components/pettodo/DemoCo
 
 export function AppShell() {
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--gray-50, #F9FAFB)' }}>
+    <div className="flex flex-col h-full" style={{ background: 'var(--brand-primary-bg)' }}>
       <div className="flex-1 overflow-y-auto">
         <Outlet />
       </div>

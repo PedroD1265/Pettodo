@@ -8,8 +8,15 @@ function CardShell({ children, onClick, className = '' }: { children: ReactNode;
   return (
     <div
       onClick={onClick}
-      className={`rounded-2xl p-4 ${onClick ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''} ${className}`}
-      style={{ background: 'var(--white)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--gray-200)' }}
+      className={`rounded-2xl p-4 ${onClick ? 'cursor-pointer active:scale-[0.98] transition-all' : ''} ${className}`}
+      style={{
+        background: 'var(--white)',
+        boxShadow: 'var(--shadow-sm)',
+        border: '1px solid var(--gray-200)',
+        ...(onClick ? { cursor: 'pointer' } : {}),
+      }}
+      onMouseEnter={onClick ? (e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-primary-soft)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; } : undefined}
+      onMouseLeave={onClick ? (e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--gray-200)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)'; } : undefined}
     >
       {children}
     </div>

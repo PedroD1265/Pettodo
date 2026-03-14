@@ -29,13 +29,13 @@ export default function HOM_01() {
   React.useEffect(() => { setMode('daily'); }, []);
 
   return (
-    <div className="flex flex-col min-h-full" style={{ background: 'var(--gray-50, #F9FAFB)' }}>
+    <div className="flex flex-col min-h-full" style={{ background: 'var(--brand-primary-bg)' }}>
       <ScreenLabel name="HOM_01_Home_Daily_NoActiveCase" />
       <AppBar showBack={false} />
       <div className="flex-1 p-4 flex flex-col gap-4">
 
         <div>
-          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Your Pets</h3>
+          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--brand-primary-dark)' }}>Your Pets</h3>
           <PetCard name={LUNA.name} breed={LUNA.breed} hasQR vaccineStatus="Up to date" onClick={() => nav('/daily/pet-profile')} />
         </div>
 
@@ -58,7 +58,7 @@ export default function HOM_01() {
         )}
 
         <div>
-          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Community</h3>
+          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--brand-primary-dark)' }}>Community</h3>
           <div className="grid grid-cols-4 gap-2">
             {[
               { icon: <Users size={18} />, label: 'Communities', path: '/communities/home', color: 'var(--brand-primary-bg)', accent: 'var(--brand-primary-dark)' },
@@ -80,7 +80,7 @@ export default function HOM_01() {
         </div>
 
         <div>
-          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Services</h3>
+          <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--brand-primary-dark)' }}>Services</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
               {
