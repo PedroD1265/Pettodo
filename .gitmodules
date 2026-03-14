@@ -1,0 +1,4 @@
+[submodule "docs/shared"]
+	path = docs/shared
+	url = https://github.com/PedroD1265/pettodo-docs.git
+	branch = main
