@@ -85,7 +85,7 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
 
   return (
     <div className="flex flex-col" style={{ background: 'var(--white)', borderBottom: '1px solid var(--gray-200)' }}>
-      <div className="flex items-center px-4 py-2" style={{ minHeight: 48 }}>
+      <div className="flex items-center px-4 py-2" style={{ minHeight: 56 }}>
         {showBack ? (
           <button
             onClick={handleBack}
@@ -98,7 +98,7 @@ export function AppBar({ title, showBack = false, showBell = true, backTo }: App
           <img
             src="/brand/pettodo-logo-primary.png"
             alt="PETTODO"
-            style={{ height: 28 }}
+            style={{ height: 36 }}
             className="mr-3"
           />
         )}
