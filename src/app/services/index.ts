@@ -7,6 +7,7 @@ import { chatDemoAdapter } from './demo/chatDemo';
 import { pushDemoAdapter } from './demo/pushDemo';
 import { geoDemoAdapter } from './demo/geoDemo';
 import { aiDemoAdapter, matchingDemoAdapter } from './demo/aiDemo';
+import { authDemoAdapter } from './demo/authDemo';
 
 import { storageAzureStub, storageGcsStub } from './integration/storageAzure.stub';
 import { smsTwilioStub } from './integration/smsTwilio.stub';
@@ -14,6 +15,7 @@ import { chatAblyStub } from './integration/chatAbly.stub';
 import { pushFcmStub } from './integration/pushFcm.stub';
 import { geoGoogleStub } from './integration/geoGoogle.stub';
 import { aiGeminiStub, matchingGeminiStub } from './integration/aiGemini.stub';
+import { authFirebaseAdapter } from './integration/authFirebase';
 
 function buildServices(): Services {
   const isDemo = appConfig.mode === 'demo';
@@ -38,7 +40,9 @@ function buildServices(): Services {
 
   const matching = isDemo || appConfig.aiProvider === 'demo' ? matchingDemoAdapter : matchingGeminiStub;
 
-  return { storage, sms, chat, push, geo, ai, matching };
+  const auth = isDemo ? authDemoAdapter : authFirebaseAdapter;
+
+  return { storage, sms, chat, push, geo, ai, matching, auth };
 }
 
 let _services: Services | null = null;

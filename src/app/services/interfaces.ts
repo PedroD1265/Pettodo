@@ -44,6 +44,21 @@ export interface IMatchingService {
   rankMatches(lostCaseId: string): Promise<MatchResult[]>;
 }
 
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
+export interface IAuthService {
+  getCurrentUser(): AuthUser | null;
+  getIdToken(): Promise<string | null>;
+  signInWithGoogle(): Promise<AuthUser>;
+  signOut(): Promise<void>;
+  onAuthStateChanged(callback: (user: AuthUser | null) => void): () => void;
+}
+
 export interface Services {
   storage: IStorageService;
   sms: ISmsService;
@@ -52,4 +67,5 @@ export interface Services {
   geo: IGeoService;
   ai: IAiAssistantService;
   matching: IMatchingService;
+  auth: IAuthService;
 }

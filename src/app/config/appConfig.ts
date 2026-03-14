@@ -3,6 +3,7 @@ const getEnv = (key: string, fallback: string): string =>
 
 export const appConfig = {
   mode: getEnv('VITE_APP_MODE', 'demo') as 'demo' | 'integration',
+  authProvider: getEnv('VITE_AUTH_PROVIDER', 'demo') as 'demo' | 'firebase',
   storageProvider: getEnv('VITE_STORAGE_PROVIDER', 'demo') as 'demo' | 'azure' | 'gcs',
   smsProvider: getEnv('VITE_SMS_PROVIDER', 'demo') as 'demo' | 'twilio',
   chatProvider: getEnv('VITE_CHAT_PROVIDER', 'demo') as 'demo' | 'ably' | 'pusher' | 'supabase',

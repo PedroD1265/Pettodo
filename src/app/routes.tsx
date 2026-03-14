@@ -2,14 +2,18 @@ import { createBrowserRouter, Outlet } from 'react-router';
 import { AppShell } from './layout/AppShell';
 import { PublicShell } from './layout/PublicShell';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import { AuthGuard } from './components/pettodo/AuthGuard';
 import { Toaster } from 'sonner';
 
 function GlobalLayout() {
   return (
-    <AppProvider>
-      <Outlet />
-      <Toaster position="top-center" richColors />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <Outlet />
+        <Toaster position="top-center" richColors />
+      </AppProvider>
+    </AuthProvider>
   );
 }
 
@@ -65,6 +69,12 @@ import { QRP_01, QRP_02, QRP_03 } from './screens/qr-public/QRP_screens';
 // Design System
 import DS_01 from './screens/design-system/DS_01';
 
+// Demo
+import DemoHub from './screens/demo/DemoHub';
+
+// Auth
+import SignIn from './screens/auth/SignIn';
+
 // Docs
 import { ExecutionLog, QASelfCheck } from './screens/docs/DocsScreens';
 
@@ -72,8 +82,10 @@ export const router = createBrowserRouter([
   {
     Component: GlobalLayout,
     children: [
-      // === IN-APP ROUTES (with AppShell) ===
+      // === IN-APP ROUTES (with AuthGuard + AppShell) ===
       {
+        Component: AuthGuard,
+        children: [{
         Component: AppShell,
         children: [
           // Home
@@ -194,7 +206,11 @@ export const router = createBrowserRouter([
           { path: '/profile/notifications', Component: PRF_04 },
           { path: '/profile/safety', Component: PRF_05 },
         ],
+      }],
       },
+
+      // === AUTH ROUTES (no shell, no guard) ===
+      { path: '/auth/sign-in', Component: SignIn },
 
       // === PUBLIC QR ROUTES (no app chrome) ===
       {
@@ -206,7 +222,8 @@ export const router = createBrowserRouter([
         ],
       },
 
-      // === STANDALONE ROUTES (no shell) ===
+      // === STANDALONE ROUTES (no shell, no guard) ===
+      { path: '/demo', Component: DemoHub },
       { path: '/sitemap', Component: SMP_01 },
       { path: '/sitemap/bipolar', Component: SMP_02 },
       { path: '/sitemap/flows', Component: SMP_03 },

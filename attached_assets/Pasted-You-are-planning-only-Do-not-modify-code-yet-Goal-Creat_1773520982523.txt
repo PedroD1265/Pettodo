@@ -1,0 +1,86 @@
+You are planning only. Do not modify code yet.
+
+Goal:
+Create a precise implementation plan for the first real backend transition step of PETTODO.
+
+What this planning pass is about:
+- real Firebase Auth on the frontend
+- Google Sign-In
+- persistent web session handling
+- a small backend/API layer inside the current Replit app
+- backend Firebase token verification using Firebase Admin SDK
+- route guards for protected routes/actions
+- preserving demo mode as fallback
+- preparing clean service/repository boundaries for later real persistence work
+
+What this planning pass is NOT about:
+- do not redesign anything
+- do not change the navigation structure
+- do not change the UI system
+- do not implement Azure PostgreSQL yet
+- do not implement Azure Blob yet
+- do not implement persistent CRUD yet if it depends on a real database
+- do not implement QR database-backed flows yet if they require real persistence
+- do not touch marketplace, play dates, events, push, chat, AI, moderation, or admin suite
+
+Frozen architecture decisions:
+- keep the current Replit app base
+- Firebase Auth is the official auth provider
+- Google Sign-In first
+- backend/API initially lives inside the Replit runtime
+- demo mode must remain as explicit fallback
+- do not use Supabase
+- protected owner data must remain protected by default
+- public location must remain approximate
+
+Firebase is already configured.
+Available frontend env vars:
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_APP_MODE
+
+Available backend env vars:
+- FIREBASE_PROJECT_ID
+- FIREBASE_CLIENT_EMAIL
+- FIREBASE_PRIVATE_KEY
+
+Inspect these files first:
+@src/app/config/appConfig.ts
+@src/app/data/storage.ts
+@src/app/services/interfaces.ts
+@src/app/context/AppContext.tsx
+
+Your task:
+1. Analyze the current app structure relevant to auth, app mode, storage, and service boundaries
+2. Identify the exact files that should be created or modified for this implementation step
+3. Propose the minimal backend/API shape inside this Replit app
+4. Propose the frontend auth flow using Firebase Auth + Google Sign-In
+5. Propose the backend token verification flow using Firebase Admin SDK
+6. Propose the route guard strategy
+7. Explain how demo mode should keep working while integration mode gains real auth
+8. Explain how to prepare clean repository/service boundaries for a later persistence step without rewriting the app
+9. Explain how to prepare a safe local-to-account import boundary/contract without implementing fake DB persistence
+10. Flag any missing files or repo areas you need to inspect next before coding
+
+Output requirements:
+- Do not write code yet
+- Be concrete and file-by-file
+- Keep scope minimal and low-risk
+- Do not expand scope
+
+Output format:
+1. Current-state summary for this task
+2. Files to create
+3. Files to modify
+4. Recommended execution order
+5. Backend/API shape
+6. Frontend auth flow
+7. Backend token verification flow
+8. Route guard strategy
+9. Demo vs integration mode behavior
+10. Local import preparation strategy
+11. Additional files to inspect before implementation
+12. Risks / blockers for this implementation step only

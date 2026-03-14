@@ -9,87 +9,72 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - **Styling**: Tailwind CSS v4 + custom CSS theme variables
 - **UI Libraries**: Radix UI, MUI, Lucide icons
 - **Routing**: React Router v7
+- **Auth**: Firebase Auth (Google Sign-In) — demo mode fallback when VITE_APP_MODE=demo
+- **Backend**: Express API server on port 3001, proxied through Vite on /api/*
 - **Structure**:
   - `src/app/` - Main app component, routes, screens, components, layout, context, data
   - `src/styles/` - Global CSS, theme, fonts, Tailwind config
+  - `src/firebase.ts` - Firebase client SDK (lazy initialization)
+  - `server/` - Express API backend (firebaseAdmin, middleware, routes)
   - `index.html` - Entry HTML
-  - `vite.config.ts` - Vite configuration
+  - `vite.config.ts` - Vite configuration (includes /api proxy to port 3001)
+
+## Auth Architecture
+- **AuthContext** (`src/app/context/AuthContext.tsx`): Provides user, authReady, isDemo, signInWithGoogle, signOut, getIdToken, hasPendingImport
+- **AuthGuard** (`src/app/components/pettodo/AuthGuard.tsx`): Wraps AppShell routes. In demo mode: passes through immediately. In integration mode: redirects to /auth/sign-in if not authenticated.
+- **Sign-in screen** (`src/app/screens/auth/SignIn.tsx`): Standalone route /auth/sign-in (no AppShell, no AuthGuard). Google Sign-In via popup.
+- **Service adapters**: `authDemo.ts` (returns synthetic demo user) and `authFirebase.ts` (real Firebase Auth)
+- **Backend token verification**: `server/middleware/verifyToken.ts` validates Firebase ID tokens via Admin SDK
+- **Public routes NOT guarded**: /public/*, /auth/sign-in, /sitemap/*, /design-system, /execution-log, /qa-selfcheck
+
+## API Endpoints
+- `GET /api/health` — unprotected, returns `{ ok: true }`
+- `GET /api/auth/me` — protected (Bearer token), returns `{ uid, email, displayName, photoURL }`
+
+## Workflows
+- **Start application**: `npm run dev` (Vite dev server, port 5000)
+- **API server**: `npm run api` (Express server, port 3001)
+
+## Environment Variables
+### Frontend (VITE_*)
+- VITE_APP_MODE: "demo" | "integration" (default: demo)
+- VITE_AUTH_PROVIDER: "demo" | "firebase" (default: demo)
+- VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID, VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_STORAGE_PROVIDER, VITE_SMS_PROVIDER, VITE_CHAT_PROVIDER, VITE_PUSH_PROVIDER, VITE_MAP_PROVIDER, VITE_AI_PROVIDER
+- VITE_API_BASE_URL
+
+### Backend
+- FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (for Admin SDK token verification)
 
 ## Recent Changes
+- 2026-03-14: Auth + Backend Foundation
+  - Firebase Auth with Google Sign-In (frontend client SDK, lazy init)
+  - Express API server on port 3001 with health and auth/me endpoints
+  - Firebase Admin SDK token verification middleware
+  - AuthContext, AuthGuard, IAuthService interface + demo/firebase adapters
+  - Sign-in screen at /auth/sign-in (standalone route, no AppShell)
+  - Route guards: AppShell routes wrapped with AuthGuard; public/standalone routes remain unguarded
+  - Demo mode unchanged — AuthGuard passes through, synthetic demo user, no Firebase calls
+  - Vite proxy config: /api/* → localhost:3001
+  - hasPendingImport flag in AuthContext for future local-to-account data migration
+  - Packages added: firebase, firebase-admin, express, cors, tsx, typescript, @types/express, @types/cors
 - 2026-03-14: Wave 1 Redesign — Brand Theme + Shell + Nav + Home
   - `theme.css`: Added Trust Blue (#2A6BB8) and Care Green (#A9E5CC) token families; brand aliases (--brand-primary, --brand-secondary, etc.); --primary remapped to blue; red demoted to alert-only; --gray-50 added
   - `ModeSwitch.tsx`: Compact pill toggle (32px height) with white elevated active state; Daily=blue, Emergency=red text; no more giant colored pills
   - `AppBar.tsx`: Logo (img from /brand/pettodo-logo-primary.png) on home; mode switch inline on home only; sub-pages show back+title without mode switch; white bg with bottom border; brand blue back chevron
   - `BottomNav.tsx`: Unified single tab set (Home, Pets, QR, Community, Profile) for both modes; brand blue active state; mode-aware home path routing
-  - `AppShell.tsx`: Background changed to --gray-50 for subtle contrast
-  - `HOM_01.tsx`: Brand tokens for all cards (reminder=care-green, feeding=brand-blue); services use brand-primary icons; removed title prop from AppBar
-  - `Cards.tsx`: PetCard avatar bg=brand-secondary-soft; QR badge=brand-primary; vaccine badge=brand-secondary-dark; SafePointCard/PlayDateCard use brand tokens; CaseCard match count=brand-primary; EventCard source/progress=brand tokens
+  - `AppShell.tsx`: Background changed to --brand-primary-bg for subtle brand contrast
+  - `HOM_01.tsx`: Brand tokens for all cards (reminder=care-green, feeding=brand-blue); services use brand-primary icons; section headers use --brand-primary-dark
+  - `Cards.tsx`: PetCard avatar bg=brand-secondary-soft; QR badge=brand-primary; vaccine badge=brand-secondary-dark; CardShell brand hover; SafePointCard/PlayDateCard use brand tokens
 - 2026-03-09: Demo Recording Polish
-  - `ScreenLabel.tsx`: Returns null — debug bars hidden globally for clean recording
-  - `DemoControls.tsx`: FAB hidden (returns null) — no floating gear icon during recording
-  - `DemoHub.tsx`: Added 5th scenario card "Community + Safe Recovery" (→ /emg/chat)
-  - `dogPhotos.ts`: New helper — stable Unsplash placeholder dog photos for match/community screens
-  - `Cards.tsx`: MatchCard and CommunityDogCard now show real dog photos instead of emoji/icons
-  - `EMG_14_to_20.tsx`: Compare (EMG_17), Lost detail (EMG_18), Found detail (EMG_19) use dog photos
-  - `CMT_screens.tsx`: Community dog detail (CMT_03) uses dog photo
-  - `main.tsx`: Leaflet CSS imported in JS entry (moved from CSS @import for Replit build reliability)
-  - `index.css`: Removed `@import 'leaflet/dist/leaflet.css'`
 - 2026-03-09: Demo Hub — Demo launcher screen at /demo route
-  - `src/app/screens/demo/DemoHub.tsx`: Standalone screen with 5 scenario buttons + Reset Demo Data
-  - `routes.tsx`: Added /demo route as standalone (no AppShell wrapper) for clean presentation entry point
 - 2026-02-23: Iteration 15 — CRUD Extensions, Weight Advisor, Feeding Gauge, UX Polish
-  - `storage.ts`: Added WeightLog entity type + SEED_WEIGHT_LOGS (3 entries for Luna) + EntityStore extended + loadEntityStore backward-compatible
-  - `AppContext.tsx`: Added 6 new CRUD methods (updateHealthCondition, deleteHealthCondition, deleteHealthDocument, deleteMedicationRecord, deleteVaccineRecord, addWeightLog)
-  - `HealthSection.tsx`: Full CRUD — edit/delete for conditions, delete for vaccines/medications/documents with confirmation modal; Weight Advisor section with mini bar chart + trend (stable/up/down)
-  - `FeedingSection.tsx`: Feeding Advisor redesigned — gauge bar (progress bar with green/yellow/red status), cleaner layout, BookOpen link to education, removed raw formula display
-  - `DLY_screens.tsx`: DLY_03 — Feeding + Health sections now collapsible (chevron toggle); Feeding first, Health second; supports ?expandFeeding=1 query param for deep linking from home
-  - `HOM_01.tsx`: Added "Next feeding" card below vaccine reminder — shows next upcoming enabled reminder time, taps to pet profile with feeding auto-expanded
-  - `AppBar.tsx`: Added safe back navigation — sessionStorage-based history tracking, loop detection, fallback to home if shallow or looping
 - 2026-02-22: Iteration 14 — Pet Profile Health + Feeding + QR Certificates
-  - `storage.ts`: Added 7 new entity types (VaccineRecord, MedicationRecord, HealthCondition, PetHealthDocument, FeedingPreset, FeedingLog, FeedingReminder) + EntityStore extensions + seed data for Luna
-  - `AppContext.tsx`: Added 8 CRUD methods (addVaccineRecord, addMedicationRecord, addHealthCondition, addHealthDocument, upsertFeedingPreset, addFeedingLog, addFeedingReminder, updateFeedingReminder)
-  - `HealthSection.tsx`: New component — vaccines list w/ status chips (Up to date/Due soon/Overdue), medications, conditions, certificates/documents (photo, file, QR import)
-  - `FeedingSection.tsx`: New component — preset management, feeding log, reminders, Feeding Advisor (RER formula, calorie targets, over/under alerts)
-  - `qrDecode.ts`: QR scanning utility using qr-scanner lib — camera + photo decode, safe payload parser (URL/JSON/text), never auto-opens URLs
-  - `DLY_screens.tsx`: DLY_03 updated — Health + Feeding sections inserted before "Report Lost" button
-  - Package added: `qr-scanner` (lightweight QR decode)
 - 2026-02-22: Iteration 13 — Critical Fixes + Home Cleanup
-  - `storage.ts`: Fixed notif-001 deep link (`/emg/matches` → `/emg/matching-top10`)
-  - `AppContext.tsx`: Fixed resetStore() to call resetEntityStore() (clears localStorage properly)
-  - `EMG_02.tsx`: Added photo gate — disabled "Next: Location" when no photos uploaded
-  - `QRP_screens.tsx`: Added conditional validation to QRP_03 (location required; phone required for "found")
-  - `HOM_01.tsx`: Removed redundant quick tiles row (My Pets / QR ID / Vaccines / Learn)
-  - Deferred: Pet profile health/feeding upgrades, QR scanning, feeding advisor (budget constraint)
-  - See `docs/ITERATION_13_PROGRESS.md` for resume checklist
 - 2026-02-20: Iteration 12 — Integration-Ready Architecture
-  - `src/app/config/appConfig.ts`: reads 7 VITE_* env vars; DEMO/INTEGRATION mode switch
-  - `.env.example`: 7 safe placeholder vars with inline comments
-  - `src/app/services/interfaces.ts`: 7 TypeScript interfaces (IStorageService, ISmsService, IChatService, IPushService, IGeoService, IAiAssistantService, IMatchingService)
-  - `src/app/services/demo/`: 6 functional demo adapters (storage, sms, chat, push, geo, ai)
-  - `src/app/services/integration/`: 6 integration stubs (Azure Blob, Twilio, Ably, FCM, Google Maps, Gemini)
-  - `src/app/services/index.ts`: `getServices()` + `useServices()` hook (singleton, mode-aware)
-  - `src/app/data/storage.ts`: AppNotification, ChatMessage, DemoDocument, Provider, BookingRequest types; SEED_NOTIFICATIONS + SEED_PROVIDERS; EntityStore extended
-  - `src/app/context/AppContext.tsx`: addNotification, markNotificationRead, addChatMessage, addDocument, addPet, resetStore methods
-  - `AppBar.tsx`: DEMO/INTEG mode badge (9px pill) + bell with live unread count badge
-  - `DemoControls.tsx`: 5 simulator buttons (Sighting, AI Match, Chat, Push, Reset Demo) — DEMO mode only
-  - `HOM_01.tsx`: 4-category services grid (Walkers, Grooming, Daycare, Training) with icons
-  - `HOM_04.tsx`: real notifications from store with filter tabs (All/Emergency/Daily) + read/unread states
-  - `DLY_screens.tsx`: DLY_02 Add Pet modal form (real); DLY_04 file upload → storageDemo → addDocument
-  - `EMG_21_to_25.tsx`: EMG_23 real chat with controlled input, send, 1.2s auto-reply, scroll-to-bottom
-  - `SRV_screens.tsx`: SRV_01 category tabs (Walkers/Grooming/Daycare/Training) filtering store.providers; SRV_02-09 fully dynamic — provider lookup via ?id= param, category-aware forms/labels/rules/incidents, providerId propagation through location state chain
-  - `docs/INTEGRATIONS.md`: 6 providers, security rules, migration checklist
 - 2026-02-20: Iteration 9 — Local-first Functionality
-  - `src/app/data/storage.ts`: typed entity store (Pet, Case, Sighting, CareLog) with localStorage persistence + seed demo data
-  - `src/app/utils/matching.ts`: deterministic match ranking (Haversine distance + recency + size/color/traits)
-  - `src/app/components/pettodo/MapComponents.tsx`: real Leaflet/OSM map (`PettodoMap`), backward-compatible `MapPlaceholder` wrapper
-  - `src/app/components/pettodo/FlyerShareKit.tsx`: real QR code in flyer (qrcode.react)
-  - `src/app/screens/qr-hub/QRH_screens.tsx`: real QR codes in QRH_01 and QRH_04
-  - `src/app/screens/emergency/EMG_14_to_20.tsx`: EMG_16 wired to deterministic matching from store
-  - `AppContext` extended with full entity store API
-  - Packages added: `react-leaflet@4.2.1`, `leaflet@1.9.4`, `qrcode.react@4.2.0`
-  - react/react-dom moved from peerDependencies to dependencies
 - 2026-02-20: Iteration 8 and earlier — 100 screens, design system, localStorage state, flyer download, calendar integration
-- 2026-02-20: Initial Replit setup - configured Vite dev server on port 5000 with all hosts allowed, added .gitignore, configured static deployment
+- 2026-02-20: Initial Replit setup
 
 ## User Preferences
 - Minimal dependencies, minimal scope changes

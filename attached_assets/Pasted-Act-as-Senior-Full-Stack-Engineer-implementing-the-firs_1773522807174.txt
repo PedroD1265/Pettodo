@@ -1,0 +1,130 @@
+Act as Senior Full-Stack Engineer implementing the first real backend/auth transition slice for PETTODO.
+
+Implement code. Do not redesign anything.
+
+Read these files first:
+@src/app/config/appConfig.ts
+@src/app/data/storage.ts
+@src/app/services/interfaces.ts
+@src/app/context/AppContext.tsx
+@src/app/App.tsx
+@src/app/routes.tsx
+@vite.config.ts
+@package.json
+@.replit
+
+Context you must obey:
+- PETTODO must remain on the current Replit app base
+- Do not rebuild from zero
+- This step is ONLY about real auth + backend foundation
+- Do not implement Azure PostgreSQL yet
+- Do not implement Azure Blob yet
+- Do not implement fake persistent CRUD
+- Do not implement real QR database-backed lookup yet if it depends on DB persistence
+- Do not touch marketplace, play dates, events, push, chat, AI, moderation, or admin suite
+- Do not change UI structure, router architecture, BottomNav, AppShell, design system, logo sizing, or ModeSwitch sizing
+- Keep demo mode as explicit fallback
+- Protected owner data must remain protected by default
+- Public location must remain approximate
+- Public routes must remain public where intended
+
+Frozen architecture decisions:
+- Firebase Auth is the official auth provider
+- Google Sign-In first
+- Backend/API initially lives inside this Replit app
+- Demo mode remains fallback
+- Do not use Supabase
+- This step prepares clean boundaries for a later Azure PostgreSQL persistence phase
+
+Available frontend env vars:
+- VITE_FIREBASE_API_KEY
+- VITE_FIREBASE_AUTH_DOMAIN
+- VITE_FIREBASE_PROJECT_ID
+- VITE_FIREBASE_APP_ID
+- VITE_FIREBASE_MESSAGING_SENDER_ID
+- VITE_APP_MODE
+- VITE_AUTH_PROVIDER
+- VITE_API_BASE_URL
+
+Available backend env vars:
+- FIREBASE_PROJECT_ID
+- FIREBASE_CLIENT_EMAIL
+- FIREBASE_PRIVATE_KEY
+
+Goal of this implementation step:
+1. Add real Firebase Auth to the frontend with Google Sign-In
+2. Add persistent session handling appropriate for a real web app
+3. Add a small backend/API layer inside the current Replit app
+4. Verify Firebase ID tokens on the backend using Firebase Admin SDK
+5. Add auth guards to protected routes/actions
+6. Preserve demo mode behavior when VITE_APP_MODE=demo
+7. Prepare clean repository/service boundaries for later real persistence
+8. Prepare a safe local-to-account import boundary/contract only, without implementing real migration yet
+
+Implementation requirements:
+- Install and wire firebase, firebase-admin, express, cors, tsx, and needed types
+- Create a minimal backend with:
+  - GET /api/health
+  - GET /api/auth/me
+- Use selective auth middleware only where needed
+- Add AuthContext and auth service adapters following the existing demo/integration adapter pattern
+- Add a standalone /auth/sign-in route
+- Add AuthGuard for protected app routes
+- Keep public/low-risk routes public
+- Keep /demo accessible
+- Keep current demo behavior untouched when mode=demo
+- Add only the minimum loading/error states required for auth correctness
+- Do not add database code in this step
+- Do not add fake persistence pretending to be real
+- Do not add import endpoint yet
+- Only add the import contract/boundary and hasPendingImport flag if it can be done cleanly without fake DB logic
+
+Critical sign-in rule:
+- Prefer signInWithPopup for this step
+- Do NOT switch to signInWithRedirect in this step unless it requires no extra hosting/auth-domain setup
+- The sign-in screen must be rendered outside the phone-frame/AppShell container if needed to reduce popup blocking risk
+- If popup still cannot work reliably in the final Replit preview, stop and report the blocker clearly instead of silently changing auth strategy
+
+Critical backend key rule:
+- Always normalize FIREBASE_PRIVATE_KEY with replace(/\\n/g, '\n') before passing it to Firebase Admin cert()
+
+Critical workflow rule:
+- Inspect .replit and choose the smallest working way to run Vite + the API server together in Replit
+- If a second workflow/process is required, set it up cleanly
+- If the current runner shape makes that impossible, report the exact blocker clearly
+
+Files likely to create:
+- src/firebase.ts
+- src/app/context/AuthContext.tsx
+- src/app/services/demo/authDemo.ts
+- src/app/services/integration/authFirebase.ts
+- src/app/components/pettodo/AuthGuard.tsx
+- src/app/screens/auth/SignIn.tsx
+- server/firebaseAdmin.ts
+- server/middleware/verifyToken.ts
+- server/routes/auth.ts
+- server/index.ts
+- server/tsconfig.json
+
+Files likely to modify:
+- src/app/config/appConfig.ts
+- src/app/services/interfaces.ts
+- src/app/services/index.ts
+- src/app/routes.tsx
+- src/app/App.tsx
+- vite.config.ts
+- package.json
+- .env.example only if it already exists; if it does not exist, do not invent a large config file unnecessarily
+
+Public route rule:
+- Do not accidentally auth-gate public QR/public pages or other intended public surfaces
+- Keep public scan/public lookup semantics compatible with PETTODO’s privacy rules
+
+Output required:
+- implement the code
+- summarize exactly what was changed
+- list any new files created
+- list any env vars that are still missing
+- list any Replit workflow/process changes made
+- list blockers, if any
+- do not continue into database or storage work
