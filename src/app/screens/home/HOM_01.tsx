@@ -29,7 +29,7 @@ export default function HOM_01() {
   React.useEffect(() => { setMode('daily'); }, []);
 
   return (
-    <div className="flex flex-col min-h-full" style={{ background: 'var(--brand-primary-bg)' }}>
+    <div className="flex flex-col min-h-full">
       <ScreenLabel name="HOM_01_Home_Daily_NoActiveCase" />
       <AppBar showBack={false} />
       <div className="flex-1 p-4 flex flex-col gap-4">
