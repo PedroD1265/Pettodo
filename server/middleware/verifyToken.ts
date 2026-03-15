@@ -16,6 +16,11 @@ export async function verifyToken(
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  if (!adminAuth) {
+    res.status(503).json({ error: 'auth_unavailable', message: 'Firebase credentials not configured' });
+    return;
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'unauthorized' });

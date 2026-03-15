@@ -78,29 +78,39 @@ export function DLY_02() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', breed: '', size: 'Medium' as 'Small'|'Medium'|'Large', age: '', colors: '' });
 
-  const handleAddPet = () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleAddPet = async () => {
     if (!form.name.trim() || !form.breed.trim()) {
       toast.error('Name and breed are required.');
       return;
     }
-    addPet({
-      name: form.name.trim(),
-      breed: form.breed.trim(),
-      size: form.size,
-      age: form.age.trim() || '?',
-      colors: form.colors ? form.colors.split(',').map(c => c.trim()) : [],
-      marks: '',
-      collar: '',
-      temperament: '',
-      weight: '',
-      microchip: '',
-      vaccines: '',
-      lastVaccine: '',
-      nextVaccine: '',
-    });
-    toast.success(`${form.name} added to your pets!`);
-    setForm({ name: '', breed: '', size: 'Medium', age: '', colors: '' });
-    setShowModal(false);
+    setSaving(true);
+    try {
+      await addPet({
+        name: form.name.trim(),
+        breed: form.breed.trim(),
+        size: form.size,
+        age: form.age.trim() || '?',
+        colors: form.colors ? form.colors.split(',').map(c => c.trim()) : [],
+        marks: '',
+        collar: '',
+        temperament: '',
+        weight: '',
+        microchip: '',
+        vaccines: '',
+        lastVaccine: '',
+        nextVaccine: '',
+      });
+      toast.success(`${form.name} added to your pets!`);
+      setForm({ name: '', breed: '', size: 'Medium', age: '', colors: '' });
+      setShowModal(false);
+    } catch (err: any) {
+      console.error('[DLY_02] Failed to add pet:', err);
+      toast.error(err?.message || 'Failed to save pet. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -171,7 +181,7 @@ export function DLY_02() {
               />
             </div>
           </div>
-          <Btn variant="primary" fullWidth onClick={handleAddPet}>Save Pet</Btn>
+          <Btn variant="primary" fullWidth onClick={handleAddPet} disabled={saving}>{saving ? 'Saving…' : 'Save Pet'}</Btn>
         </div>
       </Modal>
     </div>

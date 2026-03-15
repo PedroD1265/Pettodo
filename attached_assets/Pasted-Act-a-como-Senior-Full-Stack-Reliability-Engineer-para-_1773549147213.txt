@@ -1,0 +1,129 @@
+Actúa como Senior Full-Stack Reliability Engineer para PETTODO.
+
+Tu misión NO es ampliar producto.
+Tu misión NO es reconstruir auth, backend ni arquitectura.
+Tu misión es cerrar el bug crítico de verdad operativa en pet CRUD dentro de integration mode.
+
+## Source-of-truth order (obligatorio)
+Lee y usa en este orden:
+
+1. latest runtime report / walkthrough.md
+2. MASTER_CONTEXT.md
+3. ARCHITECTURE.md
+4. CURRENT_STATE.md
+5. QA_CURRENT.md
+6. RELEASE_CRITERIA.md
+7. los archivos frontend reales donde viven:
+   - pets state
+   - addPet / updatePet / deletePet
+   - loadPetsFromApi o equivalente
+   - pet create/edit form submit handlers
+8. api.ts y rutas backend relacionadas con pets
+
+## Critical interpretation rule
+Si CURRENT_STATE.md, QA_CURRENT.md o RELEASE_CRITERIA.md contradicen la realidad implementada demostrada por walkthrough.md y por el código actual, debes tomar como verdad principal:
+- runtime report más reciente
+- implementación real en el repo
+
+No reabras discusiones sobre si auth/backend/db “existen o no”.
+Para este packet, la verdad operativa es:
+- Firebase Auth ya está integrado
+- Express API ya existe
+- Azure PostgreSQL ya conecta
+- import flow sí persiste
+- public pet route sí funciona sin exponer owner PII
+- owner scoping ya existe
+- demo mode debe seguir existiendo como fallback explícito
+
+## Problema crítico actual
+Hoy, crear una mascota desde la UI en integration mode puede mostrar éxito en UI/local state, pero no persistir realmente en PostgreSQL.
+
+El runtime report atribuye la causa más probable a este patrón:
+- AppContext.addPet() hace optimistic update
+- luego dispara petApi.create() async
+- el fallo puede quedar silencioso
+- la mascota parece existir en sesión actual
+- al refrescar o volver a entrar desaparece porque la DB nunca la tuvo
+
+Además, el mismo riesgo probablemente aplica también a updatePet y deletePet.
+
+## Objetivo exacto
+Hacer que pet CRUD en integration mode sea confiable y server-authoritative:
+
+- create/update/delete deben depender del resultado real del backend
+- no debe existir éxito silencioso ni éxito falso
+- si la API falla, el usuario debe verlo claramente
+- refresh y nueva sesión deben reflejar exactamente la DB
+- la respuesta del servidor debe ser la fuente autoritativa del estado final en UI
+- demo mode debe seguir funcionando, separado y explícito
+
+## Scope exacto
+En scope:
+- localizar el flujo real de addPet / updatePet / deletePet
+- revisar el pet form submit path
+- revisar integration mode detection
+- revisar load/reload/rehydration desde API
+- revisar cualquier write path a localStorage para pets
+- revisar cualquier toast/snackbar/error UI
+- corregir create/update/delete para integration mode
+- hacer QA manual básica del flujo CRUD real
+
+Fuera de scope:
+- Blob storage
+- protected contact relay completo
+- nuevas features
+- image pipeline
+- users table
+- migration system grande
+- admin/moderation
+- refactor amplio no necesario
+- rediseño visual
+- cambiar arquitectura base
+
+## Strict rules
+- integration mode = API truth
+- localStorage no puede ser la autoridad final de pets en integration mode
+- no mostrar success final antes del OK real del backend
+- no dejar ghost pets si POST falla
+- no dejar edición falsa si PUT falla
+- no dejar borrado falso si DELETE falla
+- no romper demo mode
+- no romper owner scoping
+- no relajar reglas de PII/public exposure
+- minimizar cambios: arreglar el flujo, no rediseñar media app
+
+## Desired implementation direction
+Preferencia principal:
+
+En integration mode:
+- await create/update/delete API calls
+- solo después del success actualizar UI final
+- usar el registro devuelto por el servidor como autoridad
+- si la API falla, mostrar error visible y mantener estado veraz
+- si hace falta, refetch desde API después de mutación para asegurar consistencia
+
+Puedes mantener optimistic UI solo si queda explícitamente “pending” y luego se confirma o revierte visiblemente.
+Pero para este packet, la preferencia es evitar optimistic success en integration mode.
+
+## Acceptance criteria
+1. Crear mascota en integration mode persiste realmente en PostgreSQL
+2. La mascota creada sobrevive hard refresh
+3. La mascota creada sobrevive sign out / sign in
+4. Si create falla, el usuario ve error claro y no queda ghost pet
+5. Editar mascota en integration mode persiste realmente
+6. La edición sobrevive refresh
+7. Si update falla, la UI no queda mintiendo
+8. Eliminar mascota en integration mode persiste realmente
+9. El delete sobrevive refresh
+10. Si delete falla, no hay falso éxito silencioso
+11. Demo mode sigue funcionando
+12. Public pet route y owner scoping no regresionan
+
+## Deliverables
+Al final responde con:
+1. root cause exacta confirmada en código
+2. archivos cambiados
+3. qué cambió en create/update/delete
+4. cualquier riesgo restante
+5. un mini manual QA script para que yo lo pruebe
+6. si encontraste contradicciones documentales que convenga corregir después

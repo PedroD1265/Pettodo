@@ -63,6 +63,16 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE (Replit-managed PostgreSQL, preferred)
 
 ## Recent Changes
+- 2026-03-15: Pet CRUD Reliability Fix (Integration Mode)
+  - Root cause: addPet/updatePet/deletePet used fire-and-forget API calls with optimistic local updates; success shown before backend confirmed
+  - Fix: In integration mode, all three operations now await the API response before updating local state
+  - Server response is the authoritative source of pet data in integration mode
+  - If API call fails, no ghost state remains; user sees a clear error toast
+  - Demo mode unchanged — still uses local-only updates
+  - Form submit handler (DLY_02) is now async with loading state and error handling
+  - loadPetsFromApi now uses updateStore (saves to localStorage) for session consistency
+  - Firebase Admin SDK initialization made graceful — server starts without credentials in demo/dev scenarios
+  - verifyToken middleware returns 503 when Firebase is not configured instead of crashing
 - 2026-03-14: PostgreSQL Persistence Phase
   - PostgreSQL connection via Replit-managed DB (PG* env vars) with DATABASE_URL fallback
   - Schema: `pets` table (id, owner_uid, name, breed, size, colors, marks, collar, temperament, age, weight, microchip, vaccines, last_vaccine, next_vaccine, created_at) + `imports` table

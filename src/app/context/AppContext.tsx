@@ -45,7 +45,7 @@ interface AppState {
   setWalkerAvailability: (v: { days: string[], times: string[] }) => void;
   // Entity store
   store: EntityStore;
-  addPet: (pet: Omit<Pet, 'id' | 'createdAt'>) => Pet;
+  addPet: (pet: Omit<Pet, 'id' | 'createdAt'>) => Promise<Pet>;
   addCase: (c: Omit<Case, 'id' | 'createdAt'>) => Case;
   addSighting: (s: Omit<Sighting, 'id' | 'createdAt'>) => Sighting;
   addCareLog: (log: Omit<CareLog, 'id' | 'createdAt'>) => CareLog;
@@ -73,8 +73,8 @@ interface AppState {
   addFeedingReminder: (r: Omit<FeedingReminder, 'id' | 'createdAt'>) => FeedingReminder;
   updateFeedingReminder: (id: string, partial: Partial<FeedingReminder>) => void;
   // CRUD extensions
-  updatePet: (id: string, patch: Partial<Pet>) => void;
-  deletePet: (id: string) => void;
+  updatePet: (id: string, patch: Partial<Pet>) => Promise<void>;
+  deletePet: (id: string) => Promise<void>;
   updateHealthCondition: (id: string, patch: Partial<HealthCondition>) => void;
   deleteHealthCondition: (id: string) => void;
   deleteHealthDocument: (id: string) => void;
@@ -142,7 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPetsLoading(true);
     try {
       const pets = await petApi.list();
-      setStore(prev => ({ ...prev, pets }));
+      updateStore(prev => ({ ...prev, pets }));
     } catch (err) {
       console.error('[AppContext] Failed to load pets from API:', err);
     } finally {
@@ -150,49 +150,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [isIntegration]);
 
-  const addPet = (pet: Omit<Pet, 'id' | 'createdAt'>): Pet => {
-    const newPet: Pet = { ...pet, id: generateId('pet'), createdAt: Date.now() };
-    updateStore(s => ({ ...s, pets: [...s.pets, newPet] }));
+  const addPet = async (pet: Omit<Pet, 'id' | 'createdAt'>): Promise<Pet> => {
+    const localPet: Pet = { ...pet, id: generateId('pet'), createdAt: Date.now() };
 
     if (isIntegration) {
-      petApi.create({ ...pet, id: newPet.id, createdAt: newPet.createdAt }).catch(err => {
-        console.error('[AppContext] Failed to persist pet, reverting:', err);
-        updateStore(s => ({ ...s, pets: s.pets.filter(p => p.id !== newPet.id) }));
-      });
+      const serverPet = await petApi.create({ ...pet, id: localPet.id, createdAt: localPet.createdAt });
+      updateStore(s => ({ ...s, pets: [...s.pets, serverPet] }));
+      return serverPet;
     }
 
-    return newPet;
+    updateStore(s => ({ ...s, pets: [...s.pets, localPet] }));
+    return localPet;
   };
 
-  const updatePet = (id: string, patch: Partial<Pet>) => {
-    const prev = store.pets.find(p => p.id === id);
+  const updatePet = async (id: string, patch: Partial<Pet>): Promise<void> => {
+    if (isIntegration) {
+      const serverPet = await petApi.update(id, patch);
+      updateStore(s => ({
+        ...s,
+        pets: s.pets.map(p => p.id === id ? serverPet : p),
+      }));
+      return;
+    }
+
     updateStore(s => ({
       ...s,
       pets: s.pets.map(p => p.id === id ? { ...p, ...patch } : p),
     }));
-
-    if (isIntegration) {
-      petApi.update(id, patch).catch(err => {
-        console.error('[AppContext] Failed to update pet, reverting:', err);
-        if (prev) {
-          updateStore(s => ({ ...s, pets: s.pets.map(p => p.id === id ? prev : p) }));
-        }
-      });
-    }
   };
 
-  const deletePet = (id: string) => {
-    const prev = store.pets.find(p => p.id === id);
-    updateStore(s => ({ ...s, pets: s.pets.filter(p => p.id !== id) }));
-
+  const deletePet = async (id: string): Promise<void> => {
     if (isIntegration) {
-      petApi.delete(id).catch(err => {
-        console.error('[AppContext] Failed to delete pet, reverting:', err);
-        if (prev) {
-          updateStore(s => ({ ...s, pets: [...s.pets, prev] }));
-        }
-      });
+      await petApi.delete(id);
+      updateStore(s => ({ ...s, pets: s.pets.filter(p => p.id !== id) }));
+      return;
     }
+
+    updateStore(s => ({ ...s, pets: s.pets.filter(p => p.id !== id) }));
   };
 
   const addCase = (c: Omit<Case, 'id' | 'createdAt'>): Case => {
