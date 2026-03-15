@@ -13,14 +13,38 @@ import publicRoutes from './routes/public.js';
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5000'];
+// Build the allowed origins list:
+// 1. Always allow localhost dev server
+// 2. Add any explicit ALLOWED_ORIGINS from env (comma-separated)
+// 3. Auto-allow the Replit preview domain when REPLIT_DEV_DOMAIN is set
+const allowedOrigins: string[] = ['http://localhost:5000', 'http://localhost:3000'];
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins.push(...process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean));
+}
+if (process.env.REPLIT_DEV_DOMAIN) {
+  allowedOrigins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+}
+console.log('[api] Allowed origins:', allowedOrigins);
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    // No origin = server-to-server (e.g. Vite proxy, curl) — allow
+    if (!origin) {
       callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
+      return;
     }
+    // Allow any *.replit.dev subdomain in development
+    if (origin.endsWith('.replit.dev') || origin.endsWith('.repl.co')) {
+      callback(null, true);
+      return;
+    }
+    // Check explicit allowlist
+    if (allowedOrigins.some(o => origin === o || origin.startsWith(o))) {
+      callback(null, true);
+      return;
+    }
+    console.warn(`[api] CORS blocked origin: ${origin}`);
+    callback(new Error('CORS not allowed'));
   },
   credentials: true,
 }));
