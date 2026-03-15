@@ -1,0 +1,137 @@
+Actúa como Senior Full-Stack Reliability Engineer para PETTODO.
+
+No amplíes producto.
+No abras varias tareas grandes.
+No escribas una solución ambiciosa de Phase 2 completa.
+
+Tu misión es implementar el siguiente work packet correcto:
+
+REAL CASE CREATION BASELINE
+
+## Source of truth obligatorio
+Lee y usa en este orden:
+1. docs/shared/00_governance/MASTER_CONTEXT.md
+2. docs/shared/00_governance/CURRENT_STATE.md
+3. docs/shared/00_governance/ARCHITECTURE.md
+4. docs/shared/03_delivery/QA_CURRENT.md
+5. docs/shared/03_delivery/RELEASE_CRITERIA.md
+
+Si existen en docs/shared y aplican al trabajo, revisa también:
+- PUBLIC_DATA_POLICY.md
+- TRUST_AND_SAFETY.md
+
+## Operational truth
+Toma como verdad actual:
+- Firebase Auth ya está integrado
+- Express API ya existe
+- Azure PostgreSQL ya es system of record actual
+- Full Pet CRUD ya es real y server-authoritative en integration mode
+- public QR route ya tiene aislamiento sin owner PII
+- owner scoping ya existe
+- PETTODO todavía NO tiene real case creation baseline
+- PETTODO todavía NO tiene real image pipeline
+- PETTODO todavía NO tiene real protected contact
+- PETTODO todavía NO tiene real moderation/evidence workflow
+
+## Main objective
+Implementar el baseline real de creación de casos:
+- LOST
+- FOUND
+- SIGHTED
+
+Con persistencia real en backend/DB y comportamiento server-authoritative en integration mode.
+
+## Architecture rules you must preserve
+- no colapsar animal profile, case y match result en una misma lógica confusa
+- case != animal profile
+- case != match
+- integration mode = backend truth
+- no fake success
+- no silent fallback que deje el flujo “pareciendo real”
+- public location debe seguir siendo approximate, no exact
+- owner data no puede exponerse
+- crear casos requiere cuenta/autenticación
+
+## Scope exacto
+Debes:
+1. localizar los emergency flows actuales de LOST / FOUND / SIGHTED
+2. identificar qué partes hoy son mock/demo/local-first
+3. diseñar e implementar el modelo mínimo real de case record
+4. crear persistencia real a PostgreSQL
+5. conectar los formularios/pantallas existentes al backend real
+6. asegurar server-authoritative create behavior
+7. dejar retrieval mínimo suficiente para validar que el caso creado existe realmente
+8. manejar loading / success / error states de forma honesta
+9. respetar public-data constraints para case visibility
+10. mantener demo mode separado sin contaminar integration mode
+
+## Minimum domain expectations
+Sin inflar scope, el case baseline debe contemplar como mínimo:
+- caseType: LOST / FOUND / SIGHTED
+- status
+- createdBy
+- animalId cuando corresponda
+- timestamps
+- campos mínimos de descripción/contexto
+- ubicación con tratamiento seguro para exposición pública
+- separación clara entre datos privados y visibles
+
+## Important implementation constraint
+No metas todavía:
+- image upload real
+- Blob integration
+- protected contact real
+- matching pipeline real
+- moderation/admin real
+- evidence workflow real
+- flyer generation real
+- broad release engineering work
+
+Este packet debe cerrar una sola cosa:
+real case creation baseline
+
+## Risks to actively avoid
+- mezclar caso con perfil animal
+- depender de localStorage en integration mode para verdad final
+- crear un endpoint superficial sin modelo claro
+- exponer ubicación exacta públicamente
+- exponer owner data
+- romper Pet CRUD ya validado
+- romper QR/public isolation ya existente
+- introducir rutas o estados ambiguos entre demo e integration mode
+
+## Acceptance criteria
+1. usuario autenticado puede crear LOST case en integration mode
+2. usuario autenticado puede crear FOUND case en integration mode
+3. usuario autenticado puede crear SIGHTED case en integration mode
+4. cada caso persiste realmente en PostgreSQL
+5. el usuario no ve éxito antes de confirmación del backend
+6. refresh mantiene el caso creado
+7. sign out / sign in mantiene el caso creado
+8. la lógica de caso no confunde animal profile con case ni con match
+9. public-data behavior no expone exact address / exact coordinates / owner PII
+10. demo mode sigue separado
+11. no hay regresión en Auth
+12. no hay regresión en Pet CRUD
+13. no hay regresión en public QR isolation
+
+## Files / technical surfaces to inspect before changing anything
+- emergency routes and screens
+- current case-related mocks and demo stores
+- AppContext / providers / hooks for integration vs demo mode
+- API client
+- server route registration
+- schema and runMigrations
+- auth middleware / route protection
+- QR/public related routes that may later depend on case state
+- types/interfaces shared across frontend/backend
+
+## Deliverables
+Al final responde con:
+1. root cause / current non-real behavior you confirmed
+2. files changed
+3. final case model you implemented
+4. how LOST / FOUND / SIGHTED now work
+5. remaining risks
+6. short manual QA script for me to test
+7. docs that should be updated after implementation

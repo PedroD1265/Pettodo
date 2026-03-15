@@ -4,13 +4,15 @@ import { AppBar } from '../../components/pettodo/AppBar';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { VerificationGate } from '../../components/pettodo/VerificationFlows';
-import { useNavigate } from 'react-router';
-import { CheckCircle, Share2, ShieldCheck, Edit, MessageCircle } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { CheckCircle, Share2, Edit, MessageCircle } from 'lucide-react';
 import { LOST_CASE } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
 
 export default function EMG_06() {
   const nav = useNavigate();
+  const location = useLocation();
+  const caseId = location.state?.caseId as string | undefined;
   const { caseClaimed, setCaseClaimed, verificationLevel, setHasActiveCase } = useApp();
   const isVerified = verificationLevel === 'basic' || verificationLevel === 'strict' as string;
 
@@ -33,6 +35,13 @@ export default function EMG_06() {
 
         <h2 className="text-[20px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Report Published!</h2>
         <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>{LOST_CASE.headline}</p>
+
+        {caseId && (
+          <div className="px-3 py-2 rounded-xl text-center" style={{ background: 'var(--gray-100)' }}>
+            <p className="text-[11px]" style={{ color: 'var(--gray-500)' }}>Case ID</p>
+            <p className="text-[12px] font-mono" style={{ color: 'var(--gray-700)', fontWeight: 600 }}>{caseId}</p>
+          </div>
+        )}
 
         <Banner type="success" text="Your report is live. No account was needed to post." />
 

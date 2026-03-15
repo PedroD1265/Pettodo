@@ -7,16 +7,63 @@ import { Banner } from '../../components/pettodo/Banners';
 import { DirectionCompass } from '../../components/pettodo/MapComponents';
 import { useNavigate, useLocation } from 'react-router';
 import { LUNA } from '../../data/demoData';
+import { useApp } from '../../context/AppContext';
+import { toast } from 'sonner';
 
 export default function EMG_05() {
   const nav = useNavigate();
   const location = useLocation();
   const isPrefilled = location.state?.prefilled;
+  const sourcePetId = location.state?.petId as string | undefined;
+
+  const { createCase, setHasActiveCase } = useApp();
+
   const [direction, setDirection] = useState('SE');
+  const [selectedSize, setSelectedSize] = useState<string>(LUNA.size);
+  const [selectedColors, setSelectedColors] = useState<string[]>([...LUNA.colors]);
+  const [selectedTemperament, setSelectedTemperament] = useState<string[]>([...LUNA.temperament]);
+  const [marks, setMarks] = useState(LUNA.marks);
+  const [collar, setCollar] = useState(LUNA.collar);
+  const [publishing, setPublishing] = useState(false);
 
   const sizes = ['Small', 'Medium', 'Large'];
   const colors = ['Brown', 'White', 'Black', 'Golden', 'Gray', 'Spotted'];
   const temperaments = ['Friendly', 'Shy', 'Energetic', 'Calm', 'Anxious'];
+
+  const toggleColor = (c: string) =>
+    setSelectedColors(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
+  const toggleTemperament = (t: string) =>
+    setSelectedTemperament(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const traits = [marks, collar].filter(Boolean);
+      const created = await createCase({
+        type: 'lost',
+        petId: sourcePetId ?? null,
+        size: selectedSize,
+        colors: selectedColors,
+        traits: [...selectedTemperament, ...traits],
+        direction,
+        description: [
+          selectedSize,
+          selectedColors.join(', '),
+          marks,
+          collar,
+          selectedTemperament.join(', '),
+          direction ? `Last direction: ${direction}` : '',
+        ].filter(Boolean).join(' · '),
+      });
+      setHasActiveCase(true);
+      nav('/emg/lost-published', { state: { caseId: created.id } });
+    } catch (err: any) {
+      console.error('[EMG_05] createCase failed:', err);
+      toast.error(err?.message || 'Failed to publish report. Please try again.');
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -38,11 +85,17 @@ export default function EMG_05() {
           <label className="text-[13px] mb-1.5 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Size</label>
           <div className="flex gap-2">
             {sizes.map((s) => (
-              <button key={s} className="flex-1 py-2 rounded-xl text-[13px]" style={{
-                background: s === LUNA.size ? 'var(--red-primary)' : 'var(--gray-100)',
-                color: s === LUNA.size ? 'var(--white)' : 'var(--gray-700)',
-                fontWeight: s === LUNA.size ? 600 : 400, minHeight: 44,
-              }}>{s}</button>
+              <button
+                key={s}
+                onClick={() => setSelectedSize(s)}
+                className="flex-1 py-2 rounded-xl text-[13px]"
+                style={{
+                  background: s === selectedSize ? 'var(--red-primary)' : 'var(--gray-100)',
+                  color: s === selectedSize ? 'var(--white)' : 'var(--gray-700)',
+                  fontWeight: s === selectedSize ? 600 : 400,
+                  minHeight: 44,
+                }}
+              >{s}</button>
             ))}
           </div>
         </div>
@@ -52,11 +105,17 @@ export default function EMG_05() {
           <label className="text-[13px] mb-1.5 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Colors (select all)</label>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
-              <button key={c} className="px-3 py-1.5 rounded-full text-[12px]" style={{
-                background: LUNA.colors.includes(c) ? 'var(--red-primary)' : 'var(--gray-100)',
-                color: LUNA.colors.includes(c) ? 'var(--white)' : 'var(--gray-700)',
-                fontWeight: LUNA.colors.includes(c) ? 600 : 400, minHeight: 44,
-              }}>{c}</button>
+              <button
+                key={c}
+                onClick={() => toggleColor(c)}
+                className="px-3 py-1.5 rounded-full text-[12px]"
+                style={{
+                  background: selectedColors.includes(c) ? 'var(--red-primary)' : 'var(--gray-100)',
+                  color: selectedColors.includes(c) ? 'var(--white)' : 'var(--gray-700)',
+                  fontWeight: selectedColors.includes(c) ? 600 : 400,
+                  minHeight: 44,
+                }}
+              >{c}</button>
             ))}
           </div>
         </div>
@@ -64,17 +123,25 @@ export default function EMG_05() {
         {/* Distinguishing marks */}
         <div>
           <label className="text-[13px] mb-1 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Distinguishing marks</label>
-          <div className="px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
-            <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>{LUNA.marks}</span>
-          </div>
+          <textarea
+            className="w-full px-3 py-2.5 rounded-xl text-[14px]"
+            style={{ background: 'var(--gray-100)', minHeight: 48, resize: 'none' }}
+            value={marks}
+            onChange={e => setMarks(e.target.value)}
+            placeholder="Describe any distinguishing marks..."
+          />
         </div>
 
         {/* Collar */}
         <div>
           <label className="text-[13px] mb-1 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Collar description</label>
-          <div className="px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
-            <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>{LUNA.collar}</span>
-          </div>
+          <textarea
+            className="w-full px-3 py-2.5 rounded-xl text-[14px]"
+            style={{ background: 'var(--gray-100)', minHeight: 48, resize: 'none' }}
+            value={collar}
+            onChange={e => setCollar(e.target.value)}
+            placeholder="Describe collar, tags, etc..."
+          />
         </div>
 
         {/* Temperament */}
@@ -82,11 +149,16 @@ export default function EMG_05() {
           <label className="text-[13px] mb-1.5 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Temperament</label>
           <div className="flex flex-wrap gap-2">
             {temperaments.map((t) => (
-              <button key={t} className="px-3 py-1.5 rounded-full text-[12px]" style={{
-                background: LUNA.temperament.includes(t) ? 'var(--red-primary)' : 'var(--gray-100)',
-                color: LUNA.temperament.includes(t) ? 'var(--white)' : 'var(--gray-700)',
-                minHeight: 44,
-              }}>{t}</button>
+              <button
+                key={t}
+                onClick={() => toggleTemperament(t)}
+                className="px-3 py-1.5 rounded-full text-[12px]"
+                style={{
+                  background: selectedTemperament.includes(t) ? 'var(--red-primary)' : 'var(--gray-100)',
+                  color: selectedTemperament.includes(t) ? 'var(--white)' : 'var(--gray-700)',
+                  minHeight: 44,
+                }}
+              >{t}</button>
             ))}
           </div>
         </div>
@@ -95,8 +167,13 @@ export default function EMG_05() {
         <DirectionCompass selected={direction} onSelect={setDirection} />
 
         <div className="mt-4 pb-4">
-          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-published')}>
-            Publish Report
+          <Btn
+            variant="emergency"
+            fullWidth
+            onClick={handlePublish}
+            disabled={publishing}
+          >
+            {publishing ? 'Publishing...' : 'Publish Report'}
           </Btn>
         </div>
       </div>

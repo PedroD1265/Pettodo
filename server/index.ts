@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import petRoutes from './routes/pets.js';
 import importRoutes from './routes/import.js';
 import publicRoutes from './routes/public.js';
+import caseRoutes from './routes/cases.js';
 
 const app = express();
 const PORT = parseInt(process.env.API_PORT || '3001', 10);
@@ -54,6 +55,7 @@ app.use('/api', authRoutes);
 app.use('/api', petRoutes);
 app.use('/api', importRoutes);
 app.use('/api', publicRoutes);
+app.use('/api', caseRoutes);
 
 async function start() {
   await testConnection();

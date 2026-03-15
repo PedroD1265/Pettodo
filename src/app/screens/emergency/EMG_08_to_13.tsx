@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 import { Camera, Plus, QrCode, CheckCircle, Eye, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { MATCHES, LOST_CASE } from '../../data/demoData';
+import { useApp } from '../../context/AppContext';
 
 // EMG_08
 export function EMG_08() {
@@ -131,6 +132,21 @@ export function EMG_09() {
 // EMG_10
 export function EMG_10() {
   const nav = useNavigate();
+  const { createCase } = useApp();
+  const [publishing, setPublishing] = useState(false);
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const created = await createCase({ type: 'found' });
+      nav('/emg/found-published', { state: { caseId: created.id } });
+    } catch (err: any) {
+      console.error('[EMG_10] createCase failed:', err);
+      toast.error(err?.message || 'Failed to publish report. Please try again.');
+      setPublishing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_10_Found_QRScanOption" />
@@ -145,8 +161,12 @@ export function EMG_10() {
           If the dog has a PETTODO QR tag, scan it to instantly connect with the owner.
         </p>
         <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth icon={<QrCode size={18} />} onClick={() => nav('/emg/found-published')}>Scan QR Code</Btn>
-          <Btn variant="secondary" fullWidth onClick={() => nav('/emg/found-published')}>Skip — No QR Found</Btn>
+          <Btn variant="primary" fullWidth icon={<QrCode size={18} />} onClick={handlePublish} disabled={publishing}>
+            {publishing ? 'Publishing...' : 'Scan QR Code'}
+          </Btn>
+          <Btn variant="secondary" fullWidth onClick={handlePublish} disabled={publishing}>
+            {publishing ? 'Publishing...' : 'Skip — No QR Found'}
+          </Btn>
         </div>
       </div>
     </div>
@@ -197,6 +217,27 @@ export function EMG_11() {
 // EMG_12
 export function EMG_12() {
   const nav = useNavigate();
+  const { createCase } = useApp();
+  const [description, setDescription] = useState('');
+  const [location] = useState('Central Park, West 72nd St');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      const created = await createCase({
+        type: 'sighted',
+        location,
+        description,
+      });
+      nav('/emg/sighted-success', { state: { caseId: created.id } });
+    } catch (err: any) {
+      console.error('[EMG_12] createCase failed:', err);
+      toast.error(err?.message || 'Failed to submit sighting. Please try again.');
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_12_Sighted_Report" />
@@ -217,17 +258,25 @@ export function EMG_12() {
           <MapPlaceholder height={120} />
           <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mt-2" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
             <MapPin size={16} style={{ color: 'var(--gray-400)' }} />
-            <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>Central Park, West 72nd St</span>
+            <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>{location}</span>
           </div>
         </div>
 
         <div>
           <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Description</label>
-          <textarea className="w-full px-3 py-2.5 rounded-xl text-[14px]" style={{ background: 'var(--gray-100)', minHeight: 72 }} placeholder="What did the dog look like? Direction heading?" />
+          <textarea
+            className="w-full px-3 py-2.5 rounded-xl text-[14px]"
+            style={{ background: 'var(--gray-100)', minHeight: 72, resize: 'none' }}
+            placeholder="What did the dog look like? Direction heading?"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+          />
         </div>
 
         <div className="mt-auto pb-4">
-          <Btn variant="primary" fullWidth onClick={() => nav('/emg/sighted-success')}>Submit Sighting</Btn>
+          <Btn variant="primary" fullWidth onClick={handleSubmit} disabled={submitting}>
+            {submitting ? 'Submitting...' : 'Submit Sighting'}
+          </Btn>
         </div>
       </div>
     </div>

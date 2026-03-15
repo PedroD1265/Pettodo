@@ -28,9 +28,9 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - **Public routes NOT guarded**: /public/*, /auth/sign-in, /sitemap/*, /design-system, /execution-log, /qa-selfcheck
 
 ## Database
-- **PostgreSQL**: Replit-managed PostgreSQL (fallback to DATABASE_URL if PG* env vars are absent)
-- **Connection**: `server/db.ts` — uses PG* env vars first, then DATABASE_URL
-- **Schema**: `server/schema.sql` — `pets` table (owner_uid indexed), `imports` table (one-time import tracking)
+- **PostgreSQL**: Azure PostgreSQL at `pettodo-pg-prod.postgres.database.azure.com` (connected via DATABASE_URL secret)
+- **Connection**: `server/db.ts` — uses DATABASE_URL first, then PG* env vars as fallback
+- **Schema**: `server/schema.sql` — `pets` table (owner_uid indexed), `imports` table, `cases` table (type/status/created_by indexed)
 - **Migrations**: `server/migrate.ts` — runs schema.sql on server startup (idempotent CREATE IF NOT EXISTS)
 
 ## API Endpoints
@@ -44,6 +44,9 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - `POST /api/import/pets` — protected, one-time import of local pets (rejects if already imported)
 - `GET /api/import/status` — protected, check if import has been done
 - `GET /api/public/pet/:petId` — unprotected, returns safe public pet data (no owner PII)
+- `POST /api/cases` — protected, create a case (lost/found/sighted); stores approx coords (privacy-safe)
+- `GET /api/cases` — protected, lists authenticated user's cases (most recent first)
+- `GET /api/cases/:id` — protected, get a specific case owned by the user
 
 ## Workflows
 - **Start application**: `npm run dev` (Vite dev server, port 5000)
@@ -73,6 +76,18 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - loadPetsFromApi now uses updateStore (saves to localStorage) for session consistency
   - Firebase Admin SDK initialization made graceful — server starts without credentials in demo/dev scenarios
   - verifyToken middleware returns 503 when Firebase is not configured instead of crashing
+- 2026-03-15: Cases Persistence Baseline
+  - Added `cases` table to schema (id, type, status, created_by, pet_id, location, approx_lat/lng, time_label, description, size, colors, traits, direction, created/updated_at)
+  - Coordinates stored rounded to 2 decimal places (~1km) per public data policy (no exact location exposure)
+  - New server route `server/routes/cases.ts`: POST /api/cases (create), GET /api/cases (list my cases), GET /api/cases/:id — all require Firebase auth
+  - Frontend `caseApi` in `src/app/services/api.ts`: create/list/get with typed CasePayload and CaseRecord interfaces
+  - AppContext: added async `createCase(data)` — server-authoritative in integration mode (no local success until DB confirms), local-only in demo mode
+  - EMG_05 (LOST Traits): traits fields (size, colors, marks, collar, temperament) are now controlled state, not hardcoded LUNA display. "Publish Report" calls createCase with real selected values and shows loading state. No navigation to success until API responds.
+  - EMG_06 (LOST Published): shows real Case ID badge when caseId is in router state
+  - EMG_10 (FOUND QR step): both "Skip" and "Scan QR" buttons now call createCase({ type: 'found' }) before navigating to success
+  - EMG_12 (SIGHTED): description textarea now controlled; "Submit Sighting" calls createCase with type/location/description
+  - All three flows: loading state on submit button, error toast on failure, navigation only on confirmed API success
+  - Demo mode: uses local case creation (localStorage) unchanged
 - 2026-03-14: PostgreSQL Persistence Phase
   - PostgreSQL connection via Replit-managed DB (PG* env vars) with DATABASE_URL fallback
   - Schema: `pets` table (id, owner_uid, name, breed, size, colors, marks, collar, temperament, age, weight, microchip, vaccines, last_vaccine, next_vaccine, created_at) + `imports` table

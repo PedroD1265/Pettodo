@@ -9,7 +9,7 @@ import {
   FeedingPreset, FeedingLog, FeedingReminder, WeightLog,
 } from '../data/storage';
 import { appConfig } from '../config/appConfig';
-import { petApi } from '../services/api';
+import { petApi, caseApi, type CasePayload } from '../services/api';
 
 export type AppMode = 'emergency' | 'daily';
 export type VerificationLevel = 'none' | 'basic' | 'strict';
@@ -82,6 +82,8 @@ interface AppState {
   deleteVaccineRecord: (id: string) => void;
   // Weight
   addWeightLog: (w: Omit<WeightLog, 'id' | 'createdAt'>) => WeightLog;
+  // Case persistence
+  createCase: (data: CasePayload) => Promise<Case>;
   // Integration
   loadPetsFromApi: () => Promise<void>;
   petsLoading: boolean;
@@ -193,6 +195,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const newCase: Case = { ...c, id: generateId('case'), createdAt: Date.now() };
     updateStore(s => ({ ...s, cases: [...s.cases, newCase] }));
     return newCase;
+  };
+
+  const createCase = async (data: CasePayload): Promise<Case> => {
+    const now = Date.now();
+    const localId = generateId('case');
+
+    if (isIntegration) {
+      const serverCase = await caseApi.create({ ...data, id: localId, createdAt: now });
+      const mapped: Case = {
+        id: serverCase.id,
+        type: serverCase.type,
+        status: (serverCase.status as Case['status']) || 'active',
+        petId: serverCase.petId ?? '',
+        location: serverCase.location,
+        lat: serverCase.lat ?? 0,
+        lng: serverCase.lng ?? 0,
+        privacyRadius: serverCase.privacyRadius,
+        time: serverCase.timeLabel || serverCase.time || '',
+        createdAt: serverCase.createdAt,
+        description: serverCase.description,
+        size: (serverCase.size as Case['size']) || 'Medium',
+        colors: serverCase.colors,
+        traits: serverCase.traits,
+        direction: serverCase.direction,
+      };
+      updateStore(s => ({ ...s, cases: [...s.cases, mapped] }));
+      return mapped;
+    }
+
+    const localCase: Case = {
+      id: localId,
+      type: data.type,
+      status: 'active',
+      petId: data.petId ?? '',
+      location: data.location ?? '',
+      lat: data.lat ?? 0,
+      lng: data.lng ?? 0,
+      privacyRadius: 300,
+      time: data.timeLabel ?? '',
+      createdAt: now,
+      description: data.description ?? '',
+      size: (data.size as Case['size']) || 'Medium',
+      colors: data.colors ?? [],
+      traits: data.traits ?? [],
+      direction: data.direction ?? '',
+    };
+    updateStore(s => ({ ...s, cases: [...s.cases, localCase] }));
+    return localCase;
   };
 
   const addSighting = (s: Omit<Sighting, 'id' | 'createdAt'>): Sighting => {
@@ -382,7 +432,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       communityDogSightings, addCommunityDogSighting,
       communityDogCareRecords, addCommunityDogCareRecord,
       walkerAvailability, setWalkerAvailability,
-      store, addPet, addCase, addSighting, addCareLog, updateCase, resetStore, updateSettings,
+      store, addPet, addCase, createCase, addSighting, addCareLog, updateCase, resetStore, updateSettings,
       addNotification, markNotificationRead,
       addChatMessage, getThreadMessages,
       addDocument,

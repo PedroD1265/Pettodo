@@ -1,5 +1,41 @@
 import type { Pet } from '../data/storage';
 
+export interface CasePayload {
+  id?: string;
+  type: 'lost' | 'found' | 'sighted';
+  petId?: string | null;
+  location?: string;
+  lat?: number | null;
+  lng?: number | null;
+  timeLabel?: string;
+  description?: string;
+  size?: string;
+  colors?: string[];
+  traits?: string[];
+  direction?: string;
+  createdAt?: number;
+}
+
+export interface CaseRecord {
+  id: string;
+  type: 'lost' | 'found' | 'sighted';
+  status: string;
+  petId: string | null;
+  location: string;
+  lat: number | null;
+  lng: number | null;
+  privacyRadius: number;
+  timeLabel: string;
+  time: string;
+  description: string;
+  size: string;
+  colors: string[];
+  traits: string[];
+  direction: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 type GetToken = () => Promise<string | null>;
 
 let _getToken: GetToken | null = null;
@@ -73,4 +109,13 @@ export const publicApi = {
     if (!r.ok) throw new Error(`Not found`);
     return r.json();
   }),
+};
+
+export const caseApi = {
+  create: (data: CasePayload): Promise<CaseRecord> =>
+    apiFetch('/cases', { method: 'POST', body: JSON.stringify(data) }),
+
+  list: (): Promise<CaseRecord[]> => apiFetch('/cases'),
+
+  get: (id: string): Promise<CaseRecord> => apiFetch(`/cases/${id}`),
 };
