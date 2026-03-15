@@ -25,3 +25,10 @@ CREATE TABLE IF NOT EXISTS imports (
   pet_count INTEGER NOT NULL DEFAULT 0,
   imported_at BIGINT NOT NULL
 );
+
+-- Migrations: Ensure newer columns exist independently of table creation
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS weight TEXT DEFAULT '';
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS microchip TEXT DEFAULT '';
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS vaccines TEXT DEFAULT '';
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS last_vaccine TEXT DEFAULT '';
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS next_vaccine TEXT DEFAULT '';
