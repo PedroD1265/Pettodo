@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { PetCard } from '../../components/pettodo/Cards';
@@ -7,7 +7,7 @@ import { Btn } from '../../components/pettodo/Buttons';
 import { Modal } from '../../components/pettodo/Modals';
 import { TimelineView } from '../../components/pettodo/Timeline';
 import { FreshnessBadge } from '../../components/pettodo/Badges';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams, useParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { LUNA, VACCINES, FEEDING } from '../../data/demoData';
 import { toast } from 'sonner';
@@ -16,6 +16,8 @@ import { useServices } from '../../services/index';
 import { PawPrint, QrCode, Syringe, FileText, Calendar, Clock, Check, AlertTriangle, ChevronRight, Utensils, Upload } from 'lucide-react';
 import { HealthSection } from '../../components/pettodo/HealthSection';
 import { FeedingSection } from '../../components/pettodo/FeedingSection';
+import type { Pet } from '../../data/storage';
+import { petApi } from '../../services/api';
 
 // DLY_01
 export function DLY_01() {
@@ -119,7 +121,7 @@ export function DLY_02() {
       <AppBar title="My Pets" showBack />
       <div className="flex-1 p-4 flex flex-col gap-3">
         {store.pets.map(p => (
-          <PetCard key={p.id} name={p.name} breed={p.breed} hasQR={p.id === 'pet-luna-001'} vaccineStatus={p.vaccines || 'Unknown'} onClick={() => nav('/daily/pet-profile')} />
+          <PetCard key={p.id} name={p.name} breed={p.breed} hasQR={p.id === 'pet-luna-001'} vaccineStatus={p.vaccines || 'Unknown'} onClick={() => nav(`/daily/pet/${p.id}`)} />
         ))}
         <Btn variant="secondary" fullWidth icon={<PawPrint size={16} />} onClick={() => setShowModal(true)}>Add Pet</Btn>
       </div>
@@ -455,6 +457,313 @@ export function DLY_08() {
           <Btn variant="ghost" fullWidth onClick={() => nav(-1)}>Cancel</Btn>
         </div>
       </div>
+    </div>
+  );
+}
+
+// PetDetail — dynamic pet profile loaded by ID
+export function PetDetail() {
+  const nav = useNavigate();
+  const { petId } = useParams<{ petId: string }>();
+  const { store, updatePet, deletePet } = useApp();
+  const isIntegration = appConfig.mode === 'integration';
+
+  const [pet, setPet] = useState<Pet | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '', breed: '', size: 'Medium' as 'Small' | 'Medium' | 'Large',
+    age: '', weight: '', colorsStr: '', marks: '', collar: '',
+    temperament: '', microchip: '', vaccines: '', nextVaccine: '', lastVaccine: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!petId) {
+      setLoadError('Invalid pet link.');
+      setLoading(false);
+      return;
+    }
+    if (isIntegration) {
+      setLoading(true);
+      setLoadError(null);
+      petApi.get(petId)
+        .then(p => { setPet(p); setLoading(false); })
+        .catch((err: any) => {
+          if (err.status === 404) setLoadError('Pet not found.');
+          else if (err.status === 401 || err.status === 403) setLoadError('Not authorized to view this pet.');
+          else setLoadError('Failed to load pet. Please try again.');
+          setLoading(false);
+        });
+    } else {
+      const found = store.pets.find(p => p.id === petId) ?? null;
+      setPet(found);
+      setLoadError(found ? null : 'Pet not found.');
+      setLoading(false);
+    }
+  }, [petId, isIntegration]);
+
+  const openEdit = () => {
+    if (!pet) return;
+    setEditForm({
+      name: pet.name,
+      breed: pet.breed,
+      size: pet.size,
+      age: pet.age || '',
+      weight: pet.weight || '',
+      colorsStr: (pet.colors || []).join(', '),
+      marks: pet.marks || '',
+      collar: pet.collar || '',
+      temperament: pet.temperament || '',
+      microchip: pet.microchip || '',
+      vaccines: pet.vaccines || '',
+      nextVaccine: pet.nextVaccine || '',
+      lastVaccine: pet.lastVaccine || '',
+    });
+    setShowEdit(true);
+  };
+
+  const handleSave = async () => {
+    if (!pet || !petId) return;
+    if (!editForm.name.trim() || !editForm.breed.trim()) {
+      toast.error('Name and breed are required.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const patch: Partial<Pet> = {
+        name: editForm.name.trim(),
+        breed: editForm.breed.trim(),
+        size: editForm.size,
+        age: editForm.age.trim(),
+        weight: editForm.weight.trim(),
+        colors: editForm.colorsStr ? editForm.colorsStr.split(',').map(c => c.trim()).filter(Boolean) : [],
+        marks: editForm.marks.trim(),
+        collar: editForm.collar.trim(),
+        temperament: editForm.temperament.trim(),
+        microchip: editForm.microchip.trim(),
+        vaccines: editForm.vaccines.trim(),
+        nextVaccine: editForm.nextVaccine.trim(),
+        lastVaccine: editForm.lastVaccine.trim(),
+      };
+      await updatePet(petId, patch);
+      setPet(prev => prev ? { ...prev, ...patch } : prev);
+      toast.success('Pet updated!');
+      setShowEdit(false);
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!petId) return;
+    setDeleting(true);
+    try {
+      await deletePet(petId);
+      toast.success(`${pet?.name ?? 'Pet'} deleted.`);
+      nav('/daily/pet-list');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete. Please try again.');
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = { background: 'var(--gray-100)', border: '1px solid var(--gray-200)', minHeight: 44 };
+  const labelStyle: React.CSSProperties = { fontWeight: 600, color: 'var(--gray-700)' };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <AppBar title="Pet Profile" showBack />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-[14px]" style={{ color: 'var(--gray-500)' }}>Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !pet) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <AppBar title="Pet Profile" showBack />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+          <AlertTriangle size={36} style={{ color: 'var(--red-dark)' }} />
+          <p className="text-[15px] text-center" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>
+            {loadError ?? 'Pet not found.'}
+          </p>
+          <Btn variant="secondary" onClick={() => nav('/daily/pet-list')}>Back to Pet List</Btn>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-full">
+      <ScreenLabel name="DLY_03_PetProfile_Dynamic" />
+      <AppBar title="Pet Profile" showBack />
+      <div className="flex-1 p-4 flex flex-col gap-4">
+
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--green-soft)' }}>
+            <span className="text-4xl">🐕</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[20px]" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{pet.name}</h3>
+            <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>{pet.breed}</p>
+            {pet.colors?.length > 0 && (
+              <p className="text-[12px]" style={{ color: 'var(--gray-400)' }}>{pet.colors.join(', ')}</p>
+            )}
+          </div>
+          <Btn variant="secondary" onClick={openEdit}>Edit</Btn>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Size', value: pet.size || '—' },
+            { label: 'Age', value: pet.age || '—' },
+            { label: 'Weight', value: pet.weight || '—' },
+            { label: 'Microchip', value: pet.microchip ? 'Yes' : '—' },
+          ].map(item => (
+            <div key={item.label} className="p-2.5 rounded-xl" style={{ background: 'var(--gray-100)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--gray-500)' }}>{item.label}</p>
+              <p className="text-[14px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{item.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Additional details */}
+        {(pet.temperament || pet.collar || pet.marks || pet.vaccines || pet.nextVaccine) && (
+          <div className="p-3 rounded-xl flex flex-col gap-1" style={{ background: 'var(--gray-100)' }}>
+            {pet.temperament && <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Temperament: {pet.temperament}</p>}
+            {pet.collar && <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Collar: {pet.collar}</p>}
+            {pet.marks && <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Marks: {pet.marks}</p>}
+            {pet.vaccines && <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Vaccines: {pet.vaccines}</p>}
+            {pet.nextVaccine && (
+              <p className="text-[12px]" style={{ color: 'var(--info)', fontWeight: 500 }}>
+                <Syringe size={12} className="inline mr-1" />Next vaccine: {pet.nextVaccine}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Report Lost */}
+        <Btn
+          variant="destructive"
+          fullWidth
+          icon={<AlertTriangle size={16} />}
+          onClick={() => nav('/daily/report-lost', { state: { petId: pet.id, prefilled: true } })}
+        >
+          Report {pet.name} as Lost
+        </Btn>
+
+        {/* Delete link */}
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="text-[13px] text-center py-2"
+          style={{ color: 'var(--red-dark)', fontWeight: 500 }}
+        >
+          Delete pet
+        </button>
+      </div>
+
+      {/* Edit Modal */}
+      <Modal open={showEdit} onClose={() => { if (!saving) setShowEdit(false); }} title={`Edit ${pet.name}`}>
+        <div className="flex flex-col gap-3" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 4 }}>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={labelStyle}>Name *</label>
+            <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+              value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={labelStyle}>Breed *</label>
+            <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+              value={editForm.breed} onChange={e => setEditForm(f => ({ ...f, breed: e.target.value }))} />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={labelStyle}>Size</label>
+            <select className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+              value={editForm.size} onChange={e => setEditForm(f => ({ ...f, size: e.target.value as any }))}>
+              <option value="Small">Small</option>
+              <option value="Medium">Medium</option>
+              <option value="Large">Large</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Age</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. 2 years" value={editForm.age} onChange={e => setEditForm(f => ({ ...f, age: e.target.value }))} />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Weight</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. 12 kg" value={editForm.weight} onChange={e => setEditForm(f => ({ ...f, weight: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={labelStyle}>Colors (comma-separated)</label>
+            <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+              placeholder="Brown, White" value={editForm.colorsStr} onChange={e => setEditForm(f => ({ ...f, colorsStr: e.target.value }))} />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Temperament</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. Friendly" value={editForm.temperament} onChange={e => setEditForm(f => ({ ...f, temperament: e.target.value }))} />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Collar</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. Red collar" value={editForm.collar} onChange={e => setEditForm(f => ({ ...f, collar: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Marks</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. White spot on chest" value={editForm.marks} onChange={e => setEditForm(f => ({ ...f, marks: e.target.value }))} />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[12px]" style={labelStyle}>Microchip #</label>
+              <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+                placeholder="e.g. 900123456" value={editForm.microchip} onChange={e => setEditForm(f => ({ ...f, microchip: e.target.value }))} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[12px]" style={labelStyle}>Vaccine notes</label>
+            <input className="px-3 py-2 rounded-xl text-[14px]" style={inputStyle}
+              placeholder="e.g. Up to date" value={editForm.vaccines} onChange={e => setEditForm(f => ({ ...f, vaccines: e.target.value }))} />
+          </div>
+          <Btn variant="primary" fullWidth onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </Btn>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={showDeleteConfirm} onClose={() => { if (!deleting) setShowDeleteConfirm(false); }} title="Delete Pet">
+        <div className="flex flex-col gap-4">
+          <p className="text-[14px]" style={{ color: 'var(--gray-700)' }}>
+            Are you sure you want to delete <strong>{pet.name}</strong>? This action cannot be undone.
+          </p>
+          <div className="flex gap-2">
+            <Btn variant="ghost" fullWidth onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>Cancel</Btn>
+            <Btn variant="destructive" fullWidth onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Btn>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

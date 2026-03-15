@@ -45,7 +45,7 @@ import { EMG_26, EMG_27, EMG_28, EMG_29, EMG_30, EMG_31 } from './screens/emerge
 import { QRH_01, QRH_02, QRH_03, QRH_04, QRH_05 } from './screens/qr-hub/QRH_screens';
 
 // Daily & Education
-import { DLY_01, DLY_02, DLY_03, DLY_04, DLY_05, DLY_06, DLY_07, DLY_08 } from './screens/daily/DLY_screens';
+import { DLY_01, DLY_02, DLY_03, DLY_04, DLY_05, DLY_06, DLY_07, DLY_08, PetDetail } from './screens/daily/DLY_screens';
 import { EDU_01, EDU_02, EDU_03, EDU_04 } from './screens/daily/EDU_screens';
 
 // Communities & Events
@@ -138,6 +138,7 @@ export const router = createBrowserRouter([
           // Daily
           { path: '/daily/home', Component: DLY_01 },
           { path: '/daily/pet-list', Component: DLY_02 },
+          { path: '/daily/pet/:petId', Component: PetDetail },
           { path: '/daily/pet-profile', Component: DLY_03 },
           { path: '/daily/documents', Component: DLY_04 },
           { path: '/daily/feeding', Component: DLY_05 },

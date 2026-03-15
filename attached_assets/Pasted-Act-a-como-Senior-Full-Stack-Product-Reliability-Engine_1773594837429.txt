@@ -1,0 +1,134 @@
+Actúa como Senior Full-Stack Product Reliability Engineer para PETTODO.
+
+Tu trabajo NO es ampliar producto.
+Tu trabajo NO es abrir Phase 2 grande.
+Tu trabajo es cerrar correctamente el siguiente bloque real:
+
+REAL PET MANAGEMENT COMPLETION
+
+## Truth sources
+Lee y usa en este orden:
+1. CURRENT_STATE.md
+2. RELEASE_CRITERIA.md
+3. los archivos reales del frontend que implementan:
+   - pet list
+   - pet cards
+   - pet detail/profile route
+   - edit pet form
+   - delete pet action
+   - AppContext / hook / provider de pets
+   - mode detection (demo vs integration)
+4. api.ts y las rutas backend de pets
+
+## Operational truth
+Toma como verdad operativa actual:
+- create pet en integration mode ya funciona y persiste realmente
+- la base Auth/API/PostgreSQL ya existe
+- el bloqueo inmediato ahora es UX/UI integration:
+  - pet cards están redirigiendo a una ficha mock/legacy
+  - update/delete no pueden validarse end-to-end desde la UI
+- demo mode debe seguir existiendo
+- integration mode debe seguir siendo la verdad del sistema cuando está activo
+
+## Main objective
+Cerrar el módulo de gestión de mascotas para que sea realmente usable y testeable en integration mode.
+
+Eso significa:
+1. routing dinámico por pet ID
+2. pet detail real por ID
+3. edit pet desde UI real
+4. delete pet desde UI real
+5. error handling visible y veraz
+6. reload/refetch desde API como verdad del sistema
+7. separación clara entre demo mode e integration mode
+
+## Strict rules
+- no agregar nuevas features
+- no tocar Blob todavía
+- no abrir protected contact todavía
+- no abrir case creation todavía
+- no rediseñar media app
+- no romper create pet ya resuelto
+- no romper owner scoping
+- no romper public pet route sin PII
+- no esconder errores reales detrás de fallback silencioso
+- no usar ficha mock estática para el detail
+- integration mode debe leer/escribir verdad desde backend
+- demo mode puede seguir local, pero explícitamente separado
+
+## Exact scope
+Debes:
+- localizar dónde las pet cards navegan a una ficha fija o mock
+- reemplazar esa navegación por una ruta dinámica real por petId
+- hacer que el pet detail cargue el pet correcto
+- conectar edit al pet correcto
+- conectar delete al pet correcto
+- mostrar loading / empty / error states razonables
+- manejar not found / unauthorized de forma limpia
+- asegurar que después de update:
+  - el detail refleja los cambios
+  - la lista refleja los cambios
+  - refresh mantiene los cambios
+- asegurar que después de delete:
+  - el detail no queda roto
+  - el usuario vuelve a la lista o pantalla correcta
+  - refresh confirma que ya no existe
+- revisar cualquier fallback localStorage ambiguo en integration mode dentro de estos flujos
+- mantener demo mode operativo sin contaminar integration mode
+
+## Desired behavior
+### Pet list
+- carga mascotas reales del usuario
+- cada card abre la mascota correcta
+- no redirige a Luna fija ni a mocks legacy
+
+### Pet detail
+- obtiene el pet correcto por route param
+- muestra datos reales
+- maneja loading / not found / error
+
+### Edit
+- abre con los datos reales del pet correcto
+- guarda en backend
+- muestra feedback visible
+- actualiza detail + list
+- sobrevive refresh y nueva sesión
+
+### Delete
+- pide confirmación
+- borra en backend
+- redirige correctamente
+- no deja UI fantasma
+- sobrevive refresh y nueva sesión
+
+### Error handling
+- si la API falla, el usuario lo ve
+- no se debe fingir éxito
+- no se debe esconder fallo con fallback local engañoso
+
+### Mode handling
+- integration mode = backend truth
+- demo mode = explícito y separado
+
+## Acceptance criteria
+1. tocar una pet card abre la mascota correcta por ID real
+2. ya no existe redirección a Luna mock fija
+3. edit funciona desde UI real sobre la mascota correcta
+4. delete funciona desde UI real sobre la mascota correcta
+5. update persiste y sobrevive refresh
+6. delete persiste y sobrevive refresh
+7. loading/error/not-found states existen y son razonables
+8. integration mode no depende silenciosamente de local state para estos flujos
+9. demo mode sigue funcionando
+10. no hay regresión en create pet
+11. no hay regresión en owner scoping
+12. no hay regresión en public pet route sin owner PII
+
+## Deliverables
+Al final responde con:
+1. root cause exacta confirmada
+2. archivos cambiados
+3. comportamiento nuevo de list/detail/edit/delete
+4. riesgos restantes
+5. manual QA script corto para que yo lo pruebe
+6. si CURRENT_STATE o QA_CURRENT necesitan actualización después de este packet
