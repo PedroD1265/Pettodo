@@ -1,0 +1,268 @@
+Act as a Senior Backend Test Engineer + Release Engineering Implementer for PETTODO.
+
+Work directly in the real PETTODO repository.
+
+Your job is to implement a **minimal backend test baseline + minimal test scripts + minimal CI** for the flows that are already real.
+
+## Mission
+Protect the currently real backend flows with a small, stable, useful automated test baseline.
+
+## Hard constraints
+- Do not add new product features.
+- Do not expand scope.
+- Do not do a broad refactor.
+- Do not touch trust-sensitive workstreams that are not real yet.
+- Do not add UI e2e.
+- Do not add Playwright or Cypress.
+- Do not connect tests or CI to real Firebase or real PostgreSQL.
+- Do not pretend this creates beta readiness by itself.
+
+## Read first
+Before changing code, read:
+
+- `docs/00_governance/CURRENT_STATE.md`
+- `docs/03_delivery/QA_CURRENT.md`
+- `docs/03_delivery/RELEASE_CRITERIA.md`
+- `docs/03_delivery/BACKLOG.md`
+- `docs/02_build/ARCHITECTURE.md`
+- `docs/02_build/ENVIRONMENTS_PUBLIC.md`
+- `docs/02_build/WEBAPP_REPLIT.md`
+
+Inspect these files carefully:
+
+- `package.json`
+- `server/index.ts`
+- `server/db.ts`
+- `server/migrate.ts`
+- `server/routes/auth.ts`
+- `server/routes/pets.ts`
+- `server/routes/cases.ts`
+- `server/routes/public.ts`
+- `server/routes/import.ts`
+- `server/middleware/verifyToken.ts`
+
+## Confirmed scope
+Only protect what is already real enough now:
+
+- `GET /api/health`
+- `GET /api/auth/me`
+- pets API CRUD
+- cases API create/list/get
+- public pet fetch
+- import status/basic import flow
+- minimal build discipline
+- minimal CI
+
+## Deliverables
+You must implement all of these:
+
+### 1) Make the Express app testable
+Do the smallest safe refactor needed so tests can import the app without startup side effects.
+
+Required result:
+- create `server/app.ts`
+- `server/app.ts` must:
+  - create the Express app
+  - configure middleware
+  - mount the existing routes
+  - export the app
+- keep `server/index.ts` as startup-only:
+  - import `app`
+  - run `testConnection()`
+  - run `runMigrations()`
+  - call `listen(...)`
+
+Important:
+- `app.ts` must not run DB connection tests
+- `app.ts` must not run migrations
+- `app.ts` must not call `listen`
+- importing `app.ts` in tests must have no infrastructure side effects
+
+Do not change route behavior beyond what is strictly needed for testability.
+
+### 2) Add minimal test tooling
+Use:
+- `vitest`
+- `supertest`
+- minimal typings only if needed
+
+Update `package.json` with:
+- `test`
+- optional `test:watch` only if it is truly useful
+
+Do not add unnecessary libraries.
+
+### 3) Add minimal backend tests
+Create a small, stable suite.
+
+Recommended test folder:
+- `tests/`
+
+#### A. Health
+Test:
+- `GET /api/health` returns `200`
+- body is `{ ok: true }`
+
+#### B. Auth me
+Test both:
+- no auth header -> `401`
+- valid mocked token path -> `200`
+
+Important:
+- do **not** globally bypass `verifyToken`
+- mock the smallest auth dependency needed so the real middleware path can still produce both `401` and `200`
+
+Validate response shape:
+- `uid`
+- `email`
+- `displayName`
+- `photoURL`
+
+#### C. Pets
+Cover:
+- `GET /api/pets`
+- `POST /api/pets`
+- `PUT /api/pets/:id`
+- `DELETE /api/pets/:id`
+
+Minimum cases:
+- list returns array
+- create without `name` -> `400`
+- valid create -> `201`
+- update existing -> `200`
+- update missing -> `404`
+- delete existing -> `200`
+- delete missing -> `404`
+
+#### D. Cases
+Cover:
+- `POST /api/cases`
+- `GET /api/cases`
+- `GET /api/cases/:id`
+
+Minimum cases:
+- invalid type -> `400`
+- valid create -> `201`
+- list returns array
+- existing case -> `200`
+- missing case -> `404`
+
+#### E. Public pet
+Cover:
+- `GET /api/public/pet/:petId`
+
+Minimum cases:
+- missing pet -> `404`
+- existing pet -> `200`
+- assert response is public/minimized and does not expose owner data
+
+#### F. Import
+Cover:
+- `GET /api/import/status`
+- `POST /api/import/pets`
+
+Minimum cases:
+- status when nothing imported yet
+- invalid payload -> `400`
+- valid payload -> success
+- duplicate import -> `409`
+
+### 4) Mock strategy
+Keep it simple.
+
+For auth:
+- mock token verification dependency, not the whole endpoint
+
+For DB:
+- mock `query`
+- mock `pool.connect` only where strictly necessary
+
+Rules:
+- no real Firebase
+- no real PostgreSQL
+- no real secrets
+- no real infra mutation
+- tests must be deterministic and fast
+
+Do not build a new abstraction layer just for tests.
+
+### 5) Add minimal CI
+Create:
+- `.github/workflows/ci.yml`
+
+Run on:
+- `push`
+- `pull_request`
+
+Workflow must do at minimum:
+- checkout
+- setup Node
+- `npm ci`
+- `npm run build`
+- `npm test`
+
+Use dummy env vars if needed so CI never depends on real Firebase or real PostgreSQL.
+
+Do not add deployment.
+Do not add CD.
+Only minimal CI.
+
+### 6) Update docs honestly
+Update only what is necessary, briefly and truthfully:
+
+- `docs/03_delivery/QA_CURRENT.md`
+- optionally `docs/03_delivery/CHANGELOG_SUMMARY.md`
+
+State clearly:
+- a minimal automated backend test baseline now exists
+- what it covers
+- what it does not cover
+- this is not full beta readiness
+
+Do not exaggerate.
+
+## Out of scope
+Do not touch:
+- image upload/storage
+- protected contact
+- moderation/review
+- AI matching
+- Community Dog governance
+- UI/browser testing
+- broad architecture cleanup
+- unrelated product logic
+
+## Acceptance criteria
+This task is complete only if all are true:
+
+1. `server/app.ts` exists and is importable in tests with no startup side effects.
+2. `server/index.ts` is startup-only.
+3. A Vitest + Supertest backend suite exists.
+4. The suite covers:
+   - health
+   - auth/me
+   - pets
+   - cases
+   - public pet
+   - basic import
+5. Tests do not use real Firebase or real PostgreSQL.
+6. `npm test` exists and works.
+7. GitHub Actions runs build + test.
+8. Docs were updated honestly.
+9. No out-of-scope workstreams were touched.
+
+## Implementation style
+Prefer the smallest change that works.
+Prefer stable tests over clever tests.
+Prefer direct mocks over heavy architecture changes.
+
+## Final response format
+When done, return exactly:
+
+### What I implemented
+### Files created or modified
+### Test coverage added
+### What I mocked
+### What remains intentionally uncovered
+### Current limitations
+### Docs updated

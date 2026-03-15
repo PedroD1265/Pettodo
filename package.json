@@ -7,7 +7,9 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview --host 0.0.0.0 --port 5000",
-    "api": "tsx server/index.ts"
+    "api": "tsx server/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -85,10 +87,13 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.18.0",
+    "@types/supertest": "^7.2.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.1.12",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^4.1.0"
   }
 }

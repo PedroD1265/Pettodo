@@ -189,7 +189,36 @@ None
 
 ---
 
-## 8. Current baseline changes recorded at initialization
+## 8. Post-baseline changes
+
+### 2026-03-15 — Minimal automated backend test baseline implemented
+**Category:**
+QA, Release readiness, Implementation
+
+**Summary:**
+A minimal Vitest + Supertest backend test suite was added covering the real backend flows: health, auth/me, pets CRUD, cases, public pet, and import. The Express app was refactored into `server/app.ts` (importable with no startup side effects) and `server/index.ts` (startup-only). A minimal GitHub Actions CI workflow was added that runs build + test on push and pull_request. All tests use mocked Firebase and mocked PostgreSQL — no real infra required.
+
+**Why it matters:**
+This reduces the "no automated tests" and "no CI" blockers that were explicitly listed as first-beta blockers. It creates a stable regression baseline for the currently real backend flows.
+
+**Affected docs or areas:**
+- `server/app.ts` (new)
+- `server/index.ts` (startup-only refactor)
+- `tests/` (new: health, auth, pets, cases, public, import)
+- `vitest.config.ts` (new)
+- `.github/workflows/ci.yml` (new)
+- `package.json` (test scripts added)
+- `QA_CURRENT.md` (updated honestly)
+
+**Implementation reality impact:**
+Materially changed — automated backend tests now exist where none existed before.
+
+**Readiness impact:**
+Reduced blocker — "no automated tests" and "no CI" are no longer fully true, though broader coverage, CD, and production-grade discipline remain outstanding.
+
+---
+
+## 9. Original baseline changes recorded at initialization
 
 These entries summarize the major structural documentation changes that were established at the current baseline and should be treated as the official starting point for future updates.
 

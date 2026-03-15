@@ -1,6 +1,6 @@
 # QA_CURRENT
 
-**Last updated:** 2026-03-15 13:45 UTC-4
+**Last updated:** 2026-03-15 22:55 UTC-4
 Purpose:
 Provide the official current QA truth for PETTODO’s web app so the team can distinguish what has actually been validated in the current Replit-built product, what remains demo/local-first, what is still untested, and what blocks the first real beta.
 
@@ -410,11 +410,27 @@ The following are still not validated as real product capabilities:
 
 ## 8.6 Automated QA and release engineering
 **[confirmed]**
-The following are still missing or not validated:
-- automated tests
-- CI/CD
+
+A minimal automated backend test baseline now exists as of 2026-03-15.
+
+What the baseline covers:
+- `GET /api/health`
+- `GET /api/auth/me` (401 and 200 paths via mocked token verification)
+- pets CRUD: list, create, update, delete including 400/404 cases
+- cases: create, list, get including 400/404 cases
+- public pet: 404 and 200 including owner data isolation check
+- import: status, invalid payload, valid import, duplicate protection
+
+What the baseline does not cover:
+- UI or browser behavior
+- real Firebase or real PostgreSQL (all mocked)
+- image upload, protected contact, moderation, AI matching, Community Dogs
+- multi-user concurrency or production infrastructure
+
+What remains missing or not yet validated:
+- CI/CD deployment pipeline
 - production-grade deploy fallback confidence
-- formal regression discipline beyond manual self-check
+- formal regression discipline beyond this minimal baseline
 
 ---
 
@@ -465,6 +481,8 @@ Use these statuses:
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
 | Update/Delete persistence | Validated in phase 1.5 | Dynamic routing UI bug fixed; end-to-end CRUD validated |
+| Automated backend test baseline | Partially validated | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
+| GitHub Actions CI (build+test) | Partially validated | CI workflow added; runs on push/PR with dummy env vars |
 | Real image upload/storage | Not yet real / not yet validated | Required by PRD for real beta |
 | Real public profile backend behavior | Not yet real / not yet validated | PRD requires real flows |
 | Real moderation/admin | Not yet real / not yet validated | PRD requires minimum moderation readiness |
@@ -486,8 +504,8 @@ They are implementation and release-readiness blockers.
 - no real multi-user production data model yet
 - no real moderation/review capability yet
 - no real evidence workflow yet
-- no automated tests yet
-- no CI/CD yet
+- minimal automated backend test baseline exists (Vitest+Supertest, mocked infra); broader test coverage not yet done
+- minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
 
 ### Meaning
