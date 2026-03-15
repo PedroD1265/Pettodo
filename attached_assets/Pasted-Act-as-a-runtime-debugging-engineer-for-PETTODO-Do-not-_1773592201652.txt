@@ -1,0 +1,74 @@
+Act as a runtime/debugging engineer for PETTODO.
+
+Do not expand product scope.
+Do not touch docs.
+Do not change UX or feature behavior unless required for runtime validation.
+Do not rewrite architecture.
+Do not undo the recent CORS fix in `server/index.ts`.
+
+## Current situation
+
+A previous runtime issue in Replit was already fixed:
+- CORS for Replit preview/dev origins was corrected in `server/index.ts`
+- the API server now starts
+- Replit preview can now reach `/api/*`
+- pet creation from Replit preview can return `201 Created`
+
+However, there is still a critical persistence-alignment problem:
+
+- pets created from Replit preview do not appear in the Azure PostgreSQL database that is audited externally with `psql`
+- local/Antigravity-based runs *do* persist correctly into Azure
+- Replit logs previously showed:
+  `[db] Using PG* environment variables (Replit-managed PostgreSQL)`
+- that strongly suggests Replit runtime is connecting to the wrong database
+
+## Important new update
+
+The Replit secret `DATABASE_URL` has now been corrected so the password is URL-encoded properly.
+
+Before it was effectively malformed because the password contained `@`.
+Now it is corrected in Secrets, using `%40` encoding inside the password portion.
+
+Assume that `DATABASE_URL` is now intended to be valid and should point to the real Azure PostgreSQL system of record.
+
+## Your task
+
+1. Inspect the DB connection resolution logic (`server/db.ts` or equivalent)
+2. Confirm whether Replit is still preferring `PG*` variables over `DATABASE_URL`
+3. Fix the runtime so database connection priority is correct:
+   - prefer `DATABASE_URL` as the primary connection source
+   - only use `PG*` variables as explicit fallback if `DATABASE_URL` is absent or intentionally disabled
+4. Preserve the previous CORS fix; do not regress it
+5. Restart the API server after the secret/connection fix
+6. Validate all of the following:
+   - API starts successfully
+   - logs clearly indicate the runtime is using `DATABASE_URL` / Azure connection path
+   - `/api/health` works
+   - authenticated `GET /api/pets` works from Replit preview
+   - authenticated `POST /api/pets` works from Replit preview
+   - a pet created from Replit preview persists into the same Azure database verified externally with `psql`
+7. If needed, add one short explicit startup log showing which DB source was selected:
+   - DATABASE_URL
+   - or PG* fallback
+8. Keep the fix minimal and runtime-focused
+9. Do not touch Firebase configuration unless absolutely required
+
+## Important distinction
+
+There are two separate issues:
+1. DB target mismatch between Replit runtime and Azure PostgreSQL
+2. the still-existing pet-profile routing bug that opens a static Luna profile
+
+This task is ONLY about fixing the DB target mismatch and validating real persistence into Azure.
+Do not confuse that with the profile-routing bug.
+
+## Deliverable
+
+Return:
+1. exact root cause
+2. exact files changed
+3. how DB source selection worked before
+4. how DB source selection works after the fix
+5. confirmation that the corrected `DATABASE_URL` is now being used
+6. proof that a pet created from Replit preview is visible in the same Azure DB audited externally
+7. any remaining separate issue you observed that is NOT part of this fix
