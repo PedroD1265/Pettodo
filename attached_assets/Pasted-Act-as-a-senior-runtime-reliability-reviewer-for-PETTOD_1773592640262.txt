@@ -1,0 +1,107 @@
+Act as a senior runtime/reliability reviewer for PETTODO.
+
+Do not expand product scope.
+Do not touch docs.
+Do not redesign UX.
+Do not open new feature work.
+Do not rewrite architecture.
+
+Your task is to audit the most recent runtime/config fixes and check whether any regression, hidden risk, or cleanup issue remains after the latest changes.
+
+## Recent changes already made
+Assume the following fixes were introduced recently and are intended to stay unless you prove they are wrong:
+
+1. `vite.config.ts`
+   - Vite proxy uses `http://127.0.0.1:3001` for `/api`
+
+2. `server/schema.sql`
+   - explicit `ALTER TABLE pets ADD COLUMN IF NOT EXISTS ...` patching was added for schema drift
+
+3. `server/index.ts`
+   - CORS was updated to support Replit preview/dev origins
+   - localhost support should still work
+   - policy should remain reasonably safe, not reckless wildcard-only CORS
+
+4. DB connection/runtime
+   - Replit should now prefer `DATABASE_URL` (Azure PostgreSQL) over Replit-managed `PG*` variables
+   - `DATABASE_URL` secret was corrected with URL-encoded password (`%40` for `@`)
+   - Replit runtime has already demonstrated write/read behavior against the intended Azure DB
+
+## What I want you to do
+Perform a focused audit/review of these recent changes and check for anything that is still wrong, risky, incomplete, or worth tightening.
+
+## Audit checklist
+Review at minimum:
+
+### A. API startup/runtime sanity
+- API starts cleanly
+- no missing dependency/runtime startup failure remains
+- no suspicious warnings/errors during startup
+- `/api/health` works
+
+### B. DB connection truth
+- confirm runtime is really using `DATABASE_URL` first
+- confirm `PG*` variables are no longer incorrectly taking precedence
+- confirm no temporary test/probe rows remain
+- confirm no leftover debug-only DB code or noisy logs remain
+- confirm new pet writes from Replit still land in Azure PostgreSQL
+
+### C. CORS and origin handling
+- confirm Replit preview still works
+- confirm localhost still works
+- confirm the CORS rule is not overly permissive in a risky way
+- confirm no unnecessary wildcard/origin bypass was introduced
+
+### D. Schema/migration sanity
+- confirm `schema.sql` changes are safe/idempotent
+- confirm patch logic does not create obvious future migration problems
+- confirm no accidental schema drift remains for `pets`
+
+### E. Dependency/package sanity
+- confirm `dotenv` is now placed correctly for runtime use
+- confirm `package.json` and lockfile are consistent
+- confirm no temporary package edits remain
+- confirm no broken workflow assumptions remain
+
+### F. Recent-change cleanup / regression scan
+- look for any temporary debug code, logs, probes, or runtime hacks that should be removed
+- look for any accidental behavior change caused by the fixes
+- check whether there are pending local changes or uncommitted runtime artifacts that should be reviewed
+- separate true blockers from non-blocking observations
+
+## Important known separate issue
+There is already a known routing bug where pet profile navigation can still open a static Luna profile instead of the correct dynamic pet ID.
+
+You may mention it, but do NOT treat it as the main subject of this audit unless you discover the recent changes affected it directly.
+
+## What to do if you find issues
+- If you find a small, clearly correct runtime/config cleanup or fix, you may apply it
+- If you find only observations and no clear safe fix is needed, do not invent changes
+- Prefer minimal, surgical corrections only
+
+## Deliverable
+Return exactly:
+
+1. Overall verdict:
+   - clean
+   - clean with minor concerns
+   - not clean / needs follow-up
+
+2. Files reviewed
+
+3. Files changed (if any)
+
+4. Confirmed good after audit
+   - bullet list of what is definitely okay now
+
+5. Problems found
+   - only real issues, not speculation
+
+6. Recommended next follow-up
+   - only if truly needed
+
+7. Explicit note on whether the latest fixes introduced any regression
+
+Important:
+Be conservative, operational, and specific.
+Do not turn this into a broad refactor or new work packet.
