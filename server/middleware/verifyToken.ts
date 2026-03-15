@@ -27,6 +27,12 @@ export async function verifyToken(
     return;
   }
 
+  if (!adminAuth) {
+    console.error('[verifyToken] adminAuth is not initialized (missing env vars).');
+    res.status(500).json({ error: 'auth_not_configured' });
+    return;
+  }
+
   const token = authHeader.split('Bearer ')[1];
   try {
     const decoded = await adminAuth.verifyIdToken(token);
@@ -38,7 +44,8 @@ export async function verifyToken(
       email_verified: decoded.email_verified,
     };
     next();
-  } catch {
+  } catch (err) {
     res.status(401).json({ error: 'unauthorized' });
   }
 }
+
