@@ -1,3 +1,6 @@
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import express from 'express';
 import cors from 'cors';
 import { testConnection } from './db.js';

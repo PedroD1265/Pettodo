@@ -1,5 +1,7 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, Auth } from 'firebase-admin/auth';
+
+export let adminAuth: Auth | null = null;
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -9,12 +11,12 @@ if (!projectId || !clientEmail || !privateKey) {
   console.warn(
     '[firebase-admin] Missing one or more env vars (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Token verification will fail.'
   );
+} else {
+  if (getApps().length === 0) {
+    initializeApp({
+      credential: cert({ projectId, clientEmail, privateKey }),
+    });
+  }
+  adminAuth = getAuth();
 }
 
-if (getApps().length === 0) {
-  initializeApp({
-    credential: cert({ projectId, clientEmail, privateKey }),
-  });
-}
-
-export const adminAuth = getAuth();

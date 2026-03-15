@@ -40,7 +40,7 @@ function buildServices(): Services {
 
   const matching = isDemo || appConfig.aiProvider === 'demo' ? matchingDemoAdapter : matchingGeminiStub;
 
-  const auth = isDemo ? authDemoAdapter : authFirebaseAdapter;
+  const auth = (isDemo || appConfig.authProvider === 'demo') ? authDemoAdapter : authFirebaseAdapter;
 
   return { storage, sms, chat, push, geo, ai, matching, auth };
 }
