@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          FIREBASE_PROJECT_ID: ci-project
+          FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
+          FIREBASE_PRIVATE_KEY: '-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4J0CYXL8G1dQHZdGnF7kTZdlMhW\n-----END RSA PRIVATE KEY-----\n'
+
+      - name: Test
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          FIREBASE_PROJECT_ID: ci-project
+          FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
+          FIREBASE_PRIVATE_KEY: '-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4J0CYXL8G1dQHZdGnF7kTZdlMhW\n-----END RSA PRIVATE KEY-----\n'
+
+#test
