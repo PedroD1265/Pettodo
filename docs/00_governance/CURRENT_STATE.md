@@ -81,12 +81,8 @@ It expresses strong product structure and relies on a real backend. The core pet
 **[confirmed]**
 The following are not yet real production capabilities:
 
-<<<<<<< HEAD
-- real protected-contact system
-=======
 - real protected-contact UI flow (backend schema + API now exist; QRP screens still use demo state)
 - real image upload/storage pipeline in production
->>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
 - real AI identity / matching pipeline
 - real Community Dog creation UI wired to backend (CMT screens still use COMMUNITY_DOGS demo data)
 - production-grade PDF / PNG flyer generation

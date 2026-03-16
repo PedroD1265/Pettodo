@@ -537,11 +537,11 @@ PETTODO is not yet first-real-beta ready today if critical flows still remain si
 
 ### Why
 **[confirmed]**
-While Phase 1 infrastructure and core pet persistence are now real, current known critical beta blockers still include:
-- real protected contact
-- real moderation/review capability
-- real evidence workflow
-- automated tests
+While Phase 1 infrastructure, core pet persistence, and Block 1 trust-sensitive backend (API/Db) are now real, current known critical beta blockers still include:
+- frontend UI wiring for real protected contact
+- frontend UI wiring for moderation/review capability
+- frontend UI wiring for evidence workflow
+- automated tests for new backend capabilities
 - CI/CD
 - stable production routing/deploy fallback behavior
 

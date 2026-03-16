@@ -307,7 +307,7 @@ When allowed in a recovery flow, direct contact reveal must remain:
 ### 8.5 Exact implementation status
 **[confirmed]**
 
-A fully real protected-contact system is not yet implemented in production and remains part of the current MVP build work.
+The core backend schema and API endpoints for protected contact are now implemented. A fully real protected-contact UI flow is not yet implemented in production and remains part of the current MVP build work.
 
 ---
 

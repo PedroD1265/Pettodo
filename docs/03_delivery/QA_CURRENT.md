@@ -385,11 +385,10 @@ The following are still not validated as real product capabilities:
 
 ## 8.3 Protected contact and private coordination
 **[confirmed]**
-The following are still not validated as real product capabilities:
-- real protected-contact system
-- real owner-controlled contact reveal in production
-- real abuse-aware contact orchestration
-- real private coordination flows
+The backend schema, API boundaries, and role enforcements for protected contact are now real and validated (added in Block 1).
+What remains not yet validated as a real full-stack capability:
+- real owner-controlled contact reveal from the UI
+- real protected-contact UI flow completely replacing the demo placeholders
 
 ## 8.4 Image pipeline and AI pipeline
 **[confirmed]**
@@ -402,11 +401,10 @@ What remains not yet validated as a real product capability:
 
 ## 8.5 Moderation and trust operations
 **[confirmed]**
-The following are still not validated as real product capabilities:
-- real moderation system
-- real dispute handling workflow
-- real shared-record review workflow
-- real abuse/suspicion operations
+The backend schema, endpoints, and role validation for moderation, change requests, and abuse flags are now real (added in Block 1). 
+What remains not yet validated as a real full-stack capability:
+- real frontend workflows for moderators
+- complete UI integration for dispute and shared-record reviews
 
 ## 8.6 Automated QA and release engineering
 **[confirmed]**
@@ -475,8 +473,8 @@ Use these statuses:
 | Education module | Validated in prototype | Good prototype coverage |
 | Profile / settings persistence | Validated in prototype | Local-store based |
 | Chat / notifications | Partially validated | UX validated; real messaging infra not validated |
-| Community Dogs UI/module | Partially validated | UI/module exists; real governance not validated |
-| Protected contact | Not yet real / not yet validated | Only prototype representation exists |
+| Community Dogs UI/module | Partially validated | UI exists; backend Governance API exists; frontend wiring pending |
+| Protected contact | Partially validated | Backend API and schema validated; UI still uses demo state |
 | Real auth / sign-in | Validated in phase 1 | Firebase Auth integrated, baseline validated |
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
@@ -484,8 +482,8 @@ Use these statuses:
 | Automated backend test baseline | Validated in phase 1.5 | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
 | GitHub Actions CI (build+test) | Validated in phase 1.5 | CI workflow added; runs on push/PR with dummy env vars |
 | Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
-| Real public profile backend behavior | Not yet real / not yet validated | PRD requires real flows |
-| Real moderation/admin | Not yet real / not yet validated | PRD requires minimum moderation readiness |
+| Real public profile backend behavior | Partially validated | Trust-sensitive backend filters exist; full UI polish pending |
+| Real moderation/admin | Partially validated | Backend API and review states exist; Admin UI pending |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
 | Play Dates mature system | Out of first-beta priority | Prototype exists, maturity not required first |
 | Full communities maturity | Out of first-beta priority | Prototype exists, maturity not required first |
