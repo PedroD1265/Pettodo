@@ -273,6 +273,10 @@ If these are not real, release is blocked.
 - images are usable in profile/case/match contexts
 - image flow is stable enough for real pilot users
 
+### Current Status
+**[confirmed]**
+This criteria baseline has been implemented and accepted as real (Azure Blob direct upload + DB tracking).
+
 ### Must not be true at release
 **[confirmed]**
 - images are only simulated or fake-persisted
@@ -280,7 +284,7 @@ If these are not real, release is blocked.
 - public/profile/matching image usage is not actually connected to real stored data
 
 ### Release result
-If these are not real, release is blocked.
+If these are not real, release is blocked. (Currently passed for the baseline).
 
 ---
 
@@ -535,7 +539,6 @@ PETTODO is not yet first-real-beta ready today if critical flows still remain si
 **[confirmed]**
 While Phase 1 infrastructure and core pet persistence are now real, current known critical beta blockers still include:
 - real protected contact
-- real image pipeline
 - real moderation/review capability
 - real evidence workflow
 - automated tests

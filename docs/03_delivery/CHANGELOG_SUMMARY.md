@@ -191,6 +191,31 @@ None
 
 ## 8. Post-baseline changes
 
+### 2026-03-15 — Real image upload/storage baseline audited and accepted
+**Category:**
+Implementation, Environment, Release readiness
+
+**Summary:**
+The image upload/storage baseline implementation (commit `b8b2c6a`) was audited, verified, and accepted as complete. It correctly integrates Azure Blob SAS uploads with paired PostgreSQL database reference persistence.
+
+**Why it matters:**
+This materially removes a core blocker for the first real beta release. Core image flows for profiles and cases are no longer simulated or local-only.
+
+**Affected docs or areas:**
+- core backend (`blobStorage.ts`, `images.ts`)
+- `CURRENT_STATE.md`
+- `QA_CURRENT.md`
+- `RELEASE_CRITERIA.md`
+- `BACKLOG.md`
+
+**Implementation reality impact:**
+Materially changed — early prototype image simulation is now backed by a real storage pipeline.
+
+**Readiness impact:**
+Reduced blocker — "no real image upload/storage pipeline yet" is no longer true for the baseline flows.
+
+---
+
 ### 2026-03-15 — Backend test baseline audited and accepted
 **Category:**
 QA, Release readiness

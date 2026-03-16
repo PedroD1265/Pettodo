@@ -77,7 +77,6 @@ If those conflict, implementation reality wins over wishful interpretation.
 **[confirmed]**
 - real multi-user behavior is validated
 - real protected contact is validated
-- real image storage pipeline is validated
 - real moderation is validated
 - automated tests exist
 - release readiness has been achieved
@@ -394,11 +393,12 @@ The following are still not validated as real product capabilities:
 
 ## 8.4 Image pipeline and AI pipeline
 **[confirmed]**
-The following are still not validated as real product capabilities:
-- real image upload/storage pipeline
-- real image retrieval/storage durability
+A real image upload/storage baseline now exists and has been independently audited and accepted (2026-03-15). It includes direct Azure Blob uploads, PostgreSQL persistence, and dedicated test coverage.
+
+What remains not yet validated as a real product capability:
 - real AI identity / matching pipeline
 - real evidence review pipeline
+- mature long-term image moderation flows
 
 ## 8.5 Moderation and trust operations
 **[confirmed]**
@@ -483,7 +483,7 @@ Use these statuses:
 | Update/Delete persistence | Validated in phase 1.5 | Dynamic routing UI bug fixed; end-to-end CRUD validated |
 | Automated backend test baseline | Validated in phase 1.5 | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
 | GitHub Actions CI (build+test) | Validated in phase 1.5 | CI workflow added; runs on push/PR with dummy env vars |
-| Real image upload/storage | Not yet real / not yet validated | Required by PRD for real beta |
+| Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
 | Real public profile backend behavior | Not yet real / not yet validated | PRD requires real flows |
 | Real moderation/admin | Not yet real / not yet validated | PRD requires minimum moderation readiness |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
@@ -500,7 +500,6 @@ They are implementation and release-readiness blockers.
 ### Blockers
 **[confirmed]**
 - no real protected-contact flow yet
-- no real image upload/storage pipeline yet
 - no real multi-user production data model yet
 - no real moderation/review capability yet
 - no real evidence workflow yet
@@ -528,10 +527,10 @@ The PRD expects the MVP to stop being a frontend-only demo and become a real web
 - Community Dogs as a real workstream
 - AI-assisted UX framing with caution language
 - daily value before emergency
+- real image upload/storage baseline
 
 ### PRD areas not yet met as real-system readiness
 **[confirmed]**
-- real image upload/storage
 - real public animal profile flows in production
 - real case creation with persistent backend behavior
 - real QR-linked public access backed by real data

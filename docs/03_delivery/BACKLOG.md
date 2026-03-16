@@ -381,7 +381,7 @@ Done for current phase when:
 
 ### BL-006 — Real image upload and storage baseline
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0

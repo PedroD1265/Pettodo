@@ -62,6 +62,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Owner scoping for protected routes
 - Minimal automated backend test baseline (Vitest + Supertest, mocked infra)
 - Minimal GitHub Actions CI (build + test)
+- Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
 
 ### Product thinking already present
 **[confirmed]**
@@ -79,7 +80,6 @@ It expresses strong product structure and relies on a real backend. The core pet
 The following are not yet real production capabilities:
 
 - real protected-contact system
-- real image upload/storage pipeline in production
 - real AI identity / matching pipeline
 - real evidence workflow for community actions
 - real moderation system
