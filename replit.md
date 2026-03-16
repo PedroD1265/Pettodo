@@ -112,6 +112,24 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
   - loadPetsFromApi now uses updateStore (saves to localStorage) for session consistency
   - Firebase Admin SDK initialization made graceful — server starts without credentials in demo/dev scenarios
   - verifyToken middleware returns 503 when Firebase is not configured instead of crashing
+- 2026-03-16: Trust-Sensitive Block 1 — Data Foundation + API
+  - Added 12 new tables to schema.sql: user_roles, community_dogs, community_dog_sightings, community_dog_actions, protected_contact_threads, protected_contact_messages, protected_contact_events, change_requests, evidence_items, review_decisions, abuse_flags, audit_logs
+  - All tables created with IF NOT EXISTS; appended to schema.sql so runMigrations picks them up on next start
+  - New middleware: server/middleware/requireRole.ts — checks user_roles table at request time; operator satisfies moderator-or-below
+  - New utility: server/utils/audit.ts — writeAuditLog() non-throwing helper for all sensitive actions
+  - New route file: server/routes/protected-contact.ts — 5 endpoints: create thread, get thread+messages, send message, reveal-request, reveal-decision (owner-only); relay-first by design; exact phone only shown to owner when reveal_state=revealed
+  - New route file: server/routes/community-dogs.ts — 8 endpoints: create, public list, public get, my-dogs (creator view), sightings, actions, my-dog by id; new dogs always start pending_review; only approved dogs visible on public GET; exact coords never exposed
+  - New route file: server/routes/change-requests.ts — POST /change-requests; starts as pending_review; never auto-applied
+  - New route file: server/routes/evidence.ts — POST /evidence-items; structured evidence, no file upload (explicit); starts as pending_review
+  - New route file: server/routes/reviews.ts — GET /reviews/pending (aggregates all pending types), POST approve/reject per entity type; both require moderator/operator role via requireRole middleware
+  - New route file: server/routes/abuse.ts — POST /abuse-flags; any authenticated user; status/metadata internal only
+  - Updated server/app.ts to register all 6 new route files
+  - Updated server/routes/public.ts: added protectedContactEnabled:true + contactEntryPoint to public pet response; owner_uid/phone/email never present
+  - Updated src/app/services/api.ts: added communityDogApi, protectedContactApi, changeRequestApi, evidenceApi, reviewApi, abuseFlagApi with typed interfaces
+  - Audited actions in audit_logs: contact_initiated, message_sent, reveal_requested, reveal_granted, reveal_revoked, community_dog_submitted, sensitive_change_requested, evidence_submitted, review_approved, review_rejected, abuse_flag_created
+  - Access rules: all writes require auth; reveal-decision is owner_uid only; approve/reject require moderator/operator in user_roles table
+  - Pet CRUD, case creation, import, and existing public routes unchanged
+  - Known explicit gaps (out of scope per task): CMT screens not yet wired to backend, QRP contact flow not yet wired to backend, image upload pipeline not implemented
 - 2026-03-15: Cases Persistence Baseline
   - Added `cases` table to schema (id, type, status, created_by, pet_id, location, approx_lat/lng, time_label, description, size, colors, traits, direction, created/updated_at)
   - Coordinates stored rounded to 2 decimal places (~1km) per public data policy (no exact location exposure)

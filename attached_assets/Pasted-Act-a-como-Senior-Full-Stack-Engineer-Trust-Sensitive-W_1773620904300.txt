@@ -1,0 +1,192 @@
+Actúa como Senior Full-Stack Engineer + Trust-Sensitive Workflow Implementer para PETTODO.
+
+Debes implementar SOLO el Bloque 1 — Fundamentos de datos y API para el trust-sensitive core.
+
+## Objetivo
+Construir la base real mínima en backend + schema + contratos API para:
+- protected contact relay-first
+- evidence items estructurados
+- review/moderation mínima
+- governance mínima de Community Dogs
+- separación real entre canonical data y salida pública
+
+## Restricciones críticas
+NO hagas estas cosas:
+- no refactorices el dominio actual de `pets` a un modelo global `animals`
+- no rehagas Pet CRUD existente
+- no rehagas auth base existente
+- no implementes image upload/storage real en este bloque
+- no construyas una suite enterprise de moderación
+- no metas CI/CD, workflows, deploy engineering o release engineering
+- no inventes matching real
+- no dejes policy enforcement solo en frontend
+- no mantengas placeholders engañosos como “show owner phone” sin backend real
+
+## Verdad operativa que debes respetar
+Hoy ya existen:
+- Firebase Auth base real
+- Express API real
+- PostgreSQL real
+- Pet CRUD real
+- Case creation real
+- ruta pública QR real con aislamiento básico de owner PII
+
+Pero todavía NO existen de verdad:
+- protected contact real
+- evidence workflow real
+- moderation mínima real
+- governance real de Community Dogs
+
+La UI actual de QR y Community Dogs contiene comportamiento local/demo y NO debe tomarse como capacidad real ya implementada.
+
+## Archivos que debes revisar antes de tocar nada
+- CURRENT_STATE.md
+- RELEASE_CRITERIA.md
+- RISKS_BLOCKERS.md
+- QA_CURRENT.md
+- PRD_MVP_WEBAPP.md
+- PUBLIC_DATA_POLICY.md
+- TRUST_AND_SAFETY.md
+- ARCHITECTURE.md
+- COMMUNITY_DOGS.md
+- DATA_MODEL.md
+- schema.sql
+- QRP_screens.tsx
+- CMT_screens.tsx
+- AppContext.tsx
+- AuthContext.tsx
+- index.ts
+- SCREEN_ROUTE_MAP.md
+- BACKLOG.md
+
+## Decisiones congeladas para este bloque
+1. NO migrar `pets` a `animals` ahora.
+2. Introducir `community_dogs` como nueva entidad separada para shared/community records.
+3. Mantener `pets` y `cases` intactos salvo relaciones nuevas estrictamente necesarias.
+4. Protected contact será relay-first.
+5. Owner direct reveal será opcional, explícito y reversible, pero solo dejar el groundwork backend si la UI final aún no entra.
+6. `pending_review`, `approved`, `rejected` son los review states oficiales mínimos.
+7. Pending items NO son verdad pública.
+8. `evidence_items` es un registro estructurado; NO equivale a implementar file upload real.
+9. La review queue puede derivarse de entidades pendientes; no necesitas una mega-arquitectura de workflow.
+
+## Implementa en este bloque
+
+### A. Extensión de schema / persistencia
+Agrega tablas nuevas mínimas:
+- protected_contact_threads
+- protected_contact_messages
+- protected_contact_events
+- community_dogs
+- community_dog_sightings
+- community_dog_actions
+- change_requests
+- evidence_items
+- review_decisions
+- abuse_flags
+- audit_logs
+
+### B. Estados mínimos
+Congela y usa estos estados:
+- review_state: pending_review | approved | rejected
+- verification_state: pending_review | approved | rejected
+- thread_status: open | closed | blocked
+- reveal_state: not_revealed | revealed | revoked
+
+### C. Relaciones mínimas
+- protected_contact_threads debe poder vincularse a pet_id y opcionalmente case_id
+- community_dog_sightings y community_dog_actions deben vincularse a community_dog_id
+- evidence_items debe usar target_entity_type + target_entity_id
+- change_requests debe usar target_entity_type + target_entity_id
+- review_decisions debe registrar reviewer + decision + notes
+- audit_logs debe poder registrar acciones sensibles
+
+### D. Rutas / API mínimas
+Implementa endpoints mínimos para:
+- POST /api/protected-contact/threads
+- GET /api/protected-contact/threads/:id
+- POST /api/protected-contact/threads/:id/messages
+- POST /api/protected-contact/threads/:id/reveal-request
+- POST /api/protected-contact/threads/:id/reveal-decision
+
+- POST /api/community-dogs
+- GET /api/community-dogs/:id
+- POST /api/community-dogs/:id/sightings
+- POST /api/community-dogs/:id/actions
+
+- POST /api/change-requests
+- POST /api/evidence-items
+
+- GET /api/reviews/pending
+- POST /api/reviews/:entityType/:entityId/approve
+- POST /api/reviews/:entityType/:entityId/reject
+
+- POST /api/abuse-flags
+
+### E. Reglas de acceso mínimas
+- crear/contactar/contribuir/revisar requiere auth
+- owner-only para reveal decision cuando aplique
+- moderator/operator-only para approve/reject review routes
+- no high-impact anonymous actions
+- usa el auth system actual; no crees auth separado para moderación
+
+### F. Reglas de salida pública/privada mínimas
+Asegura desde backend:
+- nunca exponer phone/email/address/exact coordinates en rutas públicas
+- QR/public pet flow debe devolver protected contact entry point, no contacto directo por defecto
+- Community Dogs solo deben ser públicos si review_state = approved
+- pending/rejected/review metadata/audit metadata/abuse flags deben permanecer internos
+- usa approximate/public-safe shaping, no raw internal fields
+
+### G. Auditabilidad mínima
+Registra al menos:
+- contact initiated
+- message sent
+- reveal requested
+- reveal granted/revoked
+- community dog creation submitted
+- sensitive change requested
+- evidence submitted
+- review approved/rejected
+- abuse flag created
+
+## Qué NO debes tocar
+- no toques CI/CD
+- no toques release workflows
+- no toques deploy strategy
+- no intentes cerrar image pipeline
+- no metas matching real
+- no cambies la arquitectura base más allá de registrar nuevas rutas necesarias
+- no conviertas esto en refactor masivo del modelo de dominio completo
+
+## Criterios de aceptación
+El bloque se considera bien implementado solo si:
+1. el schema ya soporta protected contact, Community Dogs controlados, evidence, change requests y review decisions
+2. existen endpoints reales autenticados para esos dominios
+3. el backend impide exposición pública de owner contact y ubicación exacta
+4. pending review no sale como verdad pública
+5. Community Dog creation NO es instant publish sin control
+6. existe base real para moderation/review mínima
+7. existe base real para auditabilidad mínima
+8. no se rompe Pet CRUD ni case creation ya existentes
+9. no se finge image upload real si no fue implementado
+10. la solución queda lo bastante modular para conectar después UI real e image pipeline real
+
+## Entregable esperado
+Cuando termines, devuelve:
+- resumen de tablas agregadas
+- resumen de rutas agregadas
+- reglas de acceso aplicadas
+- decisiones tomadas si había ambigüedad
+- lista de archivos tocados
+- lista de riesgos o follow-ups que quedan explícitamente fuera de este bloque
+
+## Documentación canónica que Antigravity deberá actualizar después si la implementación sale bien
+- CURRENT_STATE.md
+- QA_CURRENT.md
+- DATA_MODEL.md
+- COMMUNITY_DOGS.md
+- TRUST_AND_SAFETY.md
+- PUBLIC_DATA_POLICY.md
+- BACKLOG.md
+- ARCHITECTURE.md solo si cambió una responsabilidad arquitectónica real

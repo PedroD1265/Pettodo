@@ -1,5 +1,7 @@
 import type { Pet } from '../data/storage';
 
+// ─── Cases ──────────────────────────────────────────────────────────────────
+
 export interface CasePayload {
   id?: string;
   type: 'lost' | 'found' | 'sighted';
@@ -36,6 +38,100 @@ export interface CaseRecord {
   updatedAt: number;
 }
 
+// ─── Community Dogs ──────────────────────────────────────────────────────────
+
+export interface CommunityDogPayload {
+  nickname: string;
+  breed?: string;
+  size?: string;
+  colors?: string[];
+  marks?: string;
+  approximateArea?: string;
+  lat?: number;
+  lng?: number;
+  healthNotes?: string;
+  isSterilized?: boolean;
+  isVaccinated?: boolean;
+}
+
+export interface CommunityDogRecord {
+  id: string;
+  nickname: string;
+  breed: string;
+  size: string;
+  colors: string[];
+  marks: string;
+  approximateArea: string;
+  healthNotes: string;
+  isSterilized: boolean;
+  isVaccinated: boolean;
+  reviewState?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── Protected Contact ───────────────────────────────────────────────────────
+
+export interface ContactThreadPayload {
+  petId?: string;
+  caseId?: string;
+  initiatorPhone?: string;
+  initiatorMessage?: string;
+}
+
+export interface ContactThreadRecord {
+  id: string;
+  petId: string | null;
+  caseId: string | null;
+  initiatorUid: string;
+  ownerUid: string | null;
+  threadStatus: string;
+  revealState: string;
+  initiatorMessage: string;
+  initiatorPhone?: string;
+  createdAt: number;
+  updatedAt: number;
+  messages?: ContactMessage[];
+}
+
+export interface ContactMessage {
+  id: string;
+  senderUid: string;
+  message: string;
+  isSystem: boolean;
+  createdAt: number;
+}
+
+// ─── Change Requests ─────────────────────────────────────────────────────────
+
+export interface ChangeRequestPayload {
+  targetEntityType: 'community_dog' | 'case' | 'pet';
+  targetEntityId: string;
+  proposedChanges: Record<string, unknown>;
+  reason?: string;
+}
+
+// ─── Evidence ────────────────────────────────────────────────────────────────
+
+export interface EvidencePayload {
+  targetEntityType: 'community_dog' | 'case' | 'pet';
+  targetEntityId: string;
+  evidenceType: 'sighting' | 'photo_description' | 'veterinary_record' | 'witness' | 'other';
+  description: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ─── Abuse Flags ─────────────────────────────────────────────────────────────
+
+export interface AbuseFlagPayload {
+  targetEntityType: string;
+  targetEntityId: string;
+  reason: string;
+  details?: string;
+}
+
+// ─── Auth token management ───────────────────────────────────────────────────
+
 type GetToken = () => Promise<string | null>;
 
 let _getToken: GetToken | null = null;
@@ -68,6 +164,8 @@ async function apiFetch(path: string, opts: RequestInit = {}) {
   return res.json();
 }
 
+// ─── Pet API ─────────────────────────────────────────────────────────────────
+
 export const petApi = {
   list: (): Promise<Pet[]> => apiFetch('/pets'),
 
@@ -83,6 +181,8 @@ export const petApi = {
     apiFetch(`/pets/${id}`, { method: 'DELETE' }),
 };
 
+// ─── Import API ───────────────────────────────────────────────────────────────
+
 export const importApi = {
   status: (): Promise<{ imported: boolean; petCount?: number; importedAt?: number }> =>
     apiFetch('/import/status'),
@@ -90,6 +190,8 @@ export const importApi = {
   importPets: (pets: Pet[]): Promise<{ imported: number; total: number }> =>
     apiFetch('/import/pets', { method: 'POST', body: JSON.stringify({ pets }) }),
 };
+
+// ─── Public API (unauthenticated) ────────────────────────────────────────────
 
 export const publicApi = {
   getPet: (petId: string): Promise<{
@@ -105,11 +207,15 @@ export const publicApi = {
     microchip: string;
     vaccines: string;
     hasOwner: boolean;
+    protectedContactEnabled: boolean;
+    contactEntryPoint: string;
   }> => fetch(`/api/public/pet/${petId}`).then(r => {
     if (!r.ok) throw new Error(`Not found`);
     return r.json();
   }),
 };
+
+// ─── Case API ─────────────────────────────────────────────────────────────────
 
 export const caseApi = {
   create: (data: CasePayload): Promise<CaseRecord> =>
@@ -120,6 +226,7 @@ export const caseApi = {
   get: (id: string): Promise<CaseRecord> => apiFetch(`/cases/${id}`),
 };
 
+<<<<<<< HEAD
 export interface ImageRef {
   id: string;
   blobPath: string;
@@ -170,4 +277,108 @@ export const imageApi = {
 
   deleteCaseImage: (caseId: string, imageId: string): Promise<{ deleted: boolean }> =>
     apiFetch(`/cases/${caseId}/images/${imageId}`, { method: 'DELETE' }),
+=======
+// ─── Community Dog API ────────────────────────────────────────────────────────
+
+export const communityDogApi = {
+  create: (data: CommunityDogPayload): Promise<CommunityDogRecord> =>
+    apiFetch('/community-dogs', { method: 'POST', body: JSON.stringify(data) }),
+
+  list: (): Promise<CommunityDogRecord[]> =>
+    fetch('/api/community-dogs').then(r => r.json()),
+
+  get: (id: string): Promise<CommunityDogRecord> =>
+    fetch(`/api/community-dogs/${id}`).then(r => {
+      if (!r.ok) throw new Error('Not found');
+      return r.json();
+    }),
+
+  getMyDog: (id: string): Promise<CommunityDogRecord> =>
+    apiFetch(`/my-community-dogs/${id}`),
+
+  listMyDogs: (): Promise<CommunityDogRecord[]> =>
+    apiFetch('/my-community-dogs'),
+
+  addSighting: (dogId: string, data: {
+    locationLabel?: string;
+    lat?: number;
+    lng?: number;
+    conditionNotes?: string;
+    notes?: string;
+  }) => apiFetch(`/community-dogs/${dogId}/sightings`, { method: 'POST', body: JSON.stringify(data) }),
+
+  addAction: (dogId: string, data: {
+    actionType: 'feeding' | 'medical' | 'rescue' | 'other';
+    notes?: string;
+  }) => apiFetch(`/community-dogs/${dogId}/actions`, { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─── Protected Contact API ────────────────────────────────────────────────────
+
+export const protectedContactApi = {
+  createThread: (data: ContactThreadPayload): Promise<ContactThreadRecord> =>
+    apiFetch('/protected-contact/threads', { method: 'POST', body: JSON.stringify(data) }),
+
+  getThread: (threadId: string): Promise<ContactThreadRecord> =>
+    apiFetch(`/protected-contact/threads/${threadId}`),
+
+  sendMessage: (threadId: string, message: string): Promise<ContactMessage> =>
+    apiFetch(`/protected-contact/threads/${threadId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
+  requestReveal: (threadId: string): Promise<{ ok: boolean; message: string }> =>
+    apiFetch(`/protected-contact/threads/${threadId}/reveal-request`, { method: 'POST' }),
+
+  decideReveal: (threadId: string, decision: 'grant' | 'revoke'): Promise<{ ok: boolean; revealState: string }> =>
+    apiFetch(`/protected-contact/threads/${threadId}/reveal-decision`, {
+      method: 'POST',
+      body: JSON.stringify({ decision }),
+    }),
+};
+
+// ─── Change Request API ───────────────────────────────────────────────────────
+
+export const changeRequestApi = {
+  submit: (data: ChangeRequestPayload): Promise<{ id: string; reviewState: string; createdAt: number }> =>
+    apiFetch('/change-requests', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─── Evidence API ─────────────────────────────────────────────────────────────
+
+export const evidenceApi = {
+  submit: (data: EvidencePayload): Promise<{ id: string; reviewState: string; createdAt: number }> =>
+    apiFetch('/evidence-items', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─── Review API (moderator/operator only) ─────────────────────────────────────
+
+export const reviewApi = {
+  getPending: (): Promise<{
+    communityDogs: unknown[];
+    changeRequests: unknown[];
+    evidenceItems: unknown[];
+    totalPending: number;
+  }> => apiFetch('/reviews/pending'),
+
+  approve: (entityType: string, entityId: string, notes?: string) =>
+    apiFetch(`/reviews/${entityType}/${entityId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    }),
+
+  reject: (entityType: string, entityId: string, notes?: string) =>
+    apiFetch(`/reviews/${entityType}/${entityId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    }),
+};
+
+// ─── Abuse Flag API ───────────────────────────────────────────────────────────
+
+export const abuseFlagApi = {
+  submit: (data: AbuseFlagPayload): Promise<{ ok: boolean; id: string; createdAt: number }> =>
+    apiFetch('/abuse-flags', { method: 'POST', body: JSON.stringify(data) }),
+>>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
 };

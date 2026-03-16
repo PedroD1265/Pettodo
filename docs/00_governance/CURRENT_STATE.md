@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Last updated:** 2026-03-15 13:45 UTC-4
+**Last updated:** 2026-03-16 00:45 UTC-4
 Purpose:
 Brutally clear snapshot of what PETTODO is today: what is implemented, what is simulated, what is decided, and what is still missing.
 
@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is now fully server-authoritative and integrated in the UI. Beta readiness is still awaiting implementation of real image pipelines and protected contact workflows.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API for protected contact, community dogs, evidence, change requests, review/moderation, abuse flags, and audit logs) is now implemented in the backend. Beta readiness is still awaiting real image pipelines, AI matching, and full UI wiring to the new Block 1 endpoints.
 
 ---
 
@@ -58,8 +58,10 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Express API backend (running with correct proxy and schema integrations)
 - Import flow from demo to DB
 - Full Pet CRUD (Create, Read, Update, Delete) end-to-end to Azure PostgreSQL in integration mode
-- Public route (QR) data isolation without owner PII
+- Case creation real (POST /cases) for lost/found/sighted flows, owner-scoped
+- Public route (QR) data isolation without owner PII; returns relay-first contact entry point
 - Owner scoping for protected routes
+- Trust-Sensitive Block 1 backend: 12 new tables, 17 new API routes, role middleware, audit utility (see Block 1 section in §3)
 - Minimal automated backend test baseline (Vitest + Supertest, mocked infra)
 - Minimal GitHub Actions CI (build + test)
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
@@ -79,21 +81,39 @@ It expresses strong product structure and relies on a real backend. The core pet
 **[confirmed]**
 The following are not yet real production capabilities:
 
+<<<<<<< HEAD
 - real protected-contact system
+=======
+- real protected-contact UI flow (backend schema + API now exist; QRP screens still use demo state)
+- real image upload/storage pipeline in production
+>>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
 - real AI identity / matching pipeline
-- real evidence workflow for community actions
-- real moderation system
+- real Community Dog creation UI wired to backend (CMT screens still use COMMUNITY_DOGS demo data)
 - production-grade PDF / PNG flyer generation
 - full UI/regression automated tests (only minimal backend baseline exists)
 - CD deployment pipeline (only minimal CI exists)
 - stable production routing / deploy fallback behavior
 
+### What is now real at the backend level (Block 1, 2026-03-16)
+**[confirmed]**
+- `user_roles` table: role assignments (user | moderator | operator), enforced via requireRole middleware
+- `community_dogs` + `community_dog_sightings` + `community_dog_actions` tables: controlled creation starts as pending_review; only approved dogs are visible on public GET
+- `protected_contact_threads` + `protected_contact_messages` + `protected_contact_events` tables: relay-first contact; reveal decision is owner-only
+- `change_requests` + `evidence_items` + `review_decisions` tables: pending_review by default; structured evidence without file upload
+- `abuse_flags` + `audit_logs` tables: audit trail for all sensitive actions
+- API routes: 17 new authenticated endpoints covering all the above domains
+- `requireRole` middleware: checks user_roles table at request time; operator satisfies any lower-tier requirement
+- `writeAuditLog` utility: non-throwing, covers contact_initiated, message_sent, reveal_requested/granted/revoked, community_dog_submitted, sensitive_change_requested, evidence_submitted, review_approved/rejected, abuse_flag_created
+- Public pet route updated: returns `protectedContactEnabled: true` + `contactEntryPoint`; never exposes phone/email/owner_uid/exact coords
+- Frontend API clients: communityDogApi, protectedContactApi, changeRequestApi, evidenceApi, reviewApi, abuseFlagApi added to api.ts
+
 ### Current known demo/local limitations & blockers
 **[confirmed]**
+- CMT screens (Community Dogs UI) still pull from COMMUNITY_DOGS demo data — not yet wired to /api/community-dogs
+- QRP contact flow (`contactRevealed`) is still frontend-only state — not yet wired to /api/protected-contact/threads
 - app data fallback depends heavily on localStorage if integration mode fails
 - OTP has been simulated
 - matching has been heuristic, not a real advanced identity system
-- users table/management in DB is not yet implemented (relies fully on Firebase token)
 - no formal schema migration system yet (uses runMigrations with IF NOT EXISTS)
 
 ---

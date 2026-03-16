@@ -5,7 +5,16 @@ import petRoutes from './routes/pets.js';
 import importRoutes from './routes/import.js';
 import publicRoutes from './routes/public.js';
 import caseRoutes from './routes/cases.js';
+<<<<<<< HEAD
 import imageRoutes from './routes/images.js';
+=======
+import protectedContactRoutes from './routes/protected-contact.js';
+import communityDogRoutes from './routes/community-dogs.js';
+import changeRequestRoutes from './routes/change-requests.js';
+import evidenceRoutes from './routes/evidence.js';
+import reviewRoutes from './routes/reviews.js';
+import abuseRoutes from './routes/abuse.js';
+>>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
 
 const app = express();
 
@@ -43,6 +52,15 @@ app.use('/api', petRoutes);
 app.use('/api', importRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', caseRoutes);
+<<<<<<< HEAD
 app.use('/api', imageRoutes);
+=======
+app.use('/api', protectedContactRoutes);
+app.use('/api', communityDogRoutes);
+app.use('/api', changeRequestRoutes);
+app.use('/api', evidenceRoutes);
+app.use('/api', reviewRoutes);
+app.use('/api', abuseRoutes);
+>>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
 
 export default app;
