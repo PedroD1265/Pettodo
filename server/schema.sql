@@ -54,39 +54,6 @@ CREATE TABLE IF NOT EXISTS cases (
 CREATE INDEX IF NOT EXISTS idx_cases_creator ON cases (created_by);
 CREATE INDEX IF NOT EXISTS idx_cases_type_status ON cases (type, status);
 
-<<<<<<< HEAD
--- Image reference tables (blobs live in Azure; we only store paths + metadata)
-
-CREATE TABLE IF NOT EXISTS pet_images (
-  id TEXT PRIMARY KEY,
-  pet_id TEXT NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
-  owner_uid TEXT NOT NULL,
-  blob_path TEXT NOT NULL,
-  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
-  original_filename TEXT NOT NULL DEFAULT '',
-  size_bytes INTEGER NOT NULL DEFAULT 0,
-  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  created_at BIGINT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_pet_images_pet ON pet_images (pet_id);
-
-CREATE TABLE IF NOT EXISTS case_images (
-  id TEXT PRIMARY KEY,
-  case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
-  owner_uid TEXT NOT NULL,
-  blob_path TEXT NOT NULL,
-  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
-  original_filename TEXT NOT NULL DEFAULT '',
-  size_bytes INTEGER NOT NULL DEFAULT 0,
-  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  created_at BIGINT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_case_images_case ON case_images (case_id);
-=======
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Block 1: Trust-Sensitive Core
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -192,7 +159,6 @@ CREATE TABLE IF NOT EXISTS protected_contact_messages (
 CREATE INDEX IF NOT EXISTS idx_pcm_thread ON protected_contact_messages (thread_id);
 
 -- Audit events scoped to a thread (separate from audit_logs for thread-level queries).
--- event_type: contact_initiated | message_sent | reveal_requested | reveal_granted | reveal_revoked | thread_closed | thread_blocked
 CREATE TABLE IF NOT EXISTS protected_contact_events (
   id TEXT PRIMARY KEY,
   thread_id TEXT NOT NULL REFERENCES protected_contact_threads(id) ON DELETE CASCADE,
@@ -205,7 +171,6 @@ CREATE TABLE IF NOT EXISTS protected_contact_events (
 CREATE INDEX IF NOT EXISTS idx_pce_thread ON protected_contact_events (thread_id);
 
 -- Change requests for sensitive shared records.
--- review_state: pending_review | approved | rejected
 CREATE TABLE IF NOT EXISTS change_requests (
   id TEXT PRIMARY KEY,
   target_entity_type TEXT NOT NULL,
@@ -223,8 +188,6 @@ CREATE INDEX IF NOT EXISTS idx_cr_entity ON change_requests (target_entity_type,
 CREATE INDEX IF NOT EXISTS idx_cr_review ON change_requests (review_state);
 
 -- Structured evidence records (no file upload pipeline yet).
--- evidence_type: sighting | photo_description | veterinary_record | witness | other
--- review_state: pending_review | approved | rejected
 CREATE TABLE IF NOT EXISTS evidence_items (
   id TEXT PRIMARY KEY,
   target_entity_type TEXT NOT NULL,
@@ -243,7 +206,6 @@ CREATE INDEX IF NOT EXISTS idx_ei_entity ON evidence_items (target_entity_type, 
 CREATE INDEX IF NOT EXISTS idx_ei_review ON evidence_items (review_state);
 
 -- Review decisions made by moderators/operators.
--- decision: approved | rejected
 CREATE TABLE IF NOT EXISTS review_decisions (
   id TEXT PRIMARY KEY,
   target_entity_type TEXT NOT NULL,
@@ -257,7 +219,6 @@ CREATE TABLE IF NOT EXISTS review_decisions (
 CREATE INDEX IF NOT EXISTS idx_rd_entity ON review_decisions (target_entity_type, target_entity_id);
 
 -- Abuse flags submitted by users.
--- status: open | reviewed | dismissed | escalated
 CREATE TABLE IF NOT EXISTS abuse_flags (
   id TEXT PRIMARY KEY,
   target_entity_type TEXT NOT NULL,
@@ -287,4 +248,35 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_al_actor ON audit_logs (actor_uid);
 CREATE INDEX IF NOT EXISTS idx_al_entity ON audit_logs (target_entity_type, target_entity_id);
 CREATE INDEX IF NOT EXISTS idx_al_action ON audit_logs (action_type);
->>>>>>> b5b508a (Implement core trust-sensitive backend features and update documentation)
+
+-- Image reference tables (blobs live in Azure; we only store paths + metadata)
+
+CREATE TABLE IF NOT EXISTS pet_images (
+  id TEXT PRIMARY KEY,
+  pet_id TEXT NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  owner_uid TEXT NOT NULL,
+  blob_path TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  original_filename TEXT NOT NULL DEFAULT '',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pet_images_pet ON pet_images (pet_id);
+
+CREATE TABLE IF NOT EXISTS case_images (
+  id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  owner_uid TEXT NOT NULL,
+  blob_path TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  original_filename TEXT NOT NULL DEFAULT '',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_case_images_case ON case_images (case_id);
