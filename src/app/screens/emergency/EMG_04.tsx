@@ -3,12 +3,20 @@ import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { Stepper } from '../../components/pettodo/Stepper';
 import { Btn } from '../../components/pettodo/Buttons';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { Clock } from 'lucide-react';
 
 export default function EMG_04() {
   const nav = useNavigate();
+  const location = useLocation();
+  // Preserve pet context from previous steps
+  const petState = location.state as { petId?: string | null; petName?: string | null; prefilled?: boolean } | null;
+
   const [quickPick, setQuickPick] = useState<string | null>(null);
+  const [dateValue, setDateValue] = useState(new Date().toISOString().slice(0, 10));
+  const [timeValue, setTimeValue] = useState(
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+  );
 
   const quickOptions = [
     { label: 'About 1 hour ago', value: '1h' },
@@ -62,14 +70,26 @@ export default function EMG_04() {
             <label className="text-[13px] mb-1 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Date</label>
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
               <Clock size={16} style={{ color: 'var(--gray-400)' }} />
-              <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>Today — February 19, 2026</span>
+              <input
+                type="date"
+                className="flex-1 bg-transparent text-[14px] outline-none"
+                style={{ color: 'var(--gray-900)' }}
+                value={dateValue}
+                onChange={(e) => { setDateValue(e.target.value); setQuickPick(null); }}
+              />
             </div>
           </div>
           <div>
             <label className="text-[13px] mb-1 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Approximate time</label>
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
               <Clock size={16} style={{ color: 'var(--gray-400)' }} />
-              <span className="text-[14px]" style={{ color: 'var(--gray-900)' }}>6:30 PM</span>
+              <input
+                type="time"
+                className="flex-1 bg-transparent text-[14px] outline-none"
+                style={{ color: 'var(--gray-900)' }}
+                value={timeValue}
+                onChange={(e) => { setTimeValue(e.target.value); setQuickPick(null); }}
+              />
             </div>
           </div>
         </div>
@@ -81,10 +101,10 @@ export default function EMG_04() {
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
-          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-traits')}>
+          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-traits', { state: petState })}>
             Next: Traits (Recommended)
           </Btn>
-          <Btn variant="ghost" fullWidth onClick={() => nav('/emg/lost-published')}>
+          <Btn variant="ghost" fullWidth onClick={() => nav('/emg/lost-published', { state: petState })}>
             Skip — Publish now
           </Btn>
         </div>

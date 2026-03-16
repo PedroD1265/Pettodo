@@ -5,11 +5,9 @@ import { Stepper } from '../../components/pettodo/Stepper';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { MapPlaceholder, RadiusSelector } from '../../components/pettodo/MapComponents';
-import { MatchCard } from '../../components/pettodo/Cards';
 import { useNavigate } from 'react-router';
-import { Camera, Plus, QrCode, CheckCircle, Eye, MapPin } from 'lucide-react';
+import { Camera, Plus, QrCode, CheckCircle, Eye, MapPin, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { MATCHES, LOST_CASE } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
 
 // EMG_08
@@ -176,38 +174,29 @@ export function EMG_10() {
 // EMG_11
 export function EMG_11() {
   const nav = useNavigate();
+
+
   return (
     <div className="flex flex-col min-h-full">
-      <ScreenLabel name="EMG_11_Found_Published_SuggestedMatches" />
+      <ScreenLabel name="EMG_11_Found_Published" />
       <AppBar title="Found Report Published" showBack={false} />
       <div className="flex-1 p-4 flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
-            <CheckCircle size={24} style={{ color: 'var(--green-primary)' }} />
+        <div className="flex flex-col items-center gap-3 pt-4">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
+            <CheckCircle size={32} style={{ color: 'var(--green-primary)' }} />
           </div>
-          <div>
-            <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Report Published</h3>
-            <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Owners with matching lost dogs will be notified.</p>
-          </div>
+          <h2 className="text-[20px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Report Published!</h2>
+          <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>Your found dog report is now live. Owners with matching lost dogs will be notified.</p>
         </div>
 
-        <div>
-          <h3 className="text-[15px] mb-1" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Suggested matches</h3>
-          <p className="text-[12px] mb-2 px-2 py-1 rounded-lg inline-block" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', fontWeight: 500 }}>
-            Possible match (AI doesn't confirm)
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {MATCHES.slice(0, 3).map((m) => (
-            <MatchCard key={m.id} confidence={m.confidence} reasons={m.reasons} location={m.location} time={m.time} onClick={() => nav('/emg/matching-top10')} />
-          ))}
+        <div className="p-4 rounded-xl flex flex-col items-center gap-2" style={{ background: 'var(--gray-100)' }}>
+          <Search size={20} style={{ color: 'var(--gray-400)' }} />
+          <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>AI matching is not yet available. Matches will appear here once the feature is active.</p>
         </div>
 
         <div className="flex flex-col gap-2 mt-auto pb-4">
-          <Btn variant="primary" fullWidth onClick={() => nav('/emg/matching-top10')}>View All Matches</Btn>
-          <Btn variant="secondary" fullWidth onClick={() => nav('/emg/chat')}>Open Chat</Btn>
-          <Btn variant="ghost" fullWidth onClick={() => nav('/emg/safe-point-select')}>Arrange Safe Handoff</Btn>
+          <Btn variant="primary" fullWidth onClick={() => nav('/emg/cases')}>My Reports</Btn>
+          <Btn variant="ghost" fullWidth onClick={() => nav('/home-emergency')}>Go Home</Btn>
         </div>
       </div>
     </div>

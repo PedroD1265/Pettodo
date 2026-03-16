@@ -71,13 +71,24 @@ export default function HOM_01() {
           ))}
         </div>
 
-        <div className="p-3 rounded-xl flex items-center gap-3" style={{ background: 'var(--brand-secondary-bg)', border: '1px solid var(--brand-secondary-soft)' }}>
-          <CalendarCheck size={18} style={{ color: 'var(--brand-secondary-dark)' }} />
-          <div>
-            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--brand-secondary-dark)' }}>Upcoming reminder</p>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--brand-secondary-dark)' }}>Distemper booster — Mar 20, 2026</p>
+        {firstPet?.nextVaccine ? (
+          <div className="p-3 rounded-xl flex items-center gap-3" style={{ background: 'var(--brand-secondary-bg)', border: '1px solid var(--brand-secondary-soft)' }}>
+            <CalendarCheck size={18} style={{ color: 'var(--brand-secondary-dark)' }} />
+            <div>
+              <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--brand-secondary-dark)' }}>Upcoming reminder</p>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--brand-secondary-dark)' }}>{firstPet.nextVaccine}</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-3 rounded-xl flex items-center gap-3" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+            <CalendarCheck size={18} style={{ color: 'var(--gray-400)' }} />
+            <div>
+              <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-500)' }}>No upcoming reminders</p>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--gray-400)' }}>Add vaccine or care reminders from your pet's profile.</p>
+            </div>
+          </div>
+        )}
+
 
         {nextFeeding && (
           <button onClick={() => nav('/daily/pet-profile?expandFeeding=1')} className="w-full p-3 rounded-xl text-left flex items-center gap-3" style={{ background: 'var(--brand-primary-bg)', border: '1px solid var(--brand-primary-soft)' }}>

@@ -540,6 +540,10 @@ Recommended structure:
 
 Exact paths may evolve but must preserve clear boundaries.
 
+New real-data routes added in Case Baseline fix pack:
+- `/emg/lost-select-pet` — Real pet selection for lost reports (uses `petApi.list()`)
+- `/emg/cases` — Real case discovery/list (uses `caseApi.list()`)
+
 ---
 
 # 9. Route state rules

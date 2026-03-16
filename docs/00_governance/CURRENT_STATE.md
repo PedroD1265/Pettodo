@@ -67,6 +67,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
 - **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
 - **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review) and real Logout in Profile.
+- **Case Baseline & Emergency Discovery Fix Pack**: Cerrado y Validado (PASS WITH ISSUES). Lost flow uses real pet selection via `petApi.list()`, state propagation fixed. Discovery list (`/emg/cases`) uses real `caseApi.list()`. Home surfaces use real data. Demo drift removed from case baseline screens. Minor: EMG_12 sighted location still hardcoded, location/time data not yet sent to backend payload, photo upload not yet persisted.
 
 ### Product thinking already present
 **[confirmed]**
