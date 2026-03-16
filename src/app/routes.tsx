@@ -81,6 +81,10 @@ import { ExecutionLog, QASelfCheck } from './screens/docs/DocsScreens';
 // Admin / Moderation
 import MOD_01 from './screens/admin/MOD_01';
 
+// Emergency – new real-data screens
+import EMG_SELECT_PET from './screens/emergency/EMG_SELECT_PET';
+import EMG_CASES_LIST from './screens/emergency/EMG_CASES_LIST';
+
 export const router = createBrowserRouter([
   {
     Component: GlobalLayout,
@@ -100,6 +104,8 @@ export const router = createBrowserRouter([
 
           // Emergency
           { path: '/emg/entry', Component: EMG_01 },
+          { path: '/emg/lost-select-pet', Component: EMG_SELECT_PET },
+          { path: '/emg/cases', Component: EMG_CASES_LIST },
           { path: '/emg/lost-photos', Component: EMG_02 },
           { path: '/emg/lost-location', Component: EMG_03 },
           { path: '/emg/lost-time', Component: EMG_04 },

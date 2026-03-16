@@ -1,0 +1,197 @@
+Actúa como Senior Full-Stack Integration Engineer + Emergency Recovery Workflow Fix-Pack Implementer para PETTODO.
+
+## Contexto importante
+Bloques 1, 2 y 3 ya fueron cerrados con PASS:
+- Bloque 1: backend trust-sensitive core
+- Bloque 2: Community Dogs + Protected Contact frontend wiring
+- Bloque 3: moderation/review UI mínima
+
+NO rehagas esos bloques.
+
+## Cambio de prioridad
+NO implementes matching real todavía.
+
+Se detectó en validación manual que el **case baseline real todavía no está suficientemente cerrado**:
+- el flujo de crear caso `lost` sigue forzando o arrastrando datos de Luna/demo
+- no están claros o no existen los entry points funcionales para crear casos `found` y `sighted`
+- no hay una superficie mínima real y utilizable para discovery/map/reporting que permita buscar casos o marcar “visto”
+- por lo tanto, antes de construir matching real, debes cerrar correctamente la base real de casos y discovery mínimo
+
+Tu tarea es implementar SOLO este bloque:
+
+# Bloque 4 — Fix Pack del case baseline real + emergency discovery mínimo
+
+## Objetivo
+Cerrar de forma real y honesta el baseline de casos de emergencia para que:
+- `lost` se pueda crear desde cualquier pet real del usuario
+- no exista dependencia demo/seed de Luna en integration mode
+- `found` y `sighted` tengan entry points reales y visibles
+- exista una superficie mínima de discovery/map/listado útil para revisar casos reales
+- exista una acción real o mínimamente conectada para “report sighting / visto” dentro del flujo correcto
+- la UI deje de sugerir capacidades que todavía no existen
+
+## Regla principal
+Usa como fuente de verdad:
+1. el código real del repo
+2. los contratos API reales existentes para pets/cases/public/reporting
+3. el routing actual
+4. el modo `integration`
+
+NO actualices documentación.
+NO hagas backend nuevo innecesario si ya existe soporte suficiente.
+NO metas matching real.
+NO metas IA.
+NO metas share/flyer real.
+NO metas refactors grandes fuera del scope.
+
+## Qué debes revisar antes de tocar nada
+
+### Frontend / routing / contexts
+- `src/app/routes.tsx`
+- `src/app/context/AppContext.tsx`
+- `src/app/context/AuthContext.tsx`
+- `src/app/services/api.ts`
+- pantallas de case creation actuales (`lost`, `found`, `sighted`)
+- pantallas de home emergency
+- pantallas de map / discovery / emergency list
+- cualquier componente o screen que siga usando `LUNA`, `LOST_CASE`, `MATCHES` u otros seeds demo en integration mode
+
+### Backend / API ya existente
+- rutas de pets
+- rutas de cases
+- rutas públicas o de report/sighting que ya existan
+- serializers seguros de case/public data si aplican
+
+## Problemas exactos que debes corregir
+
+### A. Lost case creation no puede depender de Luna/demo
+En integration mode:
+- el flujo de crear caso `lost` debe permitir seleccionar una mascota real del usuario
+- si el usuario tiene varias mascotas, debe poder elegir cuál reportar
+- si el usuario tiene solo una, puede preseleccionarse automáticamente, pero desde data real
+- si el usuario no tiene mascotas, debe mostrarse un empty state honesto con CTA a crear mascota, NO usar Luna demo
+- elimina cualquier dependencia demo/local-only de Luna o seeds similares dentro del flujo real
+
+### B. Found y Sighted deben tener entry points reales y visibles
+Debes asegurar que existan entry points funcionales y visibles para:
+- crear caso `found`
+- crear caso `sighted`
+
+Estos entry points deben:
+- ser encontrables desde la navegación/emergency surface correcta
+- llevar a formularios reales o mínimamente conectados al backend real de casos
+- no ser botones muertos
+- no depender de placeholders demo
+
+### C. Discovery mínimo real para casos
+Debe existir una superficie mínima real para explorar casos reales, al menos una de estas formas:
+- lista de casos relevantes
+- mapa con markers reales
+- o combinación simple de ambas
+
+Reglas:
+- en integration mode debe cargar casos reales desde backend, no desde demo seeds
+- si todavía no hay suficientes datos para mapa enriquecido, muestra un empty state honesto
+- si el mapa existe, no debe ser solo placeholder decorativo
+- si no puedes dejar un mapa plenamente útil sin abrir demasiado scope, prioriza una lista/discovery real clara con navegación a detalle
+
+### D. Report sighting / “visto” debe ser utilizable
+Debes asegurar que exista al menos una acción clara y funcional para reportar sighting desde la superficie correcta:
+- desde QR/public donde aplique
+- o desde case/discovery surface cuando aplique
+
+La acción debe:
+- usar backend real si ya existe soporte suficiente
+- o conectarse al flujo real existente de creación de `sighted`
+- no debe ser solo copy visual
+- no debe fingir persistencia si no existe
+
+### E. Home emergency y contadores no deben inducir a error
+Revisa la home/emergency surface para que en integration mode:
+- no dependa de `LOST_CASE` demo
+- no muestre contadores fake o datos seed como si fueran reales
+- use datos reales cuando existan
+- y si no existen, muestre estados vacíos o copy honesto
+
+## Qué sí entra en este bloque
+- fix del flujo `lost`
+- visibilidad/entrada real de `found`
+- visibilidad/entrada real de `sighted`
+- discovery mínimo real de casos
+- navegación coherente entre create/detail/discovery/report
+- limpieza de demo drift en emergency case baseline
+- empty states honestos
+- integración real en integration mode
+
+## Qué NO entra
+- matching real
+- share/flyer outputs
+- IA provider
+- embeddings
+- refactor completo de mapas
+- refactor completo de toda la emergency suite
+- tests/CI/CD
+- documentación
+- nueva infraestructura cloud
+- nuevos secrets
+
+## Restricciones críticas
+NO hagas estas cosas:
+- no fuerces Luna/demo en integration mode
+- no mezcles data demo y real en create flows de emergency
+- no dejes botones visibles para found/sighted si siguen rotos
+- no dejes mapa “convincente pero falso”
+- no inventes backend nuevo si el backend de cases ya soporta el flujo
+- no rompas Pet CRUD
+- no rompas Protected Contact
+- no rompas Community Dogs
+- no rompas moderation UI
+- no cambies auth base
+
+## Criterios de aceptación
+El bloque se considera correcto solo si:
+
+1. En integration mode, crear caso `lost` ya no depende de Luna/demo.
+2. `lost` usa pets reales del usuario.
+3. Si no hay pets reales, se muestra estado vacío honesto y CTA correcta.
+4. Existen entry points funcionales y visibles para `found` y `sighted`.
+5. Hay una superficie mínima real de discovery/listado/mapa para casos.
+6. Existe una acción funcional para reportar sighting / “visto” dentro del flujo correcto.
+7. Home emergency deja de depender de caso seed/demo en integration mode.
+8. No se muestran contadores o estados fake como si fueran reales.
+9. No se rompe ningún flujo ya cerrado en Bloques 1, 2 o 3.
+10. No se actualiza documentación.
+
+## Validación mínima obligatoria al terminar
+Debes validar manualmente, como mínimo, estos escenarios:
+
+1. Usuario con 0 pets:
+- intenta crear `lost`
+- ve empty state honesto
+- no aparece Luna
+
+2. Usuario con 1 pet real:
+- entra a crear `lost`
+- el pet correcto se usa desde backend real
+- se puede continuar
+
+3. Usuario con más de 1 pet real:
+- puede elegir pet para `lost`
+
+4. Usuario puede encontrar y abrir flujo `found`
+
+5. Usuario puede encontrar y abrir flujo `sighted`
+
+6. Discovery surface:
+- carga datos reales o empty state honesto
+- no depende de demo seeds en integration mode
+
+## Entregable al finalizar
+Responde SOLO con:
+- resumen de cambios realizados
+- archivos tocados
+- qué flujos quedaron realmente cerrados
+- qué endpoints quedaron usados
+- qué seguía roto y ahora quedó corregido
+- qué quedó explícitamente fuera de alcance
+- confirmación honesta de si este bloque quedó completo o si falta algo

@@ -6,24 +6,24 @@ import { Btn } from '../../components/pettodo/Buttons';
 import { Banner } from '../../components/pettodo/Banners';
 import { DirectionCompass } from '../../components/pettodo/MapComponents';
 import { useNavigate, useLocation } from 'react-router';
-import { LUNA } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
 
 export default function EMG_05() {
   const nav = useNavigate();
   const location = useLocation();
-  const isPrefilled = location.state?.prefilled;
+  const prefilled = location.state?.prefilled as boolean | undefined;
+  const petName = location.state?.petName as string | undefined;
   const sourcePetId = location.state?.petId as string | undefined;
 
   const { createCase, setHasActiveCase } = useApp();
 
   const [direction, setDirection] = useState('SE');
-  const [selectedSize, setSelectedSize] = useState<string>(LUNA.size);
-  const [selectedColors, setSelectedColors] = useState<string[]>([...LUNA.colors]);
-  const [selectedTemperament, setSelectedTemperament] = useState<string[]>([...LUNA.temperament]);
-  const [marks, setMarks] = useState(LUNA.marks);
-  const [collar, setCollar] = useState(LUNA.collar);
+  const [selectedSize, setSelectedSize] = useState<string>('Medium');
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedTemperament, setSelectedTemperament] = useState<string[]>([]);
+  const [marks, setMarks] = useState('');
+  const [collar, setCollar] = useState('');
   const [publishing, setPublishing] = useState(false);
 
   const sizes = ['Small', 'Medium', 'Large'];
@@ -49,15 +49,15 @@ export default function EMG_05() {
         direction,
         description: [
           selectedSize,
-          selectedColors.join(', '),
-          marks,
-          collar,
-          selectedTemperament.join(', '),
-          direction ? `Last direction: ${direction}` : '',
+          selectedColors.length > 0 ? selectedColors.join(', ') : null,
+          marks || null,
+          collar || null,
+          selectedTemperament.length > 0 ? selectedTemperament.join(', ') : null,
+          direction ? `Last direction: ${direction}` : null,
         ].filter(Boolean).join(' · '),
       });
       setHasActiveCase(true);
-      nav('/emg/lost-published', { state: { caseId: created.id } });
+      nav('/emg/lost-published', { state: { caseId: created.id, petName } });
     } catch (err: any) {
       console.error('[EMG_05] createCase failed:', err);
       toast.error(err?.message || 'Failed to publish report. Please try again.');
@@ -71,8 +71,8 @@ export default function EMG_05() {
       <AppBar title="Report Lost Dog" showBack backTo="/emg/lost-time" />
       <Stepper steps={['Photos', 'Location', 'Time', 'Traits', 'Publish']} current={3} />
       <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
-        {isPrefilled && (
-          <Banner type="prefilled" text="Prefilled from Luna's profile" />
+        {prefilled && petName && (
+          <Banner type="prefilled" text={`Reporting ${petName} — fill in any additional details`} />
         )}
 
         <div>
@@ -102,7 +102,7 @@ export default function EMG_05() {
 
         {/* Colors */}
         <div>
-          <label className="text-[13px] mb-1.5 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Colors (select all)</label>
+          <label className="text-[13px] mb-1.5 block" style={{ color: 'var(--gray-700)', fontWeight: 500 }}>Colors (select all that apply)</label>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
               <button

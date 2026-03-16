@@ -4,7 +4,7 @@ import { AppBar } from '../../components/pettodo/AppBar';
 import { Btn } from '../../components/pettodo/Buttons';
 import { Banner } from '../../components/pettodo/Banners';
 import { useNavigate } from 'react-router';
-import { AlertTriangle, Search, Eye } from 'lucide-react';
+import { AlertTriangle, Search, Eye, List } from 'lucide-react';
 
 export default function EMG_01() {
   const nav = useNavigate();
@@ -20,7 +20,7 @@ export default function EMG_01() {
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => nav('/emg/lost-photos')}
+            onClick={() => nav('/emg/lost-select-pet')}
             className="flex items-center gap-4 p-4 rounded-2xl text-left"
             style={{ background: 'var(--red-bg)', border: '2px solid var(--red-soft)', minHeight: 80 }}
           >
@@ -64,6 +64,14 @@ export default function EMG_01() {
         </div>
 
         <Banner type="calm" text="Stay calm — we'll guide you step by step" />
+
+        <button
+          onClick={() => nav('/emg/cases')}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl text-[13px]"
+          style={{ background: 'var(--gray-100)', color: 'var(--gray-700)', fontWeight: 500 }}
+        >
+          <List size={15} /> My Reports
+        </button>
       </div>
     </div>
   );

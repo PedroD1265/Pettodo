@@ -6,7 +6,6 @@ import { Btn } from '../../components/pettodo/Buttons';
 import { VerificationGate } from '../../components/pettodo/VerificationFlows';
 import { useNavigate, useLocation } from 'react-router';
 import { CheckCircle, Share2, Edit, MessageCircle } from 'lucide-react';
-import { LOST_CASE } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
 
 export default function EMG_06() {
@@ -34,7 +33,7 @@ export default function EMG_06() {
         </div>
 
         <h2 className="text-[20px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Report Published!</h2>
-        <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>{LOST_CASE.headline}</p>
+        <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>Your lost dog report is now live and the community will be alerted.</p>
 
         {caseId && (
           <div className="px-3 py-2 rounded-xl text-center" style={{ background: 'var(--gray-100)' }}>

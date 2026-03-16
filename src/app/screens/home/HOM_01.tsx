@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { PetCard } from '../../components/pettodo/Cards';
+import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
-import { LUNA } from '../../data/demoData';
-import { Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap, Utensils, CalendarCheck } from 'lucide-react';
+import { petApi } from '../../services/api';
+import type { Pet } from '../../data/storage';
+import { Users, Calendar, Dog, Shield, Footprints, Scissors, Home, GraduationCap, Utensils, CalendarCheck, Plus } from 'lucide-react';
 
 function getNextFeedingTime(reminders: { timeHHMM: string; enabled: boolean }[]): string | null {
   const enabled = reminders.filter(r => r.enabled).sort((a, b) => a.timeHHMM.localeCompare(b.timeHHMM));
@@ -22,11 +24,22 @@ function getNextFeedingTime(reminders: { timeHHMM: string; enabled: boolean }[])
 export default function HOM_01() {
   const nav = useNavigate();
   const { setMode, store } = useApp();
-
-  const petReminders = store.feedingReminders.filter(r => r.petId === 'pet-luna-001');
-  const nextFeeding = useMemo(() => getNextFeedingTime(petReminders), [petReminders]);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [petsLoaded, setPetsLoaded] = useState(false);
 
   React.useEffect(() => { setMode('daily'); }, []);
+
+  useEffect(() => {
+    petApi.list()
+      .then((data) => { setPets(data); setPetsLoaded(true); })
+      .catch(() => { setPets([]); setPetsLoaded(true); });
+  }, []);
+
+  const firstPet = pets[0];
+  const petReminders = firstPet
+    ? store.feedingReminders.filter(r => r.petId === firstPet.id)
+    : [];
+  const nextFeeding = useMemo(() => getNextFeedingTime(petReminders), [petReminders]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -36,7 +49,26 @@ export default function HOM_01() {
 
         <div>
           <h3 className="text-[15px] mb-2" style={{ fontWeight: 600, color: 'var(--brand-primary-dark)' }}>Your Pets</h3>
-          <PetCard name={LUNA.name} breed={LUNA.breed} hasQR vaccineStatus="Up to date" onClick={() => nav('/daily/pet-profile')} />
+          {!petsLoaded && (
+            <p className="text-[13px] px-1" style={{ color: 'var(--gray-500)' }}>Loading...</p>
+          )}
+          {petsLoaded && pets.length === 0 && (
+            <div className="p-4 rounded-xl flex flex-col gap-2 items-start" style={{ background: 'var(--gray-100)' }}>
+              <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>You haven't added any pets yet.</p>
+              <Btn variant="secondary" icon={<Plus size={14} />} onClick={() => nav('/daily/pet-list')}>Add a Pet</Btn>
+            </div>
+          )}
+          {petsLoaded && pets.map((pet) => (
+            <div key={pet.id} className="mb-2">
+              <PetCard
+                name={pet.name}
+                breed={pet.breed}
+                hasQR
+                vaccineStatus={pet.nextVaccine ? `Next vaccine: ${pet.nextVaccine}` : 'Up to date'}
+                onClick={() => nav(`/daily/pet/${pet.id}`)}
+              />
+            </div>
+          ))}
         </div>
 
         <div className="p-3 rounded-xl flex items-center gap-3" style={{ background: 'var(--brand-secondary-bg)', border: '1px solid var(--brand-secondary-soft)' }}>
