@@ -467,7 +467,7 @@ Done for current phase when:
 
 ### BL-008 — Real protected contact v1
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0
@@ -511,7 +511,7 @@ Done for current phase when:
 
 ### BL-009 — Controlled Community Dog creation and contribution baseline
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0
@@ -556,7 +556,7 @@ Done for current phase when:
 
 ### BL-010 — Minimum moderation and review capability
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0

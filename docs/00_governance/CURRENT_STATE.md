@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring) are now implemented. Real wiring exists for Community Dogs (list/create/detail/evidence) and Protected Contact (relay chat). Beta readiness is still awaiting real image pipelines (production), AI matching, and full resolution of minor integration gaps.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting real image pipelines (production), AI matching, and full resolution of minor integration gaps.
 
 ---
 
@@ -65,7 +65,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Minimal automated backend test baseline (Vitest + Supertest, mocked infra)
 - Minimal GitHub Actions CI (build + test)
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
-- Trust-Sensitive Block 2 frontend: Real wiring for Community Dogs (CMT_01, 02, 07) and Protected Contact (QRP_01, 02, 04)
+- **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
 
 ### Product thinking already present
 **[confirmed]**
@@ -104,9 +104,6 @@ The following are not yet real production capabilities:
 
 ### Current known demo/local limitations & blockers
 **[confirmed]**
-- QRP_03 (Report sight/found from QR) still uses demo addSighting — not yet connected to real case/evidence API
-- QRP_04 (Relay Chat) lacks thread management — creates new thread on every mount (duplication risk)
-- CMT_03 (Dog Detail) history (sightings/actions) not fetched from API on mount
 - app data fallback depends heavily on localStorage if integration mode fails
 - OTP has been simulated
 - matching has been heuristic, not a real advanced identity system

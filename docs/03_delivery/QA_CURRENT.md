@@ -403,9 +403,7 @@ What remains not yet validated as a real product capability:
 The backend schema, endpoints, and role validation for moderation, change requests, and abuse flags are now real (added in Block 1). 
 What remains not yet validated as a real full-stack capability:
 - real owner-controlled contact reveal from the UI
-- real QRP_03 (Report sight/found) is fake (still demo state)
-- real QRP_04 (Relay Chat) duplication issue (no thread management)
-- real CMT_03 (Dog Detail) history missing fetches
+- complete UI integration for dispute and shared-record reviews
 - complete UI integration for dispute and shared-record reviews
 
 ## 8.6 Automated QA and release engineering
@@ -468,15 +466,15 @@ Use these statuses:
 | Daily / Emergency core UI logic | Validated in prototype | Bipolar logic is materially present |
 | Lost / Found / Sighted UX flows | Validated in prototype | Good prototype coverage, but not real backend workflows |
 | QR identity UX | Validated in prototype | Strong prototype evidence |
-| Public QR report flow | Validated in prototype | QRP_03 still demo-only state |
+| Public QR report flow | Validated in pilot-baseline | QRP_03 real contact relay confirmed |
 | Local persistence | Validated in prototype | localStorage-based, but real API integration active in many flows |
 | Maps | Validated in prototype | Real frontend map rendering present |
 | Matching UX | Partially validated | UX exists, but AI/identity pipeline is not real |
 | Education module | Validated in prototype | Good prototype coverage |
 | Profile / settings persistence | Validated in prototype | Local-store based |
-| Chat / notifications | Validated in pilot-baseline | QRP_04 real chat implemented; real messaging infra (polling) validated |
-| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 07 real; wiring to backend confirmed |
-| Protected contact | Validated in pilot-baseline | QRP_01, 02, 04 real; relay chat pattern confirmed |
+| Chat / notifications | Validated in pilot-baseline | QRP_04 real chat + idempotency validated |
+| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 03, 07 real; full history fetching confirmed |
+| Protected contact | Validated in pilot-baseline | QRP_01, 02, 03, 04 real; relay chat + QR integration confirmed |
 | Real auth / sign-in | Validated in phase 1 | Firebase Auth integrated, baseline validated |
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
@@ -500,9 +498,7 @@ They are implementation and release-readiness blockers.
 ### Blockers
 **[confirmed]**
 - no real multi-user production data model yet (session-based real, but no multi-party sync validation)
-- no real evidence workflow beyond CMT_07 dispute submission
-- QRP_03 still demo-only state
-- QRP_04 thread duplication risk
+- no real evidence workflow beyond CMT_07 dispute submission and QRP_03/CMT_03 sightings
 - minimal automated backend test baseline exists (Vitest+Supertest, mocked infra); broader test coverage not yet done
 - minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
