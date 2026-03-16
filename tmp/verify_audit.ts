@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { query } from '../server/db.js';
 
 async function verify() {
@@ -32,7 +33,7 @@ async function verify() {
     moderators.rows.forEach(m => {
       console.log(`- UID: ${m.user_uid}, Role: ${m.role}`);
     });
-    
+
     // Check for pedelvi@gmail.com if possible, but we only have UIDs here.
     // We'll assume the existence of moderators is a good sign for now.
     if (moderators.rowCount > 0) {
