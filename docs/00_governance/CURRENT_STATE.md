@@ -68,6 +68,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
 - **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review) and real Logout in Profile.
 - **Case Baseline & Emergency Discovery Fix Pack**: Cerrado y Validado (PASS WITH ISSUES). Lost flow uses real pet selection via `petApi.list()`, state propagation fixed. Discovery list (`/emg/cases`) uses real `caseApi.list()`. Home surfaces use real data. Demo drift removed from case baseline screens. Minor: EMG_12 sighted location still hardcoded, location/time data not yet sent to backend payload, photo upload not yet persisted.
+- **Bloque 5 — Real Matching v1**: Cerrado y Validado (PASS WITH ISSUES). Real backend matching heuristic (distance, traits, recency) implemented on `/api/matching/cases/:id`. Frontend `matchingRealAdapter` active in integration mode. UI in `EMG_16` displays real ranked candidates. `EMG_17` handles comparisons with real data. Caution framing present. Minor: EMG_17 still has demo fallback if accessed without state.
 
 ### Product thinking already present
 **[confirmed]**
@@ -108,7 +109,7 @@ The following are not yet real production capabilities:
 **[confirmed]**
 - app data fallback depends heavily on localStorage if integration mode fails
 - OTP has been simulated
-- matching has been heuristic, not a real advanced identity system
+- matching is a real backend-backed heuristic (distance, traits, recency), mapped to confidence scores and caution framing
 - no formal schema migration system yet (uses runMigrations with IF NOT EXISTS)
 
 ---

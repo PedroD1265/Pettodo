@@ -78,6 +78,7 @@ If those conflict, implementation reality wins over wishful interpretation.
 - real owner-controlled contact reveal from the UI
 - real moderation is validated (backend API & screens MOD_01, CMT_01, 02, 03, 07, QRP_01, 04 are real)
 - case baseline flow is validated (Lost flow uses real pet selection, Found/Sighted use real createCase, discovery list uses caseApi.list, home surfaces use real data)
+- matching v1 (heuristics) is validated (real backend ranking, real UI integration in EMG_16/17, caution framing)
 - automated tests exist (backend only)
 - release readiness has been achieved
 
