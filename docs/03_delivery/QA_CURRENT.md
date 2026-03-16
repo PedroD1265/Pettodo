@@ -76,7 +76,7 @@ If those conflict, implementation reality wins over wishful interpretation.
 ### What this does not mean
 **[confirmed]**
 - real owner-controlled contact reveal from the UI
-- real moderation is partially validated (backend API & screens CMT_01, 02, 07, QRP_01, 04 are real)
+- real moderation is validated (backend API & screens MOD_01, CMT_01, 02, 03, 07, QRP_01, 04 are real)
 - automated tests exist (backend only)
 - release readiness has been achieved
 
@@ -400,10 +400,9 @@ What remains not yet validated as a real product capability:
 
 ## 8.5 Moderation and trust operations
 **[confirmed]**
-The backend schema, endpoints, and role validation for moderation, change requests, and abuse flags are now real (added in Block 1). 
+The backend schema, endpoints, and role validation for moderation, change requests, and abuse flags are now real (added in Block 1). The Moderation UI for pending reviews (/admin/review) is real and validated (added in Block 3).
 What remains not yet validated as a real full-stack capability:
-- real owner-controlled contact reveal from the UI
-- complete UI integration for dispute and shared-record reviews
+- real owner-controlled contact reveal from the UI (reveal decision logic in backend, UX integration pending)
 - complete UI integration for dispute and shared-record reviews
 
 ## 8.6 Automated QA and release engineering
@@ -483,7 +482,7 @@ Use these statuses:
 | GitHub Actions CI (build+test) | Validated in phase 1.5 | CI workflow added; runs on push/PR with dummy env vars |
 | Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
 | Real public profile backend behavior | Partially validated | Trust-sensitive backend filters exist; full UI polish pending |
-| Real moderation/admin | Partially validated | Backend API and review states exist; Admin UI pending |
+| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
 | Play Dates mature system | Out of first-beta priority | Prototype exists, maturity not required first |
 | Full communities maturity | Out of first-beta priority | Prototype exists, maturity not required first |

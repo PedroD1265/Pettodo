@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting real image pipelines (production), AI matching, and full resolution of minor integration gaps.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting real AI matching and full resolution of minor integration gaps.
 
 ---
 
@@ -66,6 +66,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Minimal GitHub Actions CI (build + test)
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
 - **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
+- **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review) and real Logout in Profile.
 
 ### Product thinking already present
 **[confirmed]**
