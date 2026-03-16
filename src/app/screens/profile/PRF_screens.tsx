@@ -8,14 +8,21 @@ import { RadiusSelector } from '../../components/pettodo/MapComponents';
 import { OTPFlow, StrictVerificationFlow } from '../../components/pettodo/VerificationFlows';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
-import { Shield, Star, CheckCircle, AlertTriangle, Bell, Lock, MapPin, Eye, Phone, FileText, Clock, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Shield, Star, CheckCircle, AlertTriangle, Bell, Lock, MapPin, Eye, Phone, FileText, Clock, ShieldCheck, LogOut } from 'lucide-react';
 
 // PRF_01
 export function PRF_01() {
   const nav = useNavigate();
   const { verificationLevel, strictStatus } = useApp();
+  const { signOut, user } = useAuth();
   const badgeLevel = strictStatus === 'approved' ? 'strict' : verificationLevel === 'basic' ? 'sms' : 'sms';
   const showBadge = verificationLevel !== 'none' || strictStatus === 'approved';
+
+  const handleSignOut = async () => {
+    await signOut();
+    nav('/auth/sign-in', { replace: true });
+  };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -68,6 +75,20 @@ export function PRF_01() {
             </button>
           ))}
         </div>
+
+        {user && (
+          <div className="mt-2">
+            <p className="text-[11px] mb-1 px-1" style={{ color: 'var(--gray-400)' }}>Signed in as {user.email}</p>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 p-3 rounded-xl text-left"
+              style={{ background: 'var(--warning-bg)', minHeight: 48 }}
+            >
+              <LogOut size={18} style={{ color: 'var(--warning-dark)' }} />
+              <span className="text-[14px]" style={{ fontWeight: 500, color: 'var(--warning-dark)' }}>Sign out</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

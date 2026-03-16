@@ -1,0 +1,180 @@
+Actúa como Senior Frontend Integration Engineer + Trust-Sensitive Operator UI Builder para PETTODO.
+
+### Contexto
+- Bloque 1 (backend trust-sensitive) y Bloque 2 (wiring de Community Dogs y Protected Contact) ya están implementados y validados.
+- El backend expone rutas de moderación en `server/routes/reviews.ts` y el cliente las envuelve en `reviewApi` dentro de `src/app/services/api.ts`:contentReference[oaicite:21]{index=21}:contentReference[oaicite:22]{index=22}:contentReference[oaicite:23]{index=23}.
+- No hay ningún frontend que consuma estas rutas.
+- Debes implementar SOLO el **Bloque 3 — UI mínima de moderación/review**.
+
+### Regla principal
+Usa como fuente de verdad:
+1. El código real del repo.
+2. Los contratos API ya implementados (`reviewApi.getPending()`, `reviewApi.approve()`, `reviewApi.reject()`).
+3. El mapa de rutas oficial (en `SCREEN_ROUTE_MAP.md`, se sugiere `/admin/...` para moderación:contentReference[oaicite:24]{index=24}).
+
+NO actualices la documentación.
+NO toques backend ni schema.
+NO alteres Pet CRUD, Protected Contact ni Community Dogs.
+NO construyas una consola enterprise ni features fuera del alcance mínimo.
+Al terminar, responde SOLO con:
+- resumen de cambios realizados
+- archivos tocados
+- endpoints conectados
+- si algo quedó pendiente o fuera de alcance
+
+### Objetivo del Bloque 3
+Crear una interfaz mínima de moderación que permita a usuarios con rol `moderator` u `operator`:
+- ver la lista de ítems en `pending_review` (CommunityDogs, ChangeRequests y EvidenceItems) obtenidos vía `reviewApi.getPending()`
+- aprobar o rechazar cada ítem mediante `reviewApi.approve(entityType, entityId, notes?)` o `reviewApi.reject(...)`
+- escribir una nota opcional en el momento de aprobar/rechazar
+- refrescar la lista tras cada decisión
+- manejar estados de carga y error, mostrando un mensaje “No autorizado” si el API devuelve 403, o “No hay pendientes” si `totalPending` es 0
+
+### Archivos exactos a revisar/modificar
+
+1. **Servicios/API**: `src/app/services/api.ts` (ya expone `reviewApi`; úsalo tal cual).
+2. **Contexto de auth**: `src/app/context/AuthContext.tsx` para obtener usuario autenticado; no se modifica.
+3. **Contexto global**: `src/app/context/AppContext.tsx` – no debes modificarlo.
+4. **Routing**: `src/app/routes.tsx` – agrega una ruta protegida tipo `/admin/review` o similar.
+5. **Crear componentes**: puedes crear carpeta `src/app/screens/admin` o `src/app/screens/moderation` para la UI de revisión. Mantén la estructura de componentes en React + Typescript con estilos ya existentes.
+6. **Opcional**: Si deseas añadir un enlace en el menú principal para usuarios moderadores, puedes agregar un item condicional en el componente de navegación que ya existe, pero no es obligatorio; mostrar la ruta y manejar el 403 es aceptable si no detectas roles en frontend.
+
+### Reglas y restricciones
+
+- No expongas datos sensibles ni PII de los creadores de los ítems. Muestra solo los campos devueltos por `reviewApi.getPending()` (id, type, description, created_by, etc.).
+- No implementes paginado ni filtros complejos. Carga todo de una vez.
+- Notas de aprobación/rechazo son opcionales; usa un textarea simple.
+- Si el API devuelve 401/403, muestra un mensaje de acceso restringido y no intentes reintentar con demo.
+- Si no hay ítems pendientes, muestra un mensaje de “No hay elementos pendientes de revisión”.
+- No alteres otras rutas ni flujos.
+- No uses datos de demo para la moderación. Toda lista debe provenir de `reviewApi`.
+
+### Criterios de aceptación
+
+1. **Ruta**: Debe existir una ruta `/admin/review` (o la indicada en el prompt final) accesible desde el navegador.
+2. **Lista**: Al ingresar, la pantalla debe llamar `reviewApi.getPending()` y mostrar los ítems agrupados por tipo (CommunityDogs, ChangeRequests, EvidenceItems).
+3. **Acciones**: Cada ítem debe tener botón **Aprobar** y **Rechazar**. Al hacer click, se debe abrir un pequeño modal/textarea para notas (opcional) y luego enviar la llamada a `reviewApi.approve(...)` o `reviewApi.reject(...)`.
+4. **Refresh**: Después de aprobar/rechazar un ítem, la lista debe actualizarse para reflejar los pendientes restantes.
+5. **Estado vacío**: Si `getPending` devuelve `totalPending: 0`, la UI debe mostrar mensaje “No hay pendientes”.
+6. **Autorización**: Si el API devuelve error 401/403, la pantalla debe mostrar “No autorizado” o “Permiso insuficiente”.
+7. **Compatibilidad**: La implementación no debe romper las rutas existentes ni el comportamiento de Bloques 1 y 2.
+
+Al finalizar, responde solo con el resumen de cambios, archivos tocados, endpoints conectados y si consideras que el bloque quedó completamente implementado o si algo quedó pendiente.
+
+### Regla crítica de alcance
+- NO agregues ni modifiques endpoints backend para exponer roles al frontend en este bloque.
+- NO modifiques `/auth/me`.
+- La autorización real debe seguir siendo server-side.
+- Si el frontend no tiene una señal confiable de rol, implementa la ruta/pantalla y maneja `401/403` mostrando estado `No autorizado`.
+- Solo oculta o muestra navegación moderator-only si el repo ya expone roles de forma real y segura; si no, no inventes esa capa en este bloque.
+
+### Validación opcional o indicar como realizar las validaciones en respuesta final.
+Valida manualmente estos casos:
+1. usuario moderator/operator puede ver pendientes
+2. usuario normal autenticado recibe estado no autorizado
+3. estado vacío con `totalPending = 0`
+4. aprobar un item refresca la lista
+5. rechazar un item refresca la lista
+
+
+### Añadido extra dentro de este mismo bloque
+Implementa también un **botón real de Logout / Sign out** para que el usuario pueda cerrar sesión.
+
+#### Ubicación correcta
+- La ubicación principal debe ser la superficie de **Profile / Settings** ya existente en la app.
+- Si ya existe una pantalla o sección clara de Profile/Settings, coloca ahí el botón.
+- Si existe además un menú/avatar/menu lateral autenticado donde el logout ya tendría sentido visual, puedes añadir un acceso secundario, pero la ubicación obligatoria mínima es **Profile / Settings**.
+- NO metas el botón dentro de la pantalla de moderación como ubicación principal.
+
+#### Comportamiento requerido
+- Usa la función real `signOut()` desde `src/app/context/AuthContext.tsx`.
+- El logout debe cerrar la sesión actual de forma real.
+- Después de cerrar sesión, redirige al usuario a una ruta segura y coherente, preferiblemente:
+  - landing pública, o
+  - pantalla de login / auth entry,
+  según la estructura ya existente del repo.
+- El estado autenticado de la app debe actualizarse correctamente después del logout.
+- No debe quedar la UI mostrando información de usuario autenticado tras cerrar sesión.
+
+#### Restricciones
+- NO implementes un sistema nuevo de auth.
+- NO toques backend.
+- NO agregues endpoints.
+- NO agregues nuevos servicios.
+- NO simules logout local fake si ya existe logout real en AuthContext.
+- NO rompas el flujo actual de login ni la navegación de Bloques 1 y 2.
+
+#### Validación obligatoria
+Valida manualmente:
+1. usuario autenticado ve el botón en Profile/Settings
+2. al hacer click, la sesión se cierra realmente
+3. el usuario es redirigido a una ruta pública o de entrada coherente
+4. al volver a rutas protegidas, la app ya no se comporta como autenticada
+5. no quedan restos visuales del usuario logueado en la UI
+
+#### Entregable esperado para esta parte
+Incluye en tu respuesta final:
+- dónde quedó ubicado el botón de logout
+- qué archivo(s) tocaste para implementarlo
+- cómo validaste que el logout real funciona
+
+### Contexto real de prueba ya disponible para este bloque
+No inventes seed data ni generes registros fake para validar la moderación.
+
+En este momento ya existen **2 registros reales en `community_dogs` con `review_state = 'pending_review'`** que deberían aparecer en la UI de revisión al consumir `reviewApi.getPending()`:
+
+1. `cd_1773687468677_zwvy5n`
+   - nickname: `blanquito`
+   - breed: `mixed`
+   - size: `Medium`
+   - approximate_area: `AMERICA`
+   - review_state: `pending_review`
+
+2. `cd_1773679281241_se5cnj`
+   - nickname: `carlitos`
+   - breed: `labrador`
+   - size: `Small`
+   - approximate_area: `america y melchor`
+   - review_state: `pending_review`
+
+### Roles reales ya existentes
+Ya existen usuarios con rol `moderator` en `user_roles`.
+
+### Sesión actual en Replit
+Actualmente en Replit ya hay una sesión iniciada con un usuario moderador:
+- `pedelvi@gmail.com`
+
+Por lo tanto:
+
+- NO implementes este bloque pensando que no hay datos para probar.
+- NO devuelvas la UI solo validada con estado vacío.
+- DEBES comprobar que la cola real de revisión muestre esos 2 registros pendientes.
+- DEBES usar esa sesión actual de moderador para validar el flujo.
+
+### Validación obligatoria adicional
+Además de los criterios generales del bloque, valida específicamente esto:
+
+1. entrando con la sesión moderadora actual, la pantalla de review muestra los 2 Community Dogs pendientes reales
+2. los registros visibles corresponden realmente a:
+   - `blanquito`
+   - `carlitos`
+3. al aprobar uno de ellos, la lista se actualiza y ese item deja de aparecer en pendientes
+4. al rechazar uno de ellos, la lista se actualiza y ese item deja de aparecer en pendientes
+5. no se usan datos de demo para simular la cola
+6. no se rompe el manejo de estado vacío después de consumir o resolver los pendientes reales
+
+### Regla de seguridad para esta validación
+- NO cambies backend ni seed scripts para fabricar esta prueba.
+- NO alteres roles.
+- NO crees nuevos endpoints.
+- Usa los datos reales existentes y la sesión moderadora ya activa.
+
+### Entregable obligatorio adicional
+En tu respuesta final, además del resumen normal, indica explícitamente:
+- si viste correctamente los 2 registros pendientes reales
+- qué acción ejecutaste sobre cada uno durante la validación (si aprobaste o rechazaste)
+- cómo se actualizó la lista después de cada acción
+
+
+
+

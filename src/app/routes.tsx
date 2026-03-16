@@ -78,6 +78,9 @@ import SignIn from './screens/auth/SignIn';
 // Docs
 import { ExecutionLog, QASelfCheck } from './screens/docs/DocsScreens';
 
+// Admin / Moderation
+import MOD_01 from './screens/admin/MOD_01';
+
 export const router = createBrowserRouter([
   {
     Component: GlobalLayout,
@@ -209,6 +212,9 @@ export const router = createBrowserRouter([
           { path: '/profile/privacy', Component: PRF_03 },
           { path: '/profile/notifications', Component: PRF_04 },
           { path: '/profile/safety', Component: PRF_05 },
+
+          // Admin / Moderation
+          { path: '/admin/review', Component: MOD_01 },
         ],
       }],
       },
