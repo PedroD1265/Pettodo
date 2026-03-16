@@ -64,7 +64,7 @@ import { PD_01, PD_02, PD_03, PD_04, PD_05, PD_06, PD_07, PD_08 } from './screen
 import { PRF_01, PRF_02, PRF_03, PRF_04, PRF_05 } from './screens/profile/PRF_screens';
 
 // Public QR
-import { QRP_01, QRP_02, QRP_03 } from './screens/qr-public/QRP_screens';
+import { QRP_01, QRP_02, QRP_03, QRP_04 } from './screens/qr-public/QRP_screens';
 
 // Design System
 import DS_01 from './screens/design-system/DS_01';
@@ -172,10 +172,13 @@ export const router = createBrowserRouter([
           { path: '/community-dogs/map-list', Component: CMT_01 },
           { path: '/community-dogs/create', Component: CMT_02 },
           { path: '/community-dogs/detail', Component: CMT_03 },
+          { path: '/community-dogs/detail/:dogId', Component: CMT_03 },
           { path: '/community-dogs/dedup', Component: CMT_04 },
           { path: '/community-dogs/found-warning', Component: CMT_05 },
           { path: '/community-dogs/dispute-start', Component: CMT_06 },
+          { path: '/community-dogs/dispute-start/:dogId', Component: CMT_06 },
           { path: '/community-dogs/dispute-evidence', Component: CMT_07 },
+          { path: '/community-dogs/dispute-evidence/:dogId', Component: CMT_07 },
           { path: '/community-dogs/dispute-resolution', Component: CMT_08 },
 
           // Walkers
@@ -223,6 +226,8 @@ export const router = createBrowserRouter([
           { path: '/public/qr-captcha/:petId', Component: QRP_02 },
           { path: '/public/qr-report', Component: QRP_03 },
           { path: '/public/qr-report/:petId', Component: QRP_03 },
+          { path: '/public/qr-contact', Component: QRP_04 },
+          { path: '/public/qr-contact/:petId', Component: QRP_04 },
         ],
       },
 

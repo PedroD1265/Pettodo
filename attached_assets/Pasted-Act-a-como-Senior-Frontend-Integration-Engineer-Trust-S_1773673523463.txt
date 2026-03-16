@@ -1,0 +1,230 @@
+Actúa como Senior Frontend Integration Engineer + Trust-Sensitive Workflow Implementer para PETTODO.
+
+Debes implementar SOLO el Bloque 2 — Frontend wiring real del trust-sensitive core.
+
+## Regla principal
+Trabaja usando como fuente principal de verdad:
+1. el código real del repo
+2. los contratos frontend ya definidos en `src/app/services/api.ts`
+3. las rutas backend ya implementadas del Bloque 1
+
+NO actualices documentación.
+NO hagas cambios en docs.
+NO hagas backend.
+NO cambies schema.
+NO hagas commits.
+Al terminar, responde SOLO con:
+- resumen de cambios realizados
+- archivos tocados
+- endpoints frontend conectados
+- qué quedó real
+- qué quedó explícitamente fuera
+- confirmación honesta de si el bloque quedó completo o si algo no pudo cerrarse
+
+## Objetivo del Bloque 2
+Conectar el frontend real a la foundation backend del Bloque 1 para que dejen de ser demo/local-only estos flujos:
+
+- protected contact en contexto QR/public
+- evidence submission mínima desde Community Dogs dispute flow
+- Community Dogs conectados a persistencia y estados reales
+- visualización real de `pending_review / approved / rejected`
+- separación visible entre acciones reales y placeholders no implementados
+- consistencia UI con reglas trust/public-private ya implementadas en backend
+
+## Archivos exactos que debes revisar antes de tocar nada
+
+### Backend contracts a respetar
+- `server/routes/protected-contact.ts`
+- `server/routes/community-dogs.ts`
+
+### Frontend contracts y auth
+- `src/app/services/api.ts`
+- `src/app/context/AuthContext.tsx`
+- `src/app/context/AppContext.tsx`
+- `src/app/config/appConfig.ts`
+
+### Pantallas a modificar
+- `src/app/screens/community-dogs/CMT_screens.tsx`
+- `src/app/screens/qr-public/QRP_screens.tsx`
+
+### Routing / reference
+- `src/app/routes.tsx`
+- `src/app/screens/emergency/EMG_21_to_25.tsx`  (solo como referencia visual del chat; NO reutilices lógica demo)
+- `src/app/data/demoData.ts`  (solo para identificar qué demo debe dejar de usarse en integration mode)
+
+NO revises más documentación.
+NO abras workstreams fuera de estos archivos salvo que sea estrictamente necesario para completar el bloque.
+Si necesitas crear un componente frontend pequeño reutilizable para el chat protegido o formularios, hazlo, pero mantén el cambio mínimo.
+
+## Restricciones críticas
+NO hagas estas cosas:
+- no toques backend
+- no toques schema
+- no rehagas auth
+- no rehagas Pet CRUD
+- no rehagas case creation
+- no implementes image upload/storage real
+- no construyas consola de moderación grande
+- no actualices documentación
+- no metas CI, tests, vitest, typecheck hardening ni release engineering
+- no dejes “UI convincente pero falsa”
+- no mezcles datos reales y demo en integration mode dentro de estos flujos trust-sensitive
+- no muestres phone/email/address del owner por fallback demo
+- no expongas coordenadas exactas en vistas públicas
+
+## Decisiones congeladas para este bloque
+1. Bloque 2 es frontend wiring, no backend work.
+2. Community Dogs debe usar API real en integration mode.
+3. Protected contact debe ser relay-first real; NO mostrar owner phone por defecto.
+4. Evidence submission será textual/metadata real; NO file upload real.
+5. Si una acción depende del image pipeline real, debe quedar deshabilitada, oculta o marcada honestamente como no disponible todavía.
+6. NO hacer operator tooling grande en este bloque.
+
+## Implementa en este bloque
+
+### A. Community Dogs — wiring real
+
+#### CMT_01
+En `CMT_01`:
+- reemplaza el uso del array demo `COMMUNITY_DOGS` por carga real con `communityDogApi.list()` cuando `appConfig.mode === 'integration'`
+- agrega loading + error state
+- muestra solo registros reales aprobados en vista pública
+- en modo demo puedes conservar el comportamiento actual, pero en integration mode no debe usar demo array
+
+#### CMT_02
+En `CMT_02`:
+- convierte el formulario en submit real usando `communityDogApi.create()`
+- usa payload mínimo correcto según `CommunityDogPayload`
+- al crear, refleja el estado real devuelto por backend (`reviewState`)
+- después del submit, muestra confirmación honesta tipo:
+  - “Record submitted”
+  - “Pending review before public visibility”
+- NO fingir subida real de foto
+- el bloque visual de foto debe quedar deshabilitado o marcado como “not available yet”
+
+#### CMT_03
+En `CMT_03`:
+- deja de usar `communityDogSightings` y `communityDogCareRecords` locales en integration mode
+- carga el detalle real del perro usando:
+  - `communityDogApi.get(id)` para vista pública aprobada
+  - `communityDogApi.getMyDog(id)` cuando aplique a vista del creador
+- muestra banner visible si `reviewState` es:
+  - `pending_review`
+  - `rejected`
+- conecta:
+  - sighting real con `communityDogApi.addSighting(dogId, ...)`
+  - action/care real con `communityDogApi.addAction(dogId, ...)`
+- después de enviar, refresca correctamente el estado real
+- NO guardar estas acciones solo en arrays locales en integration mode
+- NO fingir proof photo real
+
+#### CMT_04–CMT_08
+- elimina o corrige copy engañoso
+- no dejes botones que digan “demo only” en flows que ya son reales
+- mantén estos screens mínimos y honestos
+- en `CMT_07`, conecta evidencia real mínima (ver sección C)
+
+### B. QR Public / Protected Contact — wiring real
+
+#### QRP_01 / QRP_02
+En `QRP_screens.tsx`:
+- elimina el comportamiento que revela owner contact por captcha
+- elimina cualquier phone hardcodeado
+- el captcha ya NO debe terminar mostrando contacto directo
+- después de verificar captcha, el usuario debe pasar a iniciar contacto protegido real
+
+Implementa flujo real con:
+- `protectedContactApi.createThread(...)`
+- `protectedContactApi.getThread(threadId)`
+- `protectedContactApi.sendMessage(threadId, message)`
+
+#### Protected chat UI
+Crea una UI mínima de chat protegido reutilizable, tomando SOLO referencia visual de `EMG_23` si sirve, pero:
+- NO reutilices la lógica demo de chat
+- NO uses `chatDemoAdapter`
+- NO uses respuestas scriptadas
+- NO guardes mensajes solo en local store en integration mode
+
+La UI mínima debe permitir:
+- cargar thread real
+- ver mensajes reales
+- enviar mensaje real
+- mostrar claramente que el flujo es secure relay
+- mostrar `revealState`
+- dejar claro que contact info remains hidden unless explicitly revealed by the owner
+
+Puedes usar refresh manual o polling simple.
+No metas realtime provider nuevo.
+
+### C. Evidence submission mínima real
+
+En `CMT_07`:
+- conecta submit real usando `evidenceApi.submit(...)`
+- usa `targetEntityType: 'community_dog'`
+- usa el `targetEntityId` correcto del perro en disputa
+- construye un payload mínimo correcto con:
+  - `evidenceType`
+  - `description`
+  - `metadata` si aplica
+
+Reglas:
+- NO fingir file upload real
+- los bloques de foto/documento deben quedar deshabilitados o claramente marcados como no disponibles todavía
+- al terminar, mostrar confirmación honesta:
+  - “Evidence submitted”
+  - “Pending review”
+
+### D. Honestidad de UI trust-sensitive
+En todo este bloque:
+- elimina hardcodes sensibles
+- elimina fallback demo peligroso en integration mode
+- si falla la API, muestra error seguro
+- NO mostrar datos demo sensibles como reemplazo de datos reales
+- deja clara la diferencia entre:
+  - acción real disponible
+  - acción aún no implementada por dependencia de image pipeline
+
+## Qué NO debe pasar al terminar
+- no debe mostrarse owner phone fake en QR public
+- no debe seguir usándose `COMMUNITY_DOGS` demo en integration mode para Community Dogs
+- no debe seguir habiendo sightings/actions solo locales en integration mode para Community Dogs
+- no debe seguir existiendo evidence submit puramente visual si el botón está activo
+- no debe usarse chat demo para protected contact en integration mode
+- no debe aparecer UI que implique upload real si no fue implementado
+
+## Criterios de aceptación
+El bloque se considera correcto solo si:
+
+1. Community Dogs usa API real en integration mode para:
+   - listado
+   - create
+   - sighting
+   - actions
+
+2. La UI refleja `reviewState` real de Community Dogs.
+
+3. QR public ya no revela owner contact directo por captcha.
+
+4. Existe flujo real de protected contact relay-first en frontend usando:
+   - createThread
+   - getThread
+   - sendMessage
+
+5. Evidence submission mínima ya llama a backend real.
+
+6. No se expone PII del owner por fallback demo.
+
+7. No se finge image upload real.
+
+8. No se rompe Pet CRUD ni case creation ya existentes.
+
+9. No se actualiza documentación.
+
+## Entregable esperado al terminar
+Responde SOLO con:
+- resumen de cambios realizados
+- lista de archivos tocados
+- endpoints conectados
+- qué quedó real
+- qué quedó deshabilitado o fuera por depender de image pipeline
+- confirmación honesta de si el Bloque 2 quedó completo o qué quedó pendiente

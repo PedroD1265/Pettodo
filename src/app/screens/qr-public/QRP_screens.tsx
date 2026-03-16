@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate, useParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { LUNA } from '../../data/demoData';
 import { checkRevealRateLimit, recordReveal } from '../../utils/rateLimit';
-import { publicApi } from '../../services/api';
+import { publicApi, protectedContactApi, type ContactThreadRecord } from '../../services/api';
+import { appConfig } from '../../config/appConfig';
 import { toast } from 'sonner';
 import { Shield, MapPin, Camera, CheckCircle, AlertTriangle, Eye, Lock } from 'lucide-react';
+
+const isIntegration = appConfig.mode === 'integration';
 
 interface PublicPetData {
   id: string;
@@ -23,6 +27,8 @@ interface PublicPetData {
   microchip: string;
   vaccines: string;
   hasOwner: boolean;
+  protectedContactEnabled: boolean;
+  contactEntryPoint: string;
 }
 
 function usePublicPet(): { pet: PublicPetData | null; loading: boolean; error: boolean } {
@@ -35,7 +41,7 @@ function usePublicPet(): { pet: PublicPetData | null; loading: boolean; error: b
     if (!petId) return;
     setLoading(true);
     publicApi.getPet(petId)
-      .then(data => { setPet(data); setError(false); })
+      .then(data => { setPet(data as PublicPetData); setError(false); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [petId]);
@@ -51,6 +57,7 @@ function getPetDisplay(dbPet: PublicPetData | null) {
       microchip: dbPet.microchip || 'Unknown',
       vaccines: dbPet.vaccines || 'Unknown',
       hasOwner: dbPet.hasOwner,
+      protectedContactEnabled: dbPet.protectedContactEnabled ?? true,
     };
   }
   return {
@@ -59,14 +66,14 @@ function getPetDisplay(dbPet: PublicPetData | null) {
     microchip: 'Yes',
     vaccines: 'Up to date',
     hasOwner: true,
+    protectedContactEnabled: false,
   };
 }
 
-// QRP_01 — Public shell, no app chrome
+// ─── QRP_01 — Public pet landing ─────────────────────────────────────────────
 export function QRP_01() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
-  const { contactRevealed } = useApp();
   const { pet: dbPet, loading, error } = usePublicPet();
   const display = getPetDisplay(dbPet);
 
@@ -116,7 +123,7 @@ export function QRP_01() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Description</span>
-              <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{display.description}</span>
+              <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{display.description || '—'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Microchip</span>
@@ -129,38 +136,35 @@ export function QRP_01() {
           </div>
         </div>
 
-        {contactRevealed && (
-          <div className="w-full p-3 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
-            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>Owner contact revealed</p>
-            <p className="text-[14px] mt-1" style={{ color: 'var(--green-dark)' }}>&#x1F4DE; +1 (555) 987-6543</p>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--green-dark)' }}>Alex J.</p>
-          </div>
-        )}
+        {/* Relay notice — always shown, never reveals direct contact */}
+        <div className="w-full p-3 rounded-xl flex items-center gap-2" style={{ background: 'var(--gray-100)' }}>
+          <Lock size={14} style={{ color: 'var(--gray-500)' }} />
+          <p className="text-[12px]" style={{ color: 'var(--gray-600)' }}>
+            Owner contact is protected. Messages are relayed through PETTODO.
+          </p>
+        </div>
 
         <div className="w-full flex flex-col gap-2">
-          {!contactRevealed && (
-            <Btn variant="primary" fullWidth onClick={() => nav(captchaPath)}>
-              <Eye size={16} /> Show Owner Contact
-            </Btn>
-          )}
+          <Btn variant="primary" fullWidth onClick={() => nav(captchaPath)}>
+            <Shield size={16} /> Contact Owner (Secure Relay)
+          </Btn>
           <Btn variant="secondary" fullWidth onClick={() => nav(reportPath)}>
             <MapPin size={16} /> I found/spotted this dog
           </Btn>
         </div>
 
         <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
-          Powered by PETTODO &middot; Privacy protected
+          Powered by PETTODO &middot; Owner contact protected by relay
         </p>
       </div>
     </div>
   );
 }
 
-// QRP_02
+// ─── QRP_02 — Captcha (bot check before relay contact) ───────────────────────
 export function QRP_02() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
-  const { setContactRevealed } = useApp();
   const [captchaInput, setCaptchaInput] = useState('');
   const [captchaNumbers] = useState(() => {
     const a = Math.floor(Math.random() * 10) + 1;
@@ -177,10 +181,9 @@ export function QRP_02() {
     }
     if (parseInt(captchaInput) === captchaNumbers.answer) {
       setVerified(true);
-      setContactRevealed(true);
       recordReveal();
-      const landingPath = petId ? `/public/qr-landing/${petId}` : '/public/qr-landing';
-      setTimeout(() => nav(landingPath), 1200);
+      const contactPath = petId ? `/public/qr-contact/${petId}` : '/public/qr-contact';
+      setTimeout(() => nav(contactPath), 1200);
     } else {
       setError(true);
       toast.error('Incorrect answer. Please try again.');
@@ -201,7 +204,7 @@ export function QRP_02() {
           <>
             <CheckCircle size={48} style={{ color: 'var(--green-primary)' }} />
             <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Verified!</h3>
-            <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Redirecting to pet profile...</p>
+            <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Opening secure contact...</p>
           </>
         ) : (
           <>
@@ -212,7 +215,7 @@ export function QRP_02() {
               Prove you're human
             </h3>
             <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>
-              We protect owner data from scrapers. Please solve this simple captcha.
+              We protect owner data from scrapers. Solve this captcha to start a secure relay message.
             </p>
 
             <div className="w-full p-4 rounded-xl flex flex-col gap-3 items-center" style={{ background: 'var(--gray-100)' }}>
@@ -223,13 +226,20 @@ export function QRP_02() {
                 className="w-24 px-3 py-2 rounded-xl text-center"
                 style={{ background: 'var(--white)', border: error ? '2px solid var(--red-primary)' : '2px solid var(--gray-300)', fontSize: 18 }}
                 value={captchaInput}
-                onChange={(e) => { setCaptchaInput(e.target.value); setError(false); }}
+                onChange={e => { setCaptchaInput(e.target.value); setError(false); }}
                 type="number"
                 inputMode="numeric"
               />
             </div>
 
-            <Btn variant="primary" fullWidth onClick={handleVerify}>Verify</Btn>
+            <div className="w-full p-3 rounded-xl flex items-start gap-2" style={{ background: 'var(--gray-100)' }}>
+              <Lock size={14} style={{ color: 'var(--gray-500)', marginTop: 2 }} />
+              <p className="text-[12px]" style={{ color: 'var(--gray-600)' }}>
+                Verification opens a secure relay thread. Owner contact info stays hidden unless the owner chooses to share it.
+              </p>
+            </div>
+
+            <Btn variant="primary" fullWidth onClick={handleVerify}>Verify &amp; Contact Owner</Btn>
             <button
               className="text-[13px]"
               style={{ color: 'var(--gray-400)' }}
@@ -244,7 +254,7 @@ export function QRP_02() {
   );
 }
 
-// QRP_03
+// ─── QRP_03 — Report sighting/found via QR ───────────────────────────────────
 export function QRP_03() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
@@ -372,28 +382,29 @@ export function QRP_03() {
             style={{ background: 'var(--gray-100)', minHeight: 48, border: errors.location ? '1px solid var(--red-primary)' : 'none' }}
             placeholder="Location or address"
             value={location}
-            onChange={(e) => { setLocation(e.target.value); setErrors(prev => ({ ...prev, location: undefined })); }}
+            onChange={e => { setLocation(e.target.value); setErrors(prev => ({ ...prev, location: undefined })); }}
           />
           {errors.location && <p className="text-[11px] mt-0.5" style={{ color: 'var(--red-primary)' }}>{errors.location}</p>}
         </div>
 
         <div>
-          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-700)' }}>Photo (optional)</label>
-          <div className="h-20 rounded-xl flex items-center justify-center" style={{ background: 'var(--gray-100)', border: '2px dashed var(--gray-300)' }}>
-            <Camera size={20} style={{ color: 'var(--gray-400)' }} />
+          <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: 'var(--gray-400)' }}>Photo (not available yet)</label>
+          <div className="h-16 rounded-xl flex flex-col items-center justify-center gap-1" style={{ background: 'var(--gray-50)', border: '2px dashed var(--gray-200)' }}>
+            <Camera size={18} style={{ color: 'var(--gray-300)' }} />
+            <span className="text-[10px]" style={{ color: 'var(--gray-400)' }}>Photo upload not available yet</span>
           </div>
         </div>
 
         <div>
           <label className="text-[13px] mb-1 block" style={{ fontWeight: 500, color: errors.phone ? 'var(--red-primary)' : 'var(--gray-700)' }}>
-            Your phone {reportType === 'found' ? '(required)' : '(optional)'}
+            Your phone {reportType === 'found' ? '(required — so owner can contact you)' : '(optional)'}
           </label>
           <input
             className="w-full px-3 py-2.5 rounded-xl"
             style={{ background: 'var(--gray-100)', minHeight: 48, border: errors.phone ? '1px solid var(--red-primary)' : 'none' }}
             placeholder="+1 (555) ..."
             value={phone}
-            onChange={(e) => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: undefined })); }}
+            onChange={e => { setPhone(e.target.value); setErrors(prev => ({ ...prev, phone: undefined })); }}
           />
           {errors.phone && <p className="text-[11px] mt-0.5" style={{ color: 'var(--red-primary)' }}>{errors.phone}</p>}
         </div>
@@ -403,6 +414,227 @@ export function QRP_03() {
         <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
           Powered by PETTODO &middot; Approximate area only — exact address is hidden.
         </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── QRP_04 — Protected contact relay chat ───────────────────────────────────
+export function QRP_04() {
+  const nav = useNavigate();
+  const { petId } = useParams<{ petId?: string }>();
+  const { user, isDemo } = useAuth();
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [thread, setThread] = useState<ContactThreadRecord | null>(null);
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  const landingPath = petId ? `/public/qr-landing/${petId}` : '/public/qr-landing';
+
+  // Create thread on mount (integration mode, user logged in)
+  useEffect(() => {
+    if (!petId || !user || isDemo) return;
+    setCreating(true);
+    protectedContactApi.createThread({ petId })
+      .then(t => {
+        setThreadId(t.id);
+        setThread(t);
+      })
+      .catch(err => {
+        setInitError(err?.message || 'Unable to start contact thread. Please try again.');
+      })
+      .finally(() => setCreating(false));
+  }, [petId, user, isDemo]);
+
+  const loadThread = useCallback(async () => {
+    if (!threadId) return;
+    try {
+      const t = await protectedContactApi.getThread(threadId);
+      setThread(t);
+    } catch {
+      // Silently ignore poll failures
+    }
+  }, [threadId]);
+
+  // Poll for new messages every 5 seconds
+  useEffect(() => {
+    if (!threadId) return;
+    const interval = setInterval(loadThread, 5000);
+    return () => clearInterval(interval);
+  }, [threadId, loadThread]);
+
+  const handleSend = async () => {
+    if (!threadId || !message.trim()) return;
+    setSubmitting(true);
+    try {
+      await protectedContactApi.sendMessage(threadId, message.trim());
+      setMessage('');
+      await loadThread();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to send message.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Not logged in — require sign in for relay
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
+        <ScreenLabel name="QRP_04_ProtectedContact_SignInRequired" />
+        <div className="px-4 py-3 text-center" style={{ background: 'var(--green-bg)' }}>
+          <p className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>PETTODO — Secure Contact</p>
+        </div>
+        <div className="flex-1 p-4 flex flex-col gap-4 items-center justify-center">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--green-bg)' }}>
+            <Lock size={32} style={{ color: 'var(--green-primary)' }} />
+          </div>
+          <h3 className="text-[17px] text-center" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Sign in to contact the owner</h3>
+          <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>
+            Protected relay contact requires a verified identity. Sign in to send a message to the owner securely.
+          </p>
+          <div className="w-full p-3 rounded-xl flex items-start gap-2" style={{ background: 'var(--gray-100)' }}>
+            <Shield size={14} style={{ color: 'var(--gray-500)', marginTop: 2 }} />
+            <p className="text-[12px]" style={{ color: 'var(--gray-600)' }}>
+              Owner contact info stays hidden. Messages go through PETTODO relay — the owner decides whether to share their contact.
+            </p>
+          </div>
+          <Btn variant="primary" fullWidth onClick={() => nav('/auth/sign-in')}>Sign in to continue</Btn>
+          <button className="text-[13px]" style={{ color: 'var(--gray-400)' }} onClick={() => nav(landingPath)}>
+            ← Back to pet profile
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Creating thread
+  if (creating) {
+    return (
+      <div className="flex flex-col min-h-full items-center justify-center" style={{ background: 'var(--white)' }}>
+        <p className="text-[14px]" style={{ color: 'var(--gray-500)' }}>Starting secure contact...</p>
+      </div>
+    );
+  }
+
+  // Error creating thread
+  if (initError) {
+    return (
+      <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
+        <ScreenLabel name="QRP_04_ProtectedContact_Thread" />
+        <div className="px-4 py-3 text-center" style={{ background: 'var(--warning-bg)' }}>
+          <p className="text-[11px]" style={{ color: 'var(--warning-dark)', fontWeight: 500 }}>PETTODO — Secure Contact</p>
+        </div>
+        <div className="flex-1 p-4 flex flex-col gap-4 items-center justify-center">
+          <AlertTriangle size={48} style={{ color: 'var(--warning)' }} />
+          <h3 className="text-[17px] text-center" style={{ fontWeight: 600 }}>Unable to start contact</h3>
+          <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>{initError}</p>
+          <button className="text-[13px]" style={{ color: 'var(--gray-400)' }} onClick={() => nav(landingPath)}>← Back to pet profile</button>
+        </div>
+      </div>
+    );
+  }
+
+  const messages = thread?.messages ?? [];
+  const revealState = thread?.revealState ?? 'hidden';
+
+  return (
+    <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
+      <ScreenLabel name="QRP_04_ProtectedContact_Thread" />
+      <div className="px-4 py-3 text-center" style={{ background: 'var(--green-bg)' }}>
+        <p className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>PETTODO — Secure Relay Chat</p>
+      </div>
+
+      {/* Relay status notice */}
+      <div className="px-4 pt-3">
+        <div className="p-3 rounded-xl flex items-start gap-2" style={{ background: revealState === 'revealed' ? 'var(--green-bg)' : 'var(--gray-100)', border: revealState === 'revealed' ? '1px solid var(--green-soft)' : 'none' }}>
+          <Lock size={14} style={{ color: revealState === 'revealed' ? 'var(--green-dark)' : 'var(--gray-500)', marginTop: 2 }} />
+          <div>
+            <p className="text-[12px]" style={{ fontWeight: 600, color: revealState === 'revealed' ? 'var(--green-dark)' : 'var(--gray-900)' }}>
+              {revealState === 'revealed' ? 'Owner has shared contact info' : 'Secure relay active'}
+            </p>
+            <p className="text-[11px]" style={{ color: revealState === 'revealed' ? 'var(--green-dark)' : 'var(--gray-500)' }}>
+              {revealState === 'revealed'
+                ? 'The owner chose to share their contact details in this thread.'
+                : 'Owner contact info is hidden. Messages go through PETTODO relay only.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto" style={{ minHeight: 200 }}>
+        {messages.length === 0 && (
+          <div className="flex-1 flex items-center justify-center py-8">
+            <p className="text-[13px] text-center" style={{ color: 'var(--gray-400)' }}>
+              Send a message to notify the owner.{'\n'}Your contact info is also protected by the relay.
+            </p>
+          </div>
+        )}
+        {messages.map(msg => (
+          <div
+            key={msg.id}
+            className={`p-3 rounded-xl ${msg.isSystem ? 'self-center' : msg.senderUid === user?.uid ? 'self-end' : 'self-start'}`}
+            style={{
+              maxWidth: msg.isSystem ? '90%' : '80%',
+              background: msg.isSystem
+                ? 'var(--gray-100)'
+                : msg.senderUid === user?.uid
+                  ? 'var(--green-bg)'
+                  : 'var(--gray-100)',
+              border: msg.isSystem ? '1px solid var(--gray-200)' : 'none',
+            }}
+          >
+            {msg.isSystem && (
+              <span className="text-[10px] block mb-1" style={{ color: 'var(--gray-400)', textAlign: 'center' }}>System</span>
+            )}
+            <p className="text-[13px]" style={{ color: 'var(--gray-900)' }}>{msg.message}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Input area */}
+      <div className="p-4" style={{ borderTop: '1px solid var(--gray-200)' }}>
+        <div className="flex gap-2 mb-2">
+          <input
+            className="flex-1 px-3 py-2.5 rounded-xl text-[14px]"
+            style={{ background: 'var(--gray-100)', minHeight: 44 }}
+            placeholder="Type a message..."
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={submitting || !message.trim()}
+            className="px-4 rounded-xl"
+            style={{
+              background: submitting || !message.trim() ? 'var(--gray-300)' : 'var(--green-primary)',
+              color: 'var(--white)',
+              minHeight: 44,
+              fontWeight: 600,
+              fontSize: 14,
+              border: 'none',
+              cursor: submitting || !message.trim() ? 'default' : 'pointer',
+            }}
+          >
+            {submitting ? '...' : 'Send'}
+          </button>
+        </div>
+        <button
+          className="text-[11px] block text-center w-full"
+          style={{ color: 'var(--gray-400)' }}
+          onClick={() => nav(landingPath)}
+        >
+          ← Back to pet profile
+        </button>
       </div>
     </div>
   );
