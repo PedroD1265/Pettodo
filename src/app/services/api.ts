@@ -38,6 +38,26 @@ export interface CaseRecord {
   updatedAt: number;
 }
 
+// ─── Images ─────────────────────────────────────────────────────────────────
+
+export interface ImageRef {
+  id: string;
+  blobPath: string;
+  mimeType: string;
+  originalFilename: string;
+  sizeBytes: number;
+  isPrimary: boolean;
+  sortOrder: number;
+  createdAt: number;
+  url: string;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  blobPath: string;
+  readUrl: string;
+}
+
 // ─── Community Dogs ──────────────────────────────────────────────────────────
 
 export interface CommunityDogPayload {
@@ -191,7 +211,7 @@ export const importApi = {
     apiFetch('/import/pets', { method: 'POST', body: JSON.stringify({ pets }) }),
 };
 
-// ─── Public API (unauthenticated) ────────────────────────────────────────────
+// ─── Public API ────────────────────────────────────────────────────────────────
 
 export const publicApi = {
   getPet: (petId: string): Promise<{
@@ -227,6 +247,7 @@ export const caseApi = {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export interface ImageRef {
   id: string;
   blobPath: string;
@@ -244,6 +265,9 @@ export interface UploadUrlResponse {
   blobPath: string;
   readUrl: string;
 }
+=======
+// ─── Image API ──────────────────────────────────────────────────────────────
+>>>>>>> a9ec103 (Add image upload and management capabilities to the API)
 
 export const imageApi = {
   getUploadUrl: (params: {
@@ -277,7 +301,12 @@ export const imageApi = {
 
   deleteCaseImage: (caseId: string, imageId: string): Promise<{ deleted: boolean }> =>
     apiFetch(`/cases/${caseId}/images/${imageId}`, { method: 'DELETE' }),
+<<<<<<< HEAD
 =======
+=======
+};
+
+>>>>>>> a9ec103 (Add image upload and management capabilities to the API)
 // ─── Community Dog API ────────────────────────────────────────────────────────
 
 export const communityDogApi = {
@@ -352,7 +381,7 @@ export const evidenceApi = {
     apiFetch('/evidence-items', { method: 'POST', body: JSON.stringify(data) }),
 };
 
-// ─── Review API (moderator/operator only) ─────────────────────────────────────
+// ─── Review API ──────────────────────────────────────────────────────────────
 
 export const reviewApi = {
   getPending: (): Promise<{
