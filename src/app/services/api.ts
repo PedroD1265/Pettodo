@@ -119,3 +119,55 @@ export const caseApi = {
 
   get: (id: string): Promise<CaseRecord> => apiFetch(`/cases/${id}`),
 };
+
+export interface ImageRef {
+  id: string;
+  blobPath: string;
+  mimeType: string;
+  originalFilename: string;
+  sizeBytes: number;
+  isPrimary: boolean;
+  sortOrder: number;
+  createdAt: number;
+  url: string;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  blobPath: string;
+  readUrl: string;
+}
+
+export const imageApi = {
+  getUploadUrl: (params: {
+    filename: string;
+    mimeType: string;
+    entityType?: 'pet' | 'case';
+    entityId?: string;
+  }): Promise<UploadUrlResponse> =>
+    apiFetch('/storage/upload-url', { method: 'POST', body: JSON.stringify(params) }),
+
+  savePetImage: (
+    petId: string,
+    data: { blobPath: string; mimeType: string; originalFilename: string; sizeBytes: number; isPrimary?: boolean },
+  ): Promise<ImageRef> =>
+    apiFetch(`/pets/${petId}/images`, { method: 'POST', body: JSON.stringify(data) }),
+
+  listPetImages: (petId: string): Promise<ImageRef[]> =>
+    apiFetch(`/pets/${petId}/images`),
+
+  deletePetImage: (petId: string, imageId: string): Promise<{ deleted: boolean }> =>
+    apiFetch(`/pets/${petId}/images/${imageId}`, { method: 'DELETE' }),
+
+  saveCaseImage: (
+    caseId: string,
+    data: { blobPath: string; mimeType: string; originalFilename: string; sizeBytes: number; isPrimary?: boolean },
+  ): Promise<ImageRef> =>
+    apiFetch(`/cases/${caseId}/images`, { method: 'POST', body: JSON.stringify(data) }),
+
+  listCaseImages: (caseId: string): Promise<ImageRef[]> =>
+    apiFetch(`/cases/${caseId}/images`),
+
+  deleteCaseImage: (caseId: string, imageId: string): Promise<{ deleted: boolean }> =>
+    apiFetch(`/cases/${caseId}/images/${imageId}`, { method: 'DELETE' }),
+};

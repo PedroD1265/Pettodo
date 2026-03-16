@@ -18,6 +18,7 @@ import { HealthSection } from '../../components/pettodo/HealthSection';
 import { FeedingSection } from '../../components/pettodo/FeedingSection';
 import type { Pet } from '../../data/storage';
 import { petApi } from '../../services/api';
+import { PetImageSection } from '../../components/pettodo/PetImageSection';
 
 // DLY_01
 export function DLY_01() {
@@ -289,16 +290,16 @@ export function DLY_04() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!isDemo) {
-      toast('Integration required: Storage provider not configured.');
-      return;
-    }
     try {
-      const { url } = await services.storage.uploadDocument(file, `docs/luna/${file.name}`);
+      const { url } = await services.storage.uploadDocument(file, `docs/${file.name}`);
       addDocument({ name: file.name, url, size: file.size });
       toast.success(`"${file.name}" uploaded and saved.`);
-    } catch {
-      toast.error('Upload failed. Try a smaller file.');
+    } catch (err: any) {
+      if (err?.message?.includes('Not configured') || err?.message?.includes('storage_not_configured')) {
+        toast.error('Storage is not configured — contact admin.');
+      } else {
+        toast.error('Upload failed. Try a smaller file.');
+      }
     }
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -343,11 +344,6 @@ export function DLY_04() {
         <Btn variant="secondary" fullWidth icon={<Upload size={16} />} onClick={() => fileRef.current?.click()}>
           Upload Document
         </Btn>
-        {!isDemo && (
-          <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
-            Integration mode: configure storage provider to enable uploads.
-          </p>
-        )}
       </div>
     </div>
   );
@@ -640,6 +636,11 @@ export function PetDetail() {
             </div>
           ))}
         </div>
+
+        {/* Photos */}
+        {isIntegration && petId && (
+          <PetImageSection petId={petId} />
+        )}
 
         {/* Additional details */}
         {(pet.temperament || pet.collar || pet.marks || pet.vaccines || pet.nextVaccine) && (

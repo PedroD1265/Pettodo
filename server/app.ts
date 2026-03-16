@@ -5,6 +5,7 @@ import petRoutes from './routes/pets.js';
 import importRoutes from './routes/import.js';
 import publicRoutes from './routes/public.js';
 import caseRoutes from './routes/cases.js';
+import imageRoutes from './routes/images.js';
 
 const app = express();
 
@@ -42,5 +43,6 @@ app.use('/api', petRoutes);
 app.use('/api', importRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', caseRoutes);
+app.use('/api', imageRoutes);
 
 export default app;

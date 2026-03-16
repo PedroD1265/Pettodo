@@ -9,6 +9,7 @@ import { geoDemoAdapter } from './demo/geoDemo';
 import { aiDemoAdapter, matchingDemoAdapter } from './demo/aiDemo';
 import { authDemoAdapter } from './demo/authDemo';
 
+import { storageAzureAdapter } from './integration/storageAzure';
 import { storageAzureStub, storageGcsStub } from './integration/storageAzure.stub';
 import { smsTwilioStub } from './integration/smsTwilio.stub';
 import { chatAblyStub } from './integration/chatAbly.stub';
@@ -23,7 +24,7 @@ function buildServices(): Services {
   const storage = isDemo
     ? storageDemoAdapter
     : appConfig.storageProvider === 'azure'
-    ? storageAzureStub
+    ? storageAzureAdapter
     : appConfig.storageProvider === 'gcs'
     ? storageGcsStub
     : storageDemoAdapter;

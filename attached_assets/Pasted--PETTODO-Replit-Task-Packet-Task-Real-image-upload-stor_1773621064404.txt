@@ -1,0 +1,296 @@
+# PETTODO — Replit Task Packet
+## Task: Real image upload/storage baseline for pet and case flows
+
+Work on the `Pettodo` repository in agent mode and use the repo itself as the primary source of truth.
+
+Act as **Senior Full-Stack Integration Engineer + Storage Baseline Implementer + Replit Delivery Agent** for PETTODO.
+
+You are working in **agent mode** with direct access to the real repository.
+
+---
+
+## Current accepted state
+
+Do **not** re-plan already accepted work.
+
+The following is already completed and accepted:
+- backend automated test baseline exists
+- minimal CI exists
+- docs were updated for that accepted state
+- backend/API foundation is already real enough in these areas:
+  - Firebase Auth baseline
+  - Express API
+  - PostgreSQL
+  - pet CRUD real
+  - case creation real
+  - public pet / QR fetch real
+
+This task is **not** to recreate tests/CI from scratch.
+
+---
+
+## Main task
+
+Implement the **next correct MVP task**:
+
+# Real image upload/storage baseline for pet and case flows
+
+The goal is to make image handling **materially real and durable** for:
+- pet create/edit flows
+- case creation flows
+
+This must become a **real storage baseline**, not local-only preview behavior.
+
+---
+
+## Main rule
+
+Inspect the repo directly before changing anything.
+
+Do **not** ask for files manually unless there is a real access blocker.
+
+Do **not** write broad brainstorming.
+Do **not** reopen already accepted work unless the repo truth forces it.
+Do **not** overbuild this into a full media platform.
+
+---
+
+## Required first step: inspect before implementing
+
+Before writing code, inspect at minimum:
+
+### Core docs
+- `docs/00_governance/CURRENT_STATE.md`
+- `docs/03_delivery/QA_CURRENT.md`
+- `docs/03_delivery/RELEASE_CRITERIA.md`
+- `docs/03_delivery/BACKLOG.md`
+- `docs/02_build/ARCHITECTURE.md`
+- `docs/02_build/ENVIRONMENTS_PUBLIC.md`
+- `docs/02_build/WEBAPP_REPLIT.md`
+- `docs/02_build/DATA_MODEL.md`
+- `docs/01_product/PRD_MVP_WEBAPP.md`
+
+### Backend
+- `server/index.ts`
+- `server/app.ts` if it exists
+- `server/db.ts`
+- `server/migrate.ts`
+- `server/schema.sql`
+- `server/routes/pets.ts`
+- `server/routes/cases.ts`
+- `server/routes/public.ts`
+- `server/routes/import.ts`
+- any storage/media-related backend files if they exist
+
+### Frontend / integration surfaces
+- auth context / auth guard
+- API client layer
+- app context / persistence layer
+- pet profile create/edit screens
+- case creation screens
+- public QR/profile surfaces if affected
+- any file inputs, image placeholders, image preview logic, media models, or storage adapters already present
+
+### Current quality/release surfaces
+- existing tests
+- current CI workflow
+- any current docs/handoffs still cited as truth
+
+---
+
+## Storage prerequisite rule
+
+Azure Blob is considered available for this task.
+
+But before implementation, verify in-repo and environment usage assumptions for:
+- storage-related env vars / secrets
+- target environment behavior
+- whether preview/dev and production are separated safely enough
+- how upload failure should surface
+
+If anything essential is missing for real storage integration:
+- do **not** fake persistence
+- do **not** silently fall back to local-only behavior
+- stop and report exactly what config is missing
+
+---
+
+## Minimum persistence rule (must follow)
+
+This task must follow this exact persistence rule:
+
+> **The real file lives in Azure Blob. PostgreSQL stores the durable reference to that file. The UI must only report success when both storage and DB persistence succeed.**
+
+### Therefore:
+- do **not** store image binaries in PostgreSQL
+- do **not** treat browser preview or local state as persistence
+- do **not** treat a Blob upload alone as sufficient if DB persistence failed
+- do **not** treat a DB record alone as sufficient if Blob upload failed
+- do **not** fake success before the full operation is consistent
+
+### Preferred persistence shape
+Use a **small separate image-reference table design** rather than a single fragile `image_url` column if the repo truth supports multiple images or likely future multiple-image use.
+
+Preferred minimal fields:
+- `id`
+- `pet_id` or `case_id`
+- `blob_path` or `storage_key`
+- `mime_type`
+- `original_filename`
+- `size_bytes`
+- `is_primary` if useful
+- `sort_order` if useful
+- `created_at`
+
+Do **not** overbuild a universal media platform.
+Keep it minimal and practical.
+
+---
+
+## Objective
+
+Make pet and case image handling real enough that:
+- a pet can have real uploaded image(s)
+- a case can have real uploaded image(s)
+- media survives re-entry
+- the UI loads persisted media from real backend data
+- the app moves materially closer to honest beta reality
+
+---
+
+## In scope
+
+### Backend / data
+- storage upload integration for pet images
+- storage upload integration for case images
+- minimal DB persistence for image references
+- minimal schema/migration updates required for this baseline
+- honest error handling and consistency handling
+
+### Frontend / flow integration
+- wiring upload into pet create/edit flow
+- wiring upload into case creation flow
+- loading persisted media in the relevant existing UI surfaces
+- replacing fake/local-only assumptions where necessary in these flows
+- visible failure states
+
+### Quality support
+- add or update tests only where needed to protect this new storage baseline
+- preserve the existing accepted test/CI baseline
+- keep any new test additions focused and minimal
+
+---
+
+## Out of scope
+
+Do **not** expand this task into:
+- protected contact
+- moderation/review
+- evidence workflow
+- Community Dog governance
+- trust-threshold logic
+- AI image analysis
+- embeddings
+- photo quality scoring
+- derived media pipelines beyond absolute minimum
+- full gallery/media manager
+- flyer generation
+- broad deploy redesign
+- architecture rewrite
+- public-data policy redesign
+
+---
+
+## Critical sequencing discipline
+
+This is a **baseline** task.
+
+A good implementation is:
+- small
+- real
+- durable
+- honest
+- testable
+- aligned with existing architecture and docs
+
+A bad implementation is:
+- huge
+- speculative
+- mixed with trust-sensitive work
+- mixed with moderation/evidence
+- pretending local preview equals persistence
+
+---
+
+## Constraints
+
+- preserve current pet CRUD behavior
+- preserve current case creation behavior
+- preserve current auth/API baseline
+- preserve current public/private boundary direction
+- do not weaken owner/privacy protections
+- do not expose raw sensitive media carelessly
+- small support refactors are acceptable
+- broad refactors are not acceptable
+
+---
+
+## Acceptance criteria
+
+This task is done only if all of the following are true:
+
+1. a pet flow can upload and persist at least one real image
+2. a case flow can upload and persist at least one real image
+3. the uploaded files are durably stored in Azure Blob
+4. PostgreSQL stores durable media references tied to the correct record
+5. stored media references survive re-entry
+6. the UI renders stored media from real persisted backend state
+7. failure is surfaced honestly when upload or DB persistence fails
+8. current pet CRUD still works
+9. current case creation still works
+10. scope remains limited to media baseline only
+11. no trust-sensitive parallel workstream area was opened
+
+---
+
+## Implementation approach guidance
+
+Use the smallest useful implementation shape.
+
+A likely good path is:
+1. inspect existing pet/case data and UI image assumptions
+2. add minimal backend storage upload handling
+3. add minimal DB persistence for image references
+4. wire pet flow
+5. wire case flow
+6. load/render persisted media
+7. add focused test coverage for the new baseline
+8. report what remains intentionally out of scope
+
+Do **not** jump directly into broad abstractions unless the repo already has them.
+
+---
+
+## Final delivery format
+
+When finished, return:
+
+1. **Files changed**
+2. **What storage integration was implemented**
+3. **What DB persistence model was chosen and why**
+4. **How pet flows now use real media**
+5. **How case flows now use real media**
+6. **What tests were added or adjusted**
+7. **What remains intentionally out of scope**
+8. **What risks or limitations remain**
+9. **Which docs should be updated after validation**
+
+---
+
+## Final rule
+
+Do not overbuild.
+
+Do not drift into moderation, evidence, protected contact, or Community Dog governance.
+
+Implement the **smallest real image upload/storage baseline** that materially advances PETTODO toward beta.

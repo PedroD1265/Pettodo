@@ -54,3 +54,35 @@ CREATE TABLE IF NOT EXISTS cases (
 
 CREATE INDEX IF NOT EXISTS idx_cases_creator ON cases (created_by);
 CREATE INDEX IF NOT EXISTS idx_cases_type_status ON cases (type, status);
+
+-- Image reference tables (blobs live in Azure; we only store paths + metadata)
+
+CREATE TABLE IF NOT EXISTS pet_images (
+  id TEXT PRIMARY KEY,
+  pet_id TEXT NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  owner_uid TEXT NOT NULL,
+  blob_path TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  original_filename TEXT NOT NULL DEFAULT '',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_pet_images_pet ON pet_images (pet_id);
+
+CREATE TABLE IF NOT EXISTS case_images (
+  id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL REFERENCES cases(id) ON DELETE CASCADE,
+  owner_uid TEXT NOT NULL,
+  blob_path TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  original_filename TEXT NOT NULL DEFAULT '',
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_case_images_case ON case_images (case_id);

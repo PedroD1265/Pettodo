@@ -30,8 +30,20 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 ## Database
 - **PostgreSQL**: Azure PostgreSQL at `pettodo-pg-prod.postgres.database.azure.com` (connected via DATABASE_URL secret)
 - **Connection**: `server/db.ts` — uses DATABASE_URL first, then PG* env vars as fallback
-- **Schema**: `server/schema.sql` — `pets` table (owner_uid indexed), `imports` table, `cases` table (type/status/created_by indexed)
+- **Schema**: `server/schema.sql` — `pets` table (owner_uid indexed), `imports` table, `cases` table (type/status/created_by indexed), `pet_images` and `case_images` tables (blob_path, mime_type, size, is_primary, sort_order)
 - **Migrations**: `server/migrate.ts` — runs schema.sql on server startup (idempotent CREATE IF NOT EXISTS)
+
+## Image / File Storage Architecture
+- **Storage backend**: Azure Blob Storage (private container)
+- **Upload flow**: SAS-based — backend generates short-lived SAS write URL (15 min); browser uploads blob directly; backend saves blobPath reference to DB; backend generates SAS read URL (60 min) on demand
+- **Key server file**: `server/blobStorage.ts` — `isStorageConfigured()`, `generateUploadSasUrl()`, `generateReadSasUrl()`, `deleteBlob()`
+- **Key client file**: `src/app/services/integration/storageAzure.ts` — real `IStorageService` adapter; selected when `VITE_STORAGE_PROVIDER=azure` and `VITE_APP_MODE=integration`
+- **503 on missing credentials**: If Azure storage env vars are not set, all storage endpoints return `{ error: "storage_not_configured" }` with HTTP 503; no silent fallback
+- **Required secrets** (NOT yet set — must be provided before storage works end-to-end):
+  - `AZURE_STORAGE_ACCOUNT_NAME`
+  - `AZURE_STORAGE_ACCOUNT_KEY`
+  - `AZURE_STORAGE_CONTAINER_NAME` (optional; defaults to `pettodo-media`)
+- **When NOT configured**: App runs normally, PetImageSection shows "storage not configured" notice, document upload shows explicit error toast
 
 ## API Endpoints
 - `GET /api/health` — unprotected, returns `{ ok: true }`
@@ -47,6 +59,13 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - `POST /api/cases` — protected, create a case (lost/found/sighted); stores approx coords (privacy-safe)
 - `GET /api/cases` — protected, lists authenticated user's cases (most recent first)
 - `GET /api/cases/:id` — protected, get a specific case owned by the user
+- `POST /api/storage/upload-url` — protected, generates Azure Blob SAS upload URL (15 min); body: `{ filename, contentType? }`; 503 if storage not configured
+- `GET /api/pets/:id/images` — protected, list all image records for a pet (includes signed read URLs)
+- `POST /api/pets/:id/images` — protected, save pet image reference to DB after upload; body: `{ blobPath, mimeType, originalFilename?, sizeBytes?, isPrimary? }`
+- `DELETE /api/pets/:id/images/:imageId` — protected, delete image record and blob from storage
+- `GET /api/cases/:id/images` — protected, list all image records for a case
+- `POST /api/cases/:id/images` — protected, save case image reference; body: `{ blobPath, mimeType, originalFilename?, sizeBytes?, isPrimary? }`
+- `DELETE /api/cases/:id/images/:imageId` — protected, delete case image record and blob
 
 ## Workflows
 - **Start application**: `npm run dev` (Vite dev server, port 5000)
@@ -57,15 +76,32 @@ PETTODO is a React-based pet management app built with Vite, Tailwind CSS v4, an
 - VITE_APP_MODE: "demo" | "integration" (default: demo)
 - VITE_AUTH_PROVIDER: "demo" | "firebase" (default: demo)
 - VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID, VITE_FIREBASE_MESSAGING_SENDER_ID
-- VITE_STORAGE_PROVIDER, VITE_SMS_PROVIDER, VITE_CHAT_PROVIDER, VITE_PUSH_PROVIDER, VITE_MAP_PROVIDER, VITE_AI_PROVIDER
+- VITE_STORAGE_PROVIDER: "demo" | "azure" — set to "azure" + VITE_APP_MODE=integration to activate real file uploads
+- VITE_SMS_PROVIDER, VITE_CHAT_PROVIDER, VITE_PUSH_PROVIDER, VITE_MAP_PROVIDER, VITE_AI_PROVIDER
 - VITE_API_BASE_URL
 
 ### Backend
 - FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (for Admin SDK token verification)
+- AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY — required for Azure Blob image storage (NOT YET SET)
+- AZURE_STORAGE_CONTAINER_NAME — optional, defaults to `pettodo-media`
 - DATABASE_URL (PostgreSQL connection string — fallback if PG* vars are absent)
 - PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE (Replit-managed PostgreSQL, preferred)
 
 ## Recent Changes
+- 2026-03-16: Azure Blob Storage Image Pipeline
+  - `server/blobStorage.ts`: `BlobServiceClient` + HMAC SAS generation; `isStorageConfigured()`, `generateUploadSasUrl(15 min)`, `generateReadSasUrl(60 min)`, `deleteBlob()`; 503 gating when env vars absent
+  - `server/routes/images.ts`: POST /api/storage/upload-url; full CRUD for pet_images (GET/POST/DELETE) and case_images (GET/POST/DELETE); ownership enforced on every route; no silent fallbacks
+  - `server/schema.sql`: `pet_images` and `case_images` tables added (ALTER TABLE IF NOT EXISTS pattern)
+  - `src/app/services/integration/storageAzure.ts`: Real IStorageService adapter (SAS PUT upload to Azure, 64MB limit); replaces stub
+  - `src/app/services/index.ts`: Selects azureStorage adapter when VITE_STORAGE_PROVIDER=azure + VITE_APP_MODE=integration
+  - `src/app/services/api.ts`: `imageApi` — uploadUrl(), listPetImages(), savePetImage(), deletePetImage(), listCaseImages(), saveCaseImage(), deleteCaseImage()
+  - `src/app/components/pettodo/PetImageSection.tsx`: New full photo management component in PetDetail — gallery, primary selection, upload, delete, storage-not-configured warning banner
+  - `src/app/components/pettodo/PhotoQuality.tsx`: Replaced mock flow with real file input + FileReader previews; accepts `onFilesChange` prop
+  - `src/app/screens/emergency/EMG_02.tsx`: Uses `onFilesChange` prop from PhotoQuality
+  - `src/app/screens/daily/DLY_screens.tsx` (DLY_04): Document upload propagates storage errors as explicit toast
+  - `tests/images.test.ts`: 16 new tests for all image endpoints; all 49 tests pass
+  - Packages added: `@azure/storage-blob`
+  - **Blocker**: AZURE_STORAGE_ACCOUNT_NAME and AZURE_STORAGE_ACCOUNT_KEY secrets not yet set in environment
 - 2026-03-15: Pet CRUD Reliability Fix (Integration Mode)
   - Root cause: addPet/updatePet/deletePet used fire-and-forget API calls with optimistic local updates; success shown before backend confirmed
   - Fix: In integration mode, all three operations now await the API response before updating local state

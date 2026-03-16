@@ -6,12 +6,11 @@ import { Stepper } from '../../components/pettodo/Stepper';
 import { Btn } from '../../components/pettodo/Buttons';
 import { PhotoUploadGrid } from '../../components/pettodo/PhotoQuality';
 import { useNavigate } from 'react-router';
-import type { PhotoQuality } from '../../data/demoData';
 
 export default function EMG_02() {
   const nav = useNavigate();
-  const [qualities, setQualities] = useState<PhotoQuality[]>([]);
-  const hasPhotos = qualities.length > 0;
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const hasPhotos = selectedFiles.length > 0;
 
   return (
     <div className="flex flex-col min-h-full">
@@ -28,7 +27,7 @@ export default function EMG_02() {
           </p>
         </div>
 
-        <PhotoUploadGrid onQualitiesChange={setQualities} />
+        <PhotoUploadGrid onFilesChange={setSelectedFiles} />
 
         <div className="mt-auto flex flex-col gap-2">
           <Btn variant="emergency" fullWidth onClick={() => nav('/emg/lost-location')} disabled={!hasPhotos}>
