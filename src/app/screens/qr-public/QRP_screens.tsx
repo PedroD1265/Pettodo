@@ -259,17 +259,21 @@ export function QRP_03() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { addSighting } = useApp();
+  const { user } = useAuth();
   const { pet: dbPet } = usePublicPet();
   const petName = dbPet?.name ?? LUNA.name;
   const [reportType, setReportType] = useState<'found' | 'sighted' | null>(null);
   const [location, setLocation] = useState('');
   const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showSignInGate, setShowSignInGate] = useState(false);
   const [errors, setErrors] = useState<{ location?: string; phone?: string }>({});
 
   const handleSelectType = (type: 'found' | 'sighted') => {
     setReportType(type);
     setErrors({});
+    setShowSignInGate(false);
     if (type === 'found') {
       toast('Great — you have the dog! Fill in the details below and submit.');
     } else {
@@ -277,7 +281,7 @@ export function QRP_03() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!reportType) {
       toast('Please select whether you have the dog or spotted it.');
       return;
@@ -295,6 +299,40 @@ export function QRP_03() {
       return;
     }
     setErrors({});
+
+    // Integration mode: use real protected contact thread
+    if (isIntegration) {
+      if (!user) {
+        setShowSignInGate(true);
+        return;
+      }
+      if (!petId) {
+        toast.error('Pet ID is missing. Cannot submit report.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const initiatorMessage = reportType === 'found'
+          ? `FOUND: I have this dog with me. Location: ${location.trim()}. My phone: ${phone.trim() || 'not provided'}.`
+          : `SIGHTED: I spotted this dog near: ${location.trim()}.`;
+        const thread = await protectedContactApi.createThread({
+          petId,
+          initiatorMessage,
+          initiatorPhone: phone.trim() || undefined,
+        });
+        setSubmitted(true);
+        // Navigate to the protected contact thread so the owner can be notified
+        setTimeout(() => nav(`/public/qr-contact/${petId}`), 1200);
+        void thread; // thread is now the active thread (idempotent)
+      } catch (err: any) {
+        toast.error(err?.message || 'Failed to submit report. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Demo mode: local AppContext sighting (unchanged)
     addSighting({
       caseId: 'CASE-2026-0219',
       lat: 40.7741 + (Math.random() - 0.5) * 0.01,
@@ -409,7 +447,20 @@ export function QRP_03() {
           {errors.phone && <p className="text-[11px] mt-0.5" style={{ color: 'var(--red-primary)' }}>{errors.phone}</p>}
         </div>
 
-        <Btn variant="primary" fullWidth onClick={handleSubmit}>Submit Report</Btn>
+        {/* Sign-in gate (integration mode, unauthenticated) */}
+        {showSignInGate && (
+          <div className="p-3 rounded-xl flex flex-col gap-2" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-soft)' }}>
+            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--warning-dark)' }}>Sign in to submit your report</p>
+            <p className="text-[12px]" style={{ color: 'var(--warning-dark)' }}>
+              Reporting via PETTODO requires a verified identity so the owner can respond to you securely through our relay.
+            </p>
+            <Btn variant="primary" fullWidth onClick={() => nav('/auth/sign-in')}>Sign in to continue</Btn>
+          </div>
+        )}
+
+        <Btn variant="primary" fullWidth onClick={handleSubmit} disabled={submitting}>
+          {submitting ? 'Submitting...' : 'Submit Report'}
+        </Btn>
 
         <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
           Powered by PETTODO &middot; Approximate area only — exact address is hidden.

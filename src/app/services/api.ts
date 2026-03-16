@@ -372,6 +372,18 @@ export const communityDogApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  getSightings: (dogId: string): Promise<Array<{ id: string; locationLabel: string; conditionNotes: string; notes: string; createdAt: number }>> =>
+    fetch(`/api/community-dogs/${dogId}/sightings`).then((r) => {
+      if (!r.ok) return [];
+      return r.json();
+    }),
+
+  getActions: (dogId: string): Promise<Array<{ id: string; actionType: string; notes: string; createdAt: number }>> =>
+    fetch(`/api/community-dogs/${dogId}/actions`).then((r) => {
+      if (!r.ok) return [];
+      return r.json();
+    }),
 };
 
 // ─── Protected Contact API ────────────────────────────────────────────────────

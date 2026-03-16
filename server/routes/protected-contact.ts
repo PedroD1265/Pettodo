@@ -66,6 +66,35 @@ router.post('/protected-contact/threads', verifyToken, async (req: Authenticated
       return;
     }
 
+    // Idempotency: return existing open thread for same (petId/caseId, initiatorUid)
+    // Prevents duplicate threads when QRP_04 remounts or user navigates back.
+    if (petId) {
+      const existing = await query(
+        `SELECT * FROM protected_contact_threads
+         WHERE pet_id = $1 AND initiator_uid = $2 AND thread_status = 'open'
+         ORDER BY created_at DESC LIMIT 1`,
+        [petId, initiatorUid]
+      );
+      if (existing.rows.length > 0) {
+        const existingRow = existing.rows[0];
+        const existingMessages = await query(
+          'SELECT * FROM protected_contact_messages WHERE thread_id = $1 ORDER BY created_at ASC',
+          [existingRow.id]
+        );
+        res.status(200).json({
+          ...threadToJson(existingRow),
+          messages: existingMessages.rows.map((m: any) => ({
+            id: m.id,
+            senderUid: m.sender_uid,
+            message: m.message,
+            isSystem: m.is_system,
+            createdAt: Number(m.created_at),
+          })),
+        });
+        return;
+      }
+    }
+
     const id = newId('pct');
     const now = Date.now();
 
@@ -89,7 +118,7 @@ router.post('/protected-contact/threads', verifyToken, async (req: Authenticated
     });
 
     const result = await query('SELECT * FROM protected_contact_threads WHERE id = $1', [id]);
-    res.status(201).json(threadToJson(result.rows[0]));
+    res.status(201).json({ ...threadToJson(result.rows[0]), messages: [] });
   } catch (err: any) {
     console.error('[protected-contact] POST /threads error:', err.message);
     res.status(500).json({ error: 'create_failed' });

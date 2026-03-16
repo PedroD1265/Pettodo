@@ -1,0 +1,209 @@
+Actúa como Senior Full-Stack Fix-Pack Engineer + Trust-Sensitive Integration Closer para PETTODO.
+
+Debes implementar SOLO el **Bloque 2 Fix Pack**.
+
+## Objetivo
+Cerrar exactamente los 3 issues abiertos que impiden considerar Bloque 2 como realmente terminado:
+
+1. `QRP_03` sigue en demo/local
+2. `QRP_04` puede duplicar threads
+3. `CMT_03` no carga historial real al entrar
+
+## Regla principal
+Usa como fuente principal de verdad:
+1. el código real del repo
+2. los contratos backend/frontend ya existentes
+3. el estado ya validado del stack real
+
+NO rehagas Bloque 2 completo.
+NO toques documentación.
+NO toques Firebase.
+NO toques storage.
+NO toques providers.
+NO metas nuevas features.
+NO abras workstreams fuera de estos 3 issues.
+
+## Contexto congelado — NO volver a investigar
+Ya está validado y NO debes gastar tiempo reabriendo esto:
+- `VITE_APP_MODE=integration`
+- Firebase Auth real funciona
+- frontend envía Bearer token real
+- API protegida responde correctamente
+- Pet CRUD real funciona
+- moderación base y `user_roles` funcionan
+- protected contact backend base funciona
+- Community Dogs create real funciona
+- Community Dogs public list respeta `pending_review`
+
+## Alcance permitido
+### Frontend
+Sí, puedes modificar frontend donde haga falta para cerrar los 3 issues.
+
+### Micro-backend patch
+Está permitido **solo si es estrictamente necesario** para cerrar correctamente:
+- reutilización/idempotencia de thread en `QRP_04`
+- carga real de historial en `CMT_03`
+
+### Restricción dura del micro-backend patch
+Si tocas backend:
+- debe ser mínimo
+- no debe cambiar el modelo de dominio
+- no debe tocar auth base
+- no debe tocar schema salvo que sea absolutamente inevitable; si llegas a ese punto, detente y repórtalo en vez de improvisar
+- no debe abrir nuevos flujos fuera de este fix pack
+
+## Archivos exactos que debes revisar antes de tocar nada
+
+### Frontend contracts / contexts
+- `src/app/services/api.ts`
+- `src/app/context/AuthContext.tsx`
+- `src/app/context/AppContext.tsx`
+- `src/app/config/appConfig.ts`
+
+### Frontend screens / routes
+- `src/app/screens/qr-public/QRP_screens.tsx`
+- `src/app/screens/community-dogs/CMT_screens.tsx`
+- `src/app/routes.tsx`
+
+### Backend contracts relevantes
+- `server/routes/protected-contact.ts`
+- `server/routes/community-dogs.ts`
+
+### Solo si necesitas referencia visual o comportamiento previo
+- `src/app/screens/emergency/EMG_21_to_25.tsx`
+- `src/app/data/demoData.ts`
+
+NO revises docs.
+NO toques docs.
+
+---
+
+# ISSUE 1 — `QRP_03` debe dejar de ser demo
+
+## Problema actual
+`QRP_03` todavía usa `addSighting` desde `AppContext` y cae en local/demo.
+
+## Qué debes hacer
+- quitar cualquier dependencia local/demo en integration mode para el flujo de `QRP_03`
+- conectar `QRP_03` a un flujo real ya soportado por el repo
+
+## Regla importante
+NO inventes una feature nueva.
+NO inventes un nuevo dominio.
+NO metas un endpoint nuevo si ya existe una forma honesta de resolverlo con contratos actuales.
+
+## Prioridad de decisión
+1. primero intenta resolverlo con contratos reales ya existentes
+2. si el repo ya soporta que el reporte QR se traduzca a inicio de relay/contacto real, úsalo
+3. si existe otra ruta real ya disponible y correcta, úsala
+4. si descubres que no existe ningún contrato real honesto para representar ese reporte sin fake/local, repórtalo claramente
+
+## Lo que NO puede pasar al terminar
+- `QRP_03` no puede seguir escribiendo solo en `AppContext`
+- no puede seguir simulando persistencia
+- no puede fingir submit real
+
+---
+
+# ISSUE 2 — `QRP_04` no debe duplicar threads
+
+## Problema actual
+El relay chat puede crear un thread nuevo en cada mount.
+
+## Qué debes hacer
+Resolver esto de forma robusta, no cosmética.
+
+## Regla de implementación
+### Si el frontend puede resolverlo honestamente con contrato actual:
+hazlo.
+
+### Si el contrato actual no alcanza:
+haz un micro-backend patch mínimo para que el sistema:
+- reutilice thread abierto existente
+- o haga `createThread` efectivamente idempotente para el mismo contexto
+- o resuelva de manera equivalente sin duplicación
+
+## Regla dura
+No quiero una solución frágil basada solo en banderas locales si eso no garantiza corrección real tras refresh o nueva navegación.
+
+## Lo que NO puede pasar al terminar
+- entrar varias veces a `QRP_04` no debe crear múltiples threads equivalentes
+- no debe depender de casualidad de UI
+- no debe romper las reglas actuales de protected contact
+- no debe permitir abrir thread sobre pet propio
+
+---
+
+# ISSUE 3 — `CMT_03` debe cargar historial real al entrar
+
+## Problema actual
+Al entrar al detalle, sightings/actions no se cargan realmente desde API; solo aparecen si se agregan en la sesión actual.
+
+## Qué debes hacer
+- hacer que `CMT_03` cargue historial real al entrar
+- usar contratos backend existentes si ya entregan historial suficiente
+- si el backend no devuelve historial suficiente, hacer micro-backend patch mínimo para exponerlo correctamente
+
+## Regla de micro-backend patch permitida aquí
+Se permite solo una de estas rutas mínimas, la que sea más conservadora:
+- ampliar el detalle actual para incluir historial
+- o agregar una ruta GET mínima y coherente para historial
+- o devolver sightings/actions relacionadas en el payload existente
+
+## Lo que NO puede pasar al terminar
+- no quiero historial fake
+- no quiero mezclar real + local
+- no quiero que el historial siga apareciendo solo después de crear una acción nueva en la sesión
+
+---
+
+# Restricciones críticas
+NO hagas estas cosas:
+- no rehagas Bloque 2 completo
+- no toques documentación
+- no toques Firebase/Auth provider
+- no toques storage/providers
+- no metas image upload real
+- no hagas refactor masivo
+- no cambies Pet CRUD
+- no cambies case creation
+- no construyas moderación nueva
+- no abras más surface area del necesario
+- no dejes fallback demo en estos 3 issues dentro de integration mode
+
+# Criterios de aceptación exactos
+
+El fix pack solo se considera correcto si:
+
+## QRP_03
+- deja de depender de `addSighting` local/demo en integration mode
+- usa un flujo real ya soportado por el sistema
+- no finge persistencia
+
+## QRP_04
+- no duplica threads equivalentes al montar o reentrar
+- la solución es robusta tras refresh o nueva navegación
+- no rompe reglas de protected contact
+
+## CMT_03
+- carga historial real al entrar
+- no depende solo de datos generados en la sesión actual
+- no mezcla historial fake/local con historial real
+
+## General
+- no se rompe auth
+- no se rompe protected contact backend ya validado
+- no se rompe Community Dogs create/list
+- no se rompe Pet CRUD
+- no se rompe case creation
+- no se toca documentación
+
+# Entregable esperado
+Cuando termines, responde SOLO con:
+- resumen exacto de cambios realizados
+- archivos tocados
+- indicar claramente cuáles fueron frontend-only
+- indicar claramente si hubo micro-backend patch y por qué fue necesario
+- cómo quedó resuelto cada uno de los 3 issues
+- qué validación hiciste para asegurarte
+- confirmación honesta de si el Fix Pack cerró completamente Bloque 2 o si todavía quedó algo abierto

@@ -213,6 +213,69 @@ router.get('/my-community-dogs', verifyToken, async (req: AuthenticatedRequest, 
   }
 });
 
+// ─── GET /community-dogs/:id/sightings ──────────────────────────────────────
+// Public: recent sightings for an approved dog. No reporter UID, no exact coords.
+router.get('/community-dogs/:id/sightings', async (req: Request, res: Response) => {
+  try {
+    const dogResult = await query(
+      'SELECT id, review_state FROM community_dogs WHERE id = $1',
+      [req.params.id]
+    );
+    if (dogResult.rows.length === 0 || dogResult.rows[0].review_state !== 'approved') {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const result = await query(
+      `SELECT id, location_label, condition_notes, notes, created_at
+       FROM community_dog_sightings
+       WHERE community_dog_id = $1
+       ORDER BY created_at DESC LIMIT 50`,
+      [req.params.id]
+    );
+    res.json(result.rows.map((r: any) => ({
+      id: r.id,
+      locationLabel: r.location_label ?? '',
+      conditionNotes: r.condition_notes ?? '',
+      notes: r.notes ?? '',
+      createdAt: Number(r.created_at),
+    })));
+  } catch (err: any) {
+    console.error('[community-dogs] GET /:id/sightings error:', err.message);
+    res.status(500).json({ error: 'fetch_failed' });
+  }
+});
+
+// ─── GET /community-dogs/:id/actions ────────────────────────────────────────
+// Public: recent care actions for an approved dog. No reporter UID.
+router.get('/community-dogs/:id/actions', async (req: Request, res: Response) => {
+  try {
+    const dogResult = await query(
+      'SELECT id, review_state FROM community_dogs WHERE id = $1',
+      [req.params.id]
+    );
+    if (dogResult.rows.length === 0 || dogResult.rows[0].review_state !== 'approved') {
+      res.status(404).json({ error: 'not_found' });
+      return;
+    }
+    const result = await query(
+      `SELECT id, action_type, notes, created_at
+       FROM community_dog_actions
+       WHERE community_dog_id = $1
+       ORDER BY created_at DESC LIMIT 50`,
+      [req.params.id]
+    );
+    res.json(result.rows.map((r: any) => ({
+      id: r.id,
+      actionType: r.action_type,
+      notes: r.notes ?? '',
+      createdAt: Number(r.created_at),
+    })));
+  } catch (err: any) {
+    console.error('[community-dogs] GET /:id/actions error:', err.message);
+    res.status(500).json({ error: 'fetch_failed' });
+  }
+});
+
 // ─── POST /community-dogs/:id/sightings ─────────────────────────────────────
 // Add a sighting for an approved Community Dog. Auth required.
 router.post('/community-dogs/:id/sightings', verifyToken, async (req: AuthenticatedRequest, res: Response) => {

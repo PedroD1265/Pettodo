@@ -287,6 +287,13 @@ export function CMT_03() {
       const data = await communityDogApi.get(dogId);
       setDog(data);
       setDogError(false);
+      // Load existing history (approved dogs only — API returns [] for non-approved)
+      const [sightingsData, actionsData] = await Promise.all([
+        communityDogApi.getSightings(dogId),
+        communityDogApi.getActions(dogId),
+      ]);
+      setRealSightings(sightingsData);
+      setRealActions(actionsData);
     } catch {
       setDogError(true);
     } finally {
