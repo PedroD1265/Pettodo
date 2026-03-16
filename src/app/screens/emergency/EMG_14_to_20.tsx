@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { AppBar } from '../../components/pettodo/AppBar';
 import { MapPlaceholder, MapLegend } from '../../components/pettodo/MapComponents';
@@ -6,11 +6,12 @@ import { CaseCard, MatchCard } from '../../components/pettodo/Cards';
 import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { StatusChip, FreshnessBadge, ConfidenceBadge, MatchReasonTag, DirectionChip } from '../../components/pettodo/Badges';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { Layers, MapPin, Clock, MessageSquare, Flag, AlertTriangle, Eye } from 'lucide-react';
 import { LOST_CASE, MATCHES, LUNA } from '../../data/demoData';
 import { useApp } from '../../context/AppContext';
-import { rankMatches } from '../../utils/matching';
+import { useServices } from '../../services';
+import type { MatchResult } from '../../services/interfaces';
 import { getDogPhoto, getMatchPhoto } from '../../data/dogPhotos';
 
 // EMG_14
@@ -103,38 +104,82 @@ export function EMG_15() {
 export function EMG_16() {
   const nav = useNavigate();
   const { store } = useApp();
-  const lostCase = store.cases.find(c => c.type === 'lost' && c.status === 'active') ?? store.cases[0];
-  const ranked = rankMatches(lostCase, store.cases);
-  const displayMatches = ranked.length > 0 ? ranked.map((r, i) => ({
-    id: i + 1,
-    confidence: r.confidence,
-    reasons: r.reasons,
-    location: r.case.location,
-    time: r.case.time,
-    status: r.case.type as 'found' | 'sighted',
-  })) : MATCHES;
+  const { matching } = useServices();
+
+  const activeLostCase = store.cases.find(c => c.type === 'lost' && c.status === 'active')
+    ?? store.cases.filter(c => c.type === 'lost')[0]
+    ?? store.cases[0];
+
+  const [matches, setMatches] = useState<MatchResult[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeLostCase) return;
+    setLoading(true);
+    setError(null);
+    matching.rankMatches(activeLostCase.id)
+      .then(results => setMatches(results))
+      .catch(err => setError(err?.message ?? 'Could not load matches'))
+      .finally(() => setLoading(false));
+  }, [activeLostCase?.id]);
+
+  const petName = activeLostCase ? (store.pets.find(p => p.id === activeLostCase.petId)?.name ?? 'your pet') : 'your pet';
 
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_16_MatchingIA_Top10" />
-      <AppBar title="AI Matches" showBack />
+      <AppBar title="Possible Matches" showBack />
       <div className="flex-1 p-4 flex flex-col gap-3">
-        <Banner type="warning" text="Possible match (AI doesn't confirm)" />
-        <h3 className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Top matches for Luna</h3>
-        <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Ranked by distance, recency, and traits. Tap to compare.</p>
+        <Banner type="warning" text="Ranked by distance, recency, and traits — not a confirmed match" />
+        <h3 className="text-[15px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Top matches for {petName}</h3>
+        <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Tap a result to compare and decide whether to contact the reporter.</p>
 
-        <div className="flex flex-col gap-2">
-          {displayMatches.map((m, i) => (
-            <MatchCard key={m.id} {...m} photoIndex={i} onClick={() => nav('/emg/matching-compare')} />
-          ))}
-        </div>
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-8 h-8 rounded-full border-4 border-red-200 border-t-red-500 animate-spin" />
+            <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Searching active reports…</p>
+          </div>
+        )}
 
-        <div className="mt-4 pb-4 flex flex-col gap-3">
-          <Btn variant="primary" fullWidth onClick={() => nav('/emg/matching-compare')}>
-            Compare Side by Side
-          </Btn>
-          
-          {/* Case Actions (Task 2) */}
+        {!loading && error && (
+          <div className="p-4 rounded-xl" style={{ background: 'var(--red-bg)' }}>
+            <p className="text-[13px] font-medium" style={{ color: 'var(--red-primary)' }}>Could not load matches</p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--gray-600)' }}>{error}</p>
+            <Btn variant="secondary" className="mt-3" onClick={() => {
+              if (!activeLostCase) return;
+              setLoading(true); setError(null);
+              matching.rankMatches(activeLostCase.id)
+                .then(setMatches).catch(e => setError(e?.message ?? 'Error')).finally(() => setLoading(false));
+            }}>Retry</Btn>
+          </div>
+        )}
+
+        {!loading && !error && matches !== null && matches.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
+            <Eye size={32} style={{ color: 'var(--gray-400)' }} />
+            <p className="text-[14px] font-medium" style={{ color: 'var(--gray-700)' }}>No matches found yet</p>
+            <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>There are no active found or sighted reports nearby. Check back soon.</p>
+          </div>
+        )}
+
+        {!loading && !error && matches && matches.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {matches.map((m, i) => (
+              <MatchCard
+                key={m.caseId}
+                confidence={m.confidence}
+                reasons={m.reasons}
+                location={m.location}
+                time={m.time}
+                photoIndex={i}
+                onClick={() => nav('/emg/matching-compare', { state: { match: m } })}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-2 pb-4 flex flex-col gap-3">
           <div className="pt-2 border-t border-gray-200">
             <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
             <div className="flex gap-2">
@@ -151,48 +196,67 @@ export function EMG_16() {
 // EMG_17
 export function EMG_17() {
   const nav = useNavigate();
-  const m = MATCHES[0];
+  const location = useLocation();
+
+  // Real match passed from EMG_16, or fall back to demo data
+  const match = (location.state?.match as MatchResult | undefined) ?? null;
+  const demo = MATCHES[0];
+
+  const confidence = match?.confidence ?? demo.confidence;
+  const reasons = match?.reasons ?? demo.reasons;
+  const matchLocation = match?.location ?? demo.location;
+  const matchTime = match?.time ?? demo.time;
+  const candidateType = match?.candidateType ?? 'found';
+  const caution = match?.caution ?? 'Suggestion based on location, size, and traits. Visual confirmation is required before any action.';
+  const nextAction = match?.nextAction ?? 'contact_finder';
+  const matchLabel = candidateType === 'found' ? 'Found report' : 'Sighting report';
+
   return (
     <div className="flex flex-col min-h-full">
       <ScreenLabel name="EMG_17_Matching_CompareSideBySide" />
       <AppBar title="Compare Match" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
-        <Banner type="warning" text="Possible match (AI doesn't confirm)" />
+        <Banner type="warning" text={caution} />
 
         <div className="flex gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
-            <img src={getDogPhoto('luna')} alt="Luna" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--red-bg)' }} />
+            <img src={getDogPhoto('luna')} alt="Your pet" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--red-bg)' }} />
             <StatusChip status="lost" />
-            <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Luna (yours)</span>
+            <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Your report (lost)</span>
           </div>
           <div className="flex-1 flex flex-col items-center gap-2">
-            <img src={getMatchPhoto(0)} alt="Match" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--green-bg)' }} />
-            <StatusChip status="found" />
-            <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Match #{m.id}</span>
+            <img src={getMatchPhoto(0)} alt="Candidate" className="w-full aspect-square rounded-xl object-cover" style={{ background: 'var(--green-bg)' }} />
+            <StatusChip status={candidateType as 'found' | 'sighted'} />
+            <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{matchLabel}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-center">
-          <ConfidenceBadge value={m.confidence} />
+          <ConfidenceBadge value={confidence} />
         </div>
 
         <div className="flex flex-wrap gap-1 justify-center">
-          {m.reasons.map((r) => <MatchReasonTag key={r} reason={r} />)}
+          {reasons.map((r) => <MatchReasonTag key={r} reason={r} />)}
         </div>
 
         <div className="p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
           <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
-            <strong>Location:</strong> {m.location} · <strong>Seen:</strong> {m.time}
+            <strong>Location:</strong> {matchLocation} · <strong>Reported:</strong> {matchTime}
           </p>
         </div>
 
         <div className="flex flex-col gap-2 mt-auto pb-4">
-          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/chat')}>
-            <MessageSquare size={16} /> Contact Finder
-          </Btn>
+          {nextAction === 'contact_finder' ? (
+            <Btn variant="emergency" fullWidth onClick={() => nav('/emg/chat')}>
+              <MessageSquare size={16} /> Contact Finder (Protected)
+            </Btn>
+          ) : (
+            <Btn variant="primary" fullWidth onClick={() => nav('/emg/map-pin-detail')}>
+              <MapPin size={16} /> View Sighting Location
+            </Btn>
+          )}
           <Btn variant="secondary" fullWidth onClick={() => nav('/emg/matching-top10')}>Back to All Matches</Btn>
 
-          {/* Case Actions (Task 2) */}
           <div className="pt-3 mt-1 border-t border-gray-200">
             <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
             <div className="flex gap-2">

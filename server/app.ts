@@ -12,6 +12,7 @@ import changeRequestRoutes from "./routes/change-requests.js";
 import evidenceRoutes from "./routes/evidence.js";
 import reviewRoutes from "./routes/reviews.js";
 import abuseRoutes from "./routes/abuse.js";
+import matchingRoutes from "./routes/matching.js";
 
 const app = express();
 
@@ -65,5 +66,6 @@ app.use("/api", changeRequestRoutes);
 app.use("/api", evidenceRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", abuseRoutes);
+app.use("/api", matchingRoutes);
 
 export default app;

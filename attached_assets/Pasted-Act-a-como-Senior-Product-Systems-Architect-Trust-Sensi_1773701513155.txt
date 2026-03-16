@@ -1,0 +1,178 @@
+Actúa como Senior Product Systems Architect + Trust-Sensitive Matching Planner + Replit Work-Packet Implementer para PETTODO.
+
+## Contexto
+Ya están cerrados con PASS:
+- Bloque 1: backend trust-sensitive core
+- Bloque 2: Community Dogs + Protected Contact frontend wiring real
+- Bloque 3: moderation/review UI mínima real
+
+Además, ya se cerró el fix pack del case baseline real + emergency discovery mínimo.
+
+### Estado real que debes respetar
+- Lost flow ya usa selección real de pet
+- el state propagation del pet seleccionado quedó corregido
+- discovery list (`/emg/cases`) usa datos reales
+- home emergency usa datos reales
+- se removió demo drift crítico del case baseline
+
+### Importante
+Ese fix pack cerró con PASS WITH ISSUES.
+Persisten gaps menores documentados:
+- `EMG_12` sighted location todavía hardcoded
+- location/time todavía no llegan completamente al backend payload
+- photo upload todavía no queda persistido en ese flow específico
+
+NO rehagas ese workstream completo.
+Solo podrás tocar lo mínimo de case payload si es estrictamente necesario para que matching no quede falso o cosmético.
+
+## Regla principal
+Implementa SOLO el siguiente bloque:
+
+# Bloque 5 — Real Matching v1
+
+NO actualices documentación.
+NO hagas commits.
+NO rehagas Bloques 1, 2 o 3.
+NO mezcles flyer/share outputs en este bloque.
+NO mezcles evidence-backed actions baseline en este bloque.
+NO metas provider AI externo real en este bloque.
+NO conviertas matching en una arquitectura gigante.
+
+## Objetivo del bloque
+Volver real el baseline de matching para que PETTODO pueda:
+- entregar posibles matches reales sobre casos reales
+- mostrar score + reasons + caution framing + next action
+- dejar de depender de matching heurístico/demo como verdad operativa en integration mode
+- hacerlo de forma útil, honesta y pilot-testable
+
+## Qué debes revisar antes de tocar nada
+
+### Docs mínimas
+- `MASTER_CONTEXT.md`
+- `CURRENT_STATE.md`
+- `QA_CURRENT.md`
+- `RELEASE_CRITERIA.md`
+
+### Docs técnicas relevantes si existen en repo
+- `AI_MATCHING.md`
+- `DATA_MODEL.md`
+- `SCREEN_ROUTE_MAP.md`
+- `ARCHITECTURE.md`
+
+### Código relevante
+- rutas/backend de cases
+- servicios/frontend de cases y matching
+- pantallas emergency donde hoy existe matching heurístico/demo
+- cualquier helper heurístico actual de matching
+- flujos de compare / top matches / emergency home que hoy usen matching demo
+- cualquier integración existente con imágenes reales de pets/cases
+
+## Alcance exacto de Bloque 5
+
+### A. Matching real backend-backed
+Construye un path real de matching sobre casos reales.
+
+Debe existir una ejecución real server-backed que:
+- reciba un caso real como origen
+- busque candidatos reales
+- rankee candidatos
+- devuelva resultados estructurados
+
+La implementación puede ser pragmática y acotada.
+No se exige matching perfecto.
+Sí se exige matching real, usable y honestamente presentado.
+
+### B. Inputs permitidos para matching v1
+Usa señales reales ya disponibles en el sistema, por ejemplo:
+- tipo de caso
+- recencia
+- área aproximada
+- rasgos estructurados del pet/case
+- cualquier metadata real disponible y confiable
+
+Puedes usar imágenes reales solo si ya existe una forma concreta y simple de integrarlas sin abrir un pipeline AI grande.
+No metas embeddings ni provider AI externo en este bloque.
+
+### C. Output obligatorio
+Cada resultado útil debe incluir:
+- score
+- reasons
+- caution framing
+- next action
+
+El framing debe dejar claro:
+- esto es una sugerencia
+- no es prueba definitiva de identidad
+- puede requerir revisión adicional
+
+### D. Frontend integration
+En integration mode:
+- reemplaza matching heurístico/demo como fuente de verdad
+- conecta las superficies emergency relevantes al matching real
+- muestra candidatos reales
+- muestra score + reasons + caution + next action
+- deja estado vacío honesto si no hay matches
+- deja error state honesto si falla backend
+
+### E. Alcance permitido sobre case baseline
+NO rehagas el case baseline.
+Pero si detectas que matching quedaría fake porque falta persistir un input mínimo indispensable (por ejemplo location/time del caso), puedes corregir únicamente ese gap mínimo y solo en la medida estrictamente necesaria para que matching sea materialmente real.
+
+### F. Persistencia / retrieval
+El matching debe ser real de verdad.
+Eso significa que no basta con una UI bonita.
+Debe existir base real para:
+- invocar matching
+- obtener candidatos reales
+- sostener la experiencia de uso en integration mode
+
+Puedes persistir runs/resultados si eso ayuda a mantener el bloque limpio y auditable.
+No sobredimensiones la solución.
+
+## Qué NO debes tocar
+- no tocar docs
+- no tocar moderation UI salvo integración mínima si realmente hiciera falta
+- no tocar Community Dogs fuera de lo estrictamente necesario
+- no tocar Protected Contact salvo link de next action si ya existe
+- no tocar flyer/share outputs
+- no tocar evidence-backed actions baseline
+- no meter CI/CD ni hardening general
+- no meter provider AI real
+- no abrir un nuevo sistema de identidad animal paralelo si el schema actual ya permite resolver el bloque de forma pragmática
+
+## Qué NO debe pasar al terminar
+- matching no debe seguir siendo solo heurístico/demo en integration mode
+- la UI no debe afirmar certainty de identidad
+- el bloque no debe depender de hardcodes demo
+- el bloque no debe romper case creation real
+- el bloque no debe abrir retrabajo innecesario sobre el fix pack anterior
+- no debe quedar una UX convincente pero falsa
+
+## Criterios de aceptación
+El bloque se considera correcto solo si:
+
+1. existe matching real backend-backed para casos reales
+2. integration mode consume matching real en las superficies emergency relevantes
+3. los resultados muestran:
+   - score
+   - reasons
+   - caution framing
+   - next action
+4. el producto no presenta matching como certeza de identidad
+5. el estado vacío y el error state son honestos
+6. no se rompe el case baseline real
+7. no se mezclan flyer/share ni evidence-backed actions
+8. build compila correctamente
+
+## Configuración previa
+No asumas nuevos secrets ni nuevas integraciones externas.
+Este bloque debe resolverse con la infraestructura ya existente del proyecto.
+
+## Entregable esperado
+Cuando termines, responde SOLO con:
+- resumen de cambios realizados
+- archivos tocados
+- rutas/endpoints creados o conectados
+- qué matching quedó realmente real
+- qué quedó explícitamente fuera de este bloque
+- confirmación honesta de si Bloque 5 quedó completo o si algo quedó pendiente

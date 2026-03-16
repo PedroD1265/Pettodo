@@ -15,7 +15,8 @@ import { smsTwilioStub } from './integration/smsTwilio.stub';
 import { chatAblyStub } from './integration/chatAbly.stub';
 import { pushFcmStub } from './integration/pushFcm.stub';
 import { geoGoogleStub } from './integration/geoGoogle.stub';
-import { aiGeminiStub, matchingGeminiStub } from './integration/aiGemini.stub';
+import { aiGeminiStub } from './integration/aiGemini.stub';
+import { matchingRealAdapter } from './integration/matchingReal';
 import { authFirebaseAdapter } from './integration/authFirebase';
 
 function buildServices(): Services {
@@ -39,7 +40,7 @@ function buildServices(): Services {
 
   const ai = isDemo || appConfig.aiProvider === 'demo' ? aiDemoAdapter : aiGeminiStub;
 
-  const matching = isDemo || appConfig.aiProvider === 'demo' ? matchingDemoAdapter : matchingGeminiStub;
+  const matching = isDemo ? matchingDemoAdapter : matchingRealAdapter;
 
   const auth = (isDemo || appConfig.authProvider === 'demo') ? authDemoAdapter : authFirebaseAdapter;
 

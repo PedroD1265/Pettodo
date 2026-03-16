@@ -38,10 +38,16 @@ export interface MatchResult {
   reasons: string[];
   location: string;
   time: string;
+  candidateType?: 'found' | 'sighted' | 'lost';
+  caution?: string;
+  nextAction?: string;
+  description?: string;
+  size?: string;
+  colors?: string[];
 }
 
 export interface IMatchingService {
-  rankMatches(lostCaseId: string): Promise<MatchResult[]>;
+  rankMatches(caseId: string): Promise<MatchResult[]>;
 }
 
 export interface AuthUser {

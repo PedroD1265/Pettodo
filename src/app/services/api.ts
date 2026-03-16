@@ -1,4 +1,5 @@
 import type { Pet } from "../data/storage";
+import type { MatchResult } from './interfaces';
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
 
@@ -463,6 +464,13 @@ export const reviewApi = {
       method: "POST",
       body: JSON.stringify({ notes }),
     }),
+};
+
+// ─── Matching API ─────────────────────────────────────────────────────────────
+
+export const matchingApi = {
+  run: (caseId: string): Promise<MatchResult[]> =>
+    apiFetch(`/matching/cases/${caseId}`),
 };
 
 // ─── Abuse Flag API ───────────────────────────────────────────────────────────
