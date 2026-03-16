@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API for protected contact, community dogs, evidence, change requests, review/moderation, abuse flags, and audit logs) is now implemented in the backend. Beta readiness is still awaiting real image pipelines, AI matching, and full UI wiring to the new Block 1 endpoints.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring) are now implemented. Real wiring exists for Community Dogs (list/create/detail/evidence) and Protected Contact (relay chat). Beta readiness is still awaiting real image pipelines (production), AI matching, and full resolution of minor integration gaps.
 
 ---
 
@@ -65,6 +65,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Minimal automated backend test baseline (Vitest + Supertest, mocked infra)
 - Minimal GitHub Actions CI (build + test)
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
+- Trust-Sensitive Block 2 frontend: Real wiring for Community Dogs (CMT_01, 02, 07) and Protected Contact (QRP_01, 02, 04)
 
 ### Product thinking already present
 **[confirmed]**
@@ -81,10 +82,8 @@ It expresses strong product structure and relies on a real backend. The core pet
 **[confirmed]**
 The following are not yet real production capabilities:
 
-- real protected-contact UI flow (backend schema + API now exist; QRP screens still use demo state)
 - real image upload/storage pipeline in production
 - real AI identity / matching pipeline
-- real Community Dog creation UI wired to backend (CMT screens still use COMMUNITY_DOGS demo data)
 - production-grade PDF / PNG flyer generation
 - full UI/regression automated tests (only minimal backend baseline exists)
 - CD deployment pipeline (only minimal CI exists)
@@ -105,8 +104,9 @@ The following are not yet real production capabilities:
 
 ### Current known demo/local limitations & blockers
 **[confirmed]**
-- CMT screens (Community Dogs UI) still pull from COMMUNITY_DOGS demo data — not yet wired to /api/community-dogs
-- QRP contact flow (`contactRevealed`) is still frontend-only state — not yet wired to /api/protected-contact/threads
+- QRP_03 (Report sight/found from QR) still uses demo addSighting — not yet connected to real case/evidence API
+- QRP_04 (Relay Chat) lacks thread management — creates new thread on every mount (duplication risk)
+- CMT_03 (Dog Detail) history (sightings/actions) not fetched from API on mount
 - app data fallback depends heavily on localStorage if integration mode fails
 - OTP has been simulated
 - matching has been heuristic, not a real advanced identity system

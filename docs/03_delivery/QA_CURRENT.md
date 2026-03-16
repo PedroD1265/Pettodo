@@ -75,10 +75,9 @@ If those conflict, implementation reality wins over wishful interpretation.
 
 ### What this does not mean
 **[confirmed]**
-- real multi-user behavior is validated
-- real protected contact is validated
-- real moderation is validated
-- automated tests exist
+- real owner-controlled contact reveal from the UI
+- real moderation is partially validated (backend API & screens CMT_01, 02, 07, QRP_01, 04 are real)
+- automated tests exist (backend only)
 - release readiness has been achieved
 
 ---
@@ -403,7 +402,10 @@ What remains not yet validated as a real product capability:
 **[confirmed]**
 The backend schema, endpoints, and role validation for moderation, change requests, and abuse flags are now real (added in Block 1). 
 What remains not yet validated as a real full-stack capability:
-- real frontend workflows for moderators
+- real owner-controlled contact reveal from the UI
+- real QRP_03 (Report sight/found) is fake (still demo state)
+- real QRP_04 (Relay Chat) duplication issue (no thread management)
+- real CMT_03 (Dog Detail) history missing fetches
 - complete UI integration for dispute and shared-record reviews
 
 ## 8.6 Automated QA and release engineering
@@ -466,15 +468,15 @@ Use these statuses:
 | Daily / Emergency core UI logic | Validated in prototype | Bipolar logic is materially present |
 | Lost / Found / Sighted UX flows | Validated in prototype | Good prototype coverage, but not real backend workflows |
 | QR identity UX | Validated in prototype | Strong prototype evidence |
-| Public QR report flow | Validated in prototype | Prototype validation exists |
-| Local persistence | Validated in prototype | localStorage-based, not real backend persistence |
+| Public QR report flow | Validated in prototype | QRP_03 still demo-only state |
+| Local persistence | Validated in prototype | localStorage-based, but real API integration active in many flows |
 | Maps | Validated in prototype | Real frontend map rendering present |
 | Matching UX | Partially validated | UX exists, but AI/identity pipeline is not real |
 | Education module | Validated in prototype | Good prototype coverage |
 | Profile / settings persistence | Validated in prototype | Local-store based |
-| Chat / notifications | Partially validated | UX validated; real messaging infra not validated |
-| Community Dogs UI/module | Partially validated | UI exists; backend Governance API exists; frontend wiring pending |
-| Protected contact | Partially validated | Backend API and schema validated; UI still uses demo state |
+| Chat / notifications | Validated in pilot-baseline | QRP_04 real chat implemented; real messaging infra (polling) validated |
+| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 07 real; wiring to backend confirmed |
+| Protected contact | Validated in pilot-baseline | QRP_01, 02, 04 real; relay chat pattern confirmed |
 | Real auth / sign-in | Validated in phase 1 | Firebase Auth integrated, baseline validated |
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
@@ -497,10 +499,10 @@ They are implementation and release-readiness blockers.
 
 ### Blockers
 **[confirmed]**
-- no real protected-contact flow yet
-- no real multi-user production data model yet
-- no real moderation/review capability yet
-- no real evidence workflow yet
+- no real multi-user production data model yet (session-based real, but no multi-party sync validation)
+- no real evidence workflow beyond CMT_07 dispute submission
+- QRP_03 still demo-only state
+- QRP_04 thread duplication risk
 - minimal automated backend test baseline exists (Vitest+Supertest, mocked infra); broader test coverage not yet done
 - minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
