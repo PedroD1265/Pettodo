@@ -726,7 +726,7 @@ Done for current phase when:
 
 ### BL-014 — Automated test baseline and regression discipline
 Status:
-Ready
+Partially real (Backend baseline complete and audited)
 
 Priority:
 P0

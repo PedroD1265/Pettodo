@@ -411,7 +411,7 @@ The following are still not validated as real product capabilities:
 ## 8.6 Automated QA and release engineering
 **[confirmed]**
 
-A minimal automated backend test baseline now exists as of 2026-03-15.
+A minimal automated backend test baseline now exists and has been audited and accepted as of 2026-03-15.
 
 What the baseline covers:
 - `GET /api/health`
@@ -481,8 +481,8 @@ Use these statuses:
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
 | Update/Delete persistence | Validated in phase 1.5 | Dynamic routing UI bug fixed; end-to-end CRUD validated |
-| Automated backend test baseline | Partially validated | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
-| GitHub Actions CI (build+test) | Partially validated | CI workflow added; runs on push/PR with dummy env vars |
+| Automated backend test baseline | Validated in phase 1.5 | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
+| GitHub Actions CI (build+test) | Validated in phase 1.5 | CI workflow added; runs on push/PR with dummy env vars |
 | Real image upload/storage | Not yet real / not yet validated | Required by PRD for real beta |
 | Real public profile backend behavior | Not yet real / not yet validated | PRD requires real flows |
 | Real moderation/admin | Not yet real / not yet validated | PRD requires minimum moderation readiness |

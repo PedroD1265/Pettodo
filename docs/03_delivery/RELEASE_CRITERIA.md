@@ -426,7 +426,7 @@ If these are not true, release is blocked.
 
 ### Important note
 **[confirmed]**
-Automated tests are highly desirable, but this document should not pretend they already exist if they do not.
+Automated tests now cover a minimal backend baseline, but this document should not pretend they cover UI flows or simulated cloud infrastructure. Full manual regression discipline must remain honest.
 
 ### Release result
 If core real flows are not actually tested, release should be blocked.

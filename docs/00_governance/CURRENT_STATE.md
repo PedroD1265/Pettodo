@@ -60,6 +60,8 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Full Pet CRUD (Create, Read, Update, Delete) end-to-end to Azure PostgreSQL in integration mode
 - Public route (QR) data isolation without owner PII
 - Owner scoping for protected routes
+- Minimal automated backend test baseline (Vitest + Supertest, mocked infra)
+- Minimal GitHub Actions CI (build + test)
 
 ### Product thinking already present
 **[confirmed]**
@@ -82,8 +84,8 @@ The following are not yet real production capabilities:
 - real evidence workflow for community actions
 - real moderation system
 - production-grade PDF / PNG flyer generation
-- automated tests
-- CI/CD
+- full UI/regression automated tests (only minimal backend baseline exists)
+- CD deployment pipeline (only minimal CI exists)
 - stable production routing / deploy fallback behavior
 
 ### Current known demo/local limitations & blockers

@@ -191,6 +191,30 @@ None
 
 ## 8. Post-baseline changes
 
+### 2026-03-15 — Backend test baseline audited and accepted
+**Category:**
+QA, Release readiness
+
+**Summary:**
+The minimal automated backend test baseline (Vitest + Supertest) and GitHub Actions CI workflow were audited, verified, and accepted as complete. Build and test validation passed locally.
+
+**Why it matters:**
+This officially confirms that the MVP now has a formal regression foundation for the currently real backend API flows. However, this does *not* mean the system is fully beta-ready. Trust-sensitive flows and real infrastructure integrations (storage) remain outside this validated scope.
+
+**Affected docs or areas:**
+- `QA_CURRENT.md`
+- `BACKLOG.md`
+- `CURRENT_STATE.md`
+- `RELEASE_CRITERIA.md`
+
+**Implementation reality impact:**
+Clarified only (implementation was already verified)
+
+**Readiness impact:**
+Improved
+
+---
+
 ### 2026-03-15 — Minimal automated backend test baseline implemented
 **Category:**
 QA, Release readiness, Implementation
