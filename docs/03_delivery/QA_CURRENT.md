@@ -1,6 +1,6 @@
 # QA_CURRENT
 
-**Last updated:** 2026-03-15 22:55 UTC-4
+**Last updated:** 2026-03-18 16:40 UTC-04:00
 Purpose:
 Provide the official current QA truth for PETTODO’s web app so the team can distinguish what has actually been validated in the current Replit-built product, what remains demo/local-first, what is still untested, and what blocks the first real beta.
 
@@ -52,6 +52,7 @@ This document is grounded primarily in:
 - `QA_SELFCHECK.md`
 - `CURRENT_STATE.md`
 - `PRD_MVP_WEBAPP.md`
+- implemented backend tests under `tests/`
 
 Interpretation rule:
 - `QA_SELFCHECK.md` is the main evidence for what was manually checked in the current prototype.
@@ -410,7 +411,7 @@ What remains not yet validated as a real full-stack capability:
 ## 8.6 Automated QA and release engineering
 **[confirmed]**
 
-A minimal automated backend test baseline now exists and has been audited and accepted as of 2026-03-15.
+A materially broader automated backend baseline now exists.
 
 What the baseline covers:
 - `GET /api/health`
@@ -419,17 +420,26 @@ What the baseline covers:
 - cases: create, list, get including 400/404 cases
 - public pet: 404 and 200 including owner data isolation check
 - import: status, invalid payload, valid import, duplicate protection
+- dedicated trust-sensitive backend suite:
+- `tests/protected-contact.test.ts`
+- `tests/community-dogs.test.ts`
+- `tests/reviews.test.ts`
+- `tests/abuse.test.ts`
+- `tests/change-requests.test.ts`
+- `tests/evidence.test.ts`
+- current trust-sensitive result: 6 files passed / 60 tests passed
 
 What the baseline does not cover:
 - UI or browser behavior
 - real Firebase or real PostgreSQL (all mocked)
-- image upload, protected contact, moderation, AI matching, Community Dogs
-- multi-user concurrency or production infrastructure
+- true concurrency reproduction for moderation race conditions
+- production rate limiting behavior
+- production infrastructure or end-to-end multi-user behavior
 
 What remains missing or not yet validated:
-- CI/CD deployment pipeline
+- CI/CD deployment pipeline beyond the current minimal CI baseline
 - production-grade deploy fallback confidence
-- formal regression discipline beyond this minimal baseline
+- closure of trust-sensitive backend blockers already identified in code and adversarial review
 
 ---
 
@@ -474,17 +484,18 @@ Use these statuses:
 | Education module | Validated in prototype | Good prototype coverage |
 | Profile / settings persistence | Validated in prototype | Local-store based |
 | Chat / notifications | Validated in pilot-baseline | QRP_04 real chat + idempotency validated |
-| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 03, 07 real; full history fetching confirmed |
-| Protected contact | Validated in pilot-baseline | QRP_01, 02, 03, 04 real; relay chat + QR integration confirmed |
+| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 03, 07 real; backend route tests now exist, but contribution-audit hardening is still open |
+| Protected contact | Validated in pilot-baseline | QRP_01, 02, 03, 04 real; backend route tests now exist, but case-only duplicate-thread hardening is still open |
 | Real auth / sign-in | Validated in phase 1 | Firebase Auth integrated, baseline validated |
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
 | Update/Delete persistence | Validated in phase 1.5 | Dynamic routing UI bug fixed; end-to-end CRUD validated |
-| Automated backend test baseline | Validated in phase 1.5 | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
+| Core automated backend test baseline | Validated in phase 1.5 | Vitest+Supertest suite covers health, auth/me, pets, cases, public pet, import — all mocked, no real infra |
 | GitHub Actions CI (build+test) | Validated in phase 1.5 | CI workflow added; runs on push/PR with dummy env vars |
+| Trust-sensitive backend test wave | Validated in pilot-baseline | Six dedicated files now exist and pass (60 tests total) for protected contact, Community Dogs, reviews, abuse, change-requests, and evidence — all mocked, no real infra |
 | Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
 | Real public profile backend behavior | Partially validated | Trust-sensitive backend filters exist; full UI polish pending |
-| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed |
+| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed; backend review tests now exist, but release-hardening blockers remain in `reviews.ts` |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
 | Play Dates mature system | Out of first-beta priority | Prototype exists, maturity not required first |
 | Full communities maturity | Out of first-beta priority | Prototype exists, maturity not required first |
@@ -500,7 +511,11 @@ They are implementation and release-readiness blockers.
 **[confirmed]**
 - no real multi-user production data model yet (session-based real, but no multi-party sync validation)
 - no real evidence workflow beyond CMT_07 dispute submission and QRP_03/CMT_03 sightings
-- minimal automated backend test baseline exists (Vitest+Supertest, mocked infra); broader test coverage not yet done
+- dedicated trust-sensitive backend tests now exist, but release blockers remain open in backend hardening:
+- dynamic SQL identifier interpolation in `reviews.ts`
+- non-atomic moderation decision flow in `reviews.ts`
+- unsanitized `proposedChanges` in `change-requests.ts`
+- missing anti-flood / duplicate-open-report guard in `abuse.ts`
 - minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
 

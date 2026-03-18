@@ -114,6 +114,67 @@
           "notes": "Used to contrast documented matching expectations with present test coverage."
         }
       ]
+    },
+    {
+      "name": "trust_backend",
+      "description": "Trust-sensitive backend boundary wave covering contract freeze, adversarial review, test authoring, critique, failure triage, release gate, and diff review.",
+      "files": [
+        {
+          "path": "server/routes/protected-contact.ts",
+          "notes": "Trust-sensitive contact route boundary."
+        },
+        {
+          "path": "server/routes/community-dogs.ts",
+          "notes": "Community exposure and boundary-sensitive route."
+        },
+        {
+          "path": "server/routes/reviews.ts",
+          "notes": "Review-state route with trust-sensitive transitions."
+        },
+        {
+          "path": "server/routes/abuse.ts",
+          "notes": "Abuse reporting route with moderation trust impact."
+        },
+        {
+          "path": "server/routes/change-requests.ts",
+          "notes": "Ownership and state mutation route."
+        },
+        {
+          "path": "server/routes/evidence.ts",
+          "notes": "Evidence route with potential sensitive metadata."
+        },
+        {
+          "path": "server/middleware/verifyToken.ts",
+          "notes": "Primary auth middleware for trust-sensitive handlers."
+        },
+        {
+          "path": "server/middleware/requireRole.ts",
+          "notes": "Role enforcement middleware."
+        },
+        {
+          "path": "server/utils/audit.ts",
+          "notes": "Audit logging expectations and helper usage."
+        },
+        {
+          "path": "server/schema.sql",
+          "max_chars": 32000,
+          "notes": "Data contract baseline for ownership and state expectations."
+        },
+        {
+          "path": "src/app/services/api.ts",
+          "max_chars": 32000,
+          "notes": "Frontend API boundary to validate public/private exposure assumptions."
+        },
+        {
+          "path": "server/app.ts",
+          "notes": "Express mounting and route wiring."
+        },
+        {
+          "path": "tests/matching.test.ts",
+          "max_chars": 26000,
+          "notes": "Repository test style baseline for new trust backend tests."
+        }
+      ]
     }
   ]
 }

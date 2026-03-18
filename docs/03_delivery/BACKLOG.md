@@ -726,7 +726,7 @@ Done for current phase when:
 
 ### BL-014 — Automated test baseline and regression discipline
 Status:
-Partially real (Backend baseline complete and audited)
+Partially real (Backend baseline expanded and audited, including trust-sensitive suite)
 
 Priority:
 P0
@@ -745,6 +745,7 @@ Includes:
 - QR/public route checks
 - core case flow checks
 - protected contact baseline checks where feasible
+- trust-sensitive backend route tests for protected contact, Community Dogs, reviews, abuse, change-requests, and evidence
 
 Does not include:
 - exhaustive test suite for every non-core module
@@ -762,6 +763,46 @@ Done for current phase when:
 - a meaningful core automated test baseline exists
 - regressions in the critical path are easier to detect
 - test evidence can support release review
+
+---
+
+### BL-014A — Trust-sensitive backend hardening wave
+Status:
+Ready
+
+Priority:
+P0
+
+Goal:
+Close the real trust-sensitive backend blockers already captured by the dedicated test wave and adversarial review.
+
+Scope:
+- harden `reviews.ts` against dynamic SQL identifier interpolation
+- make moderation decisions atomic
+- validate/sanitize `proposedChanges` by entity allowlist
+- add anti-flood and duplicate-open-report protection to abuse flags
+- validate target entity existence in abuse/change-request/evidence routes
+- add endpoint-level size caps where required
+- add missing audit logging for Community Dog contribution writes
+- extend protected-contact duplicate-thread protection to case-based flows
+
+Does not include:
+- new trust domains
+- UI redesign
+- broad refactors outside the affected backend routes
+
+Why it matters:
+The trust-sensitive suite is now green, but it also exposed release-relevant backend bugs that remain open.
+
+Dependencies:
+- BL-010 Minimum moderation and review capability
+- BL-014 Automated test baseline and regression discipline
+- `ai-war-room/outputs/08_trust_release/trust_backend_bug_backlog_run01.md`
+
+Done for current phase when:
+- blocker findings in the trust backend backlog are closed
+- targeted backend tests remain green after fixes
+- QA_CURRENT and CURRENT_STATE reflect the new truth
 
 ---
 
@@ -997,6 +1038,7 @@ The recommended current execution sequence is:
 - BL-015 Evidence-backed actions baseline
 
 ### Wave 5 — Hardening
+- BL-014A Trust-sensitive backend hardening wave
 - BL-014 Automated test baseline and regression discipline
 - BL-016 Settings, privacy controls, and visibility controls baseline
 - BL-017 Notification and operational feedback baseline

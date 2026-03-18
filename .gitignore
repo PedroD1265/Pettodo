@@ -4,3 +4,8 @@ dist/
 *.log
 .env
 .env.local
+
+ai-war-room/bundles/*.txt
+ai-war-room/outputs/05_trust_contracts/
+ai-war-room/outputs/06_trust_adversarial/
+ai-war-room/outputs/07_trust_tests/
