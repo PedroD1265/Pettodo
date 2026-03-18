@@ -1,0 +1,439 @@
+﻿===== FILE: 01_risk =====
+Claro, aquÃ­ estÃ¡ la auditorÃ­a de riesgo para la superficie `matching` de PETTODO.
+
+***
+
+# AuditorÃ­a de Riesgo de PETTODO
+
+## 1. Resumen Ejecutivo
+
+La superficie `matching` es funcional en su estado actual, pero representa una versiÃ³n muy simplificada y frÃ¡gil del sistema previsto en la documentaciÃ³n (`AI_MATCHING.md`). La implementaciÃ³n actual es puramente heurÃ­stica (basada en reglas simples) y no utiliza ninguna capacidad de IA, lo que crea una **deriva arquitectÃ³nica crÃ­tica** y establece expectativas incorrectas.
+
+Los riesgos mÃ¡s significativos identificados son:
+
+1.  **LÃ³gica de negocio duplicada y divergente** entre el backend y el frontend, lo que garantiza inconsistencias y un alto coste de mantenimiento.
+2.  Un **error de cÃ¡lculo fundamental** en la puntuaciÃ³n de `confidence` (confianza), que socava la fiabilidad del resultado principal de la funcionalidad.
+3.  **Manejo de datos frÃ¡gil** que puede llevar a fallos silenciosos y puntuaciones incorrectas sin generar errores.
+4.  **Riesgos operativos** de rendimiento y posible denegaciÃ³n de servicio (DoS) debido a un procesamiento de datos ineficiente.
+
+Aunque la ruta estÃ¡ protegida por autenticaciÃ³n, su diseÃ±o actual como un "MVP" (Producto MÃ­nimo Viable) introduce riesgos significativos de correcciÃ³n, mantenibilidad y confianza del producto. La brecha entre el diseÃ±o y la implementaciÃ³n es la mayor amenaza para la superficie.
+
+## 2. Riesgos Principales
+
+### **CRÃTICO: Deriva ArquitectÃ³nica y DesalineaciÃ³n con la DocumentaciÃ³n**
+
+-   **DescripciÃ³n:** La implementaciÃ³n en `server/routes/matching.ts` es un sistema de puntuaciÃ³n heurÃ­stico simple que se ejecuta en memoria. Esto contradice directamente el diseÃ±o detallado y multi-etapa descrito en `docs/02_build/AI_MATCHING.md`, que prevÃ© un pipeline de IA con puertas de calidad de imagen, generaciÃ³n de embeddings y fases de recuperaciÃ³n de candidatos. El nombre "AI_MATCHING" es, en este momento, aspiracional y engaÃ±oso.
+-   **Impacto:** Erosiona la confianza en la documentaciÃ³n, crea deuda tÃ©cnica y establece expectativas falsas para el producto. El sistema actual no estÃ¡ preparado para evolucionar hacia la visiÃ³n documentada sin una reescritura importante.
+-   **CategorÃ­as:** Architectural Drift, High-risk assumptions.
+
+### **CRÃTICO: LÃ³gica de PuntuaciÃ³n Duplicada y Divergente**
+
+-   **DescripciÃ³n:** Existe una implementaciÃ³n casi idÃ©ntica, pero sutilmente diferente, de la lÃ³gica de puntuaciÃ³n en el backend (`server/routes/matching.ts`) y en el frontend (`src/app/utils/matching.ts`). Por ejemplo, el backend limita la puntuaciÃ³n de colores y rasgos (`Math.min(...)`), mientras que el frontend no lo hace.
+-   **Impacto:** Esto es una fuente garantizada de bugs. Cualquier cambio en la lÃ³gica de puntuaciÃ³n debe hacerse en dos lugares, y es probable que diverjan aÃºn mÃ¡s con el tiempo. Dado que el cliente real (`matchingRealAdapter`) llama a la API del backend, el cÃ³digo del frontend es probablemente cÃ³digo muerto o se usa en un contexto no obvio, lo que aumenta la confusiÃ³n.
+-   **CategorÃ­as:** Correctness and bug risk, Operational fragility.
+
+### **ALTO: CÃ¡lculo Incorrecto de la PuntuaciÃ³n de Confianza**
+
+-   **DescripciÃ³n:** La puntuaciÃ³n de `confidence` se calcula como `Math.min(Math.round((score / 95) * 100), 95)`. El denominador `95` pretende ser la puntuaciÃ³n mÃ¡xima posible. Sin embargo, un cÃ¡lculo de la puntuaciÃ³n mÃ¡xima real en el backend es: `distance (30) + recency (30) + size (20) + colors (20) + traits (15) = 115`.
+-   **Impacto:** El denominador incorrecto infla artificialmente la puntuaciÃ³n de confianza y la lÃ³gica es fundamentalmente errÃ³nea. Una puntuaciÃ³n de `score = 95` da como resultado `confidence = 95` (debido al `Math.min`), pero una puntuaciÃ³n de `score = 115` tambiÃ©n da como resultado `confidence = 95`. Esto oculta la verdadera calidad de la coincidencia y hace que la mÃ©trica de `confidence` sea poco fiable.
+-   **CategorÃ­as:** Correctness and bug risk.
+
+### **MEDIO: Falta de ValidaciÃ³n Robusta de Entradas y Fallos Silenciosos**
+
+-   **DescripciÃ³n:** El cÃ³digo utiliza `parseFloat(origin.approx_lat)` y `Number(c.created_at)` sin verificar si el resultado es `NaN` (Not a Number). Si los datos en la base de datos no son numÃ©ricos por alguna razÃ³n (p. ej., una cadena vacÃ­a o corrupta), estas funciones devolverÃ¡n `NaN`. Las operaciones posteriores (cÃ¡lculos de distancia, tiempo) fallarÃ¡n silenciosamente, resultando en una puntuaciÃ³n de `0` para esa categorÃ­a sin ningÃºn error registrado.
+-   **Impacto:** Las coincidencias pueden recibir puntuaciones incorrectamente bajas debido a datos mal formados, lo que degrada la calidad del matching sin que los desarrolladores o usuarios se den cuenta del problema subyacente.
+-   **CategorÃ­as:** Data handling and validation, Bug risk.
+
+### **MEDIO: Potencial de DegradaciÃ³n del Rendimiento o DenegaciÃ³n de Servicio (DoS)**
+
+-   **DescripciÃ³n:** El endpoint recupera hasta 300 casos completos de la base de datos (`LIMIT 300`) y luego itera sobre ellos en memoria en el servidor de Node.js. Para un caso origen con muchos candidatos potenciales, esta operaciÃ³n puede consumir una cantidad significativa de CPU y memoria.
+-   **Impacto:** Un usuario malintencionado (o incluso un uso legÃ­timo intensivo) podrÃ­a desencadenar repetidamente esta costosa operaciÃ³n, degradando el rendimiento del servicio para todos los usuarios o incluso causando una denegaciÃ³n de servicio. La consulta no es selectiva en los campos, cargando datos innecesarios.
+-   **CategorÃ­as:** Operational fragility.
+
+## 3. Evidencia del Paquete
+
+-   **Deriva ArquitectÃ³nica:** `docs/02_build/AI_MATCHING.md` describe un pipeline complejo (secciones 8.1 a 8.8) que incluye "Stage B â€” Cheap quality gate", "Stage E â€” Feature and embedding generation", etc. La implementaciÃ³n en `server/routes/matching.ts` es un Ãºnico bucle `for` que aplica heurÃ­sticas simples, sin ninguna interacciÃ³n con imÃ¡genes o modelos de IA.
+
+-   **LÃ³gica Duplicada:**
+    -   Backend (`server/routes/matching.ts`, lÃ­nea 132): `score += Math.min(colorMatches * 10, 20);`
+    -   Frontend (`src/app/utils/matching.ts`, lÃ­nea 77): `score += colorMatches * 10;` (falta el lÃ­mite de 20).
+    -   Backend (lÃ­nea 144): `score += Math.min(sharedTraits.length * 5, 15);`
+    -   Frontend (lÃ­nea 83): `score += sharedTraits.length * 5;` (falta el lÃ­mite de 15).
+
+-   **Error en CÃ¡lculo de Confianza:**
+    -   `server/routes/matching.ts`, lÃ­nea 148: `const confidence = Math.min(Math.round((score / 95) * 100), 95);`
+    -   La suma de las puntuaciones mÃ¡ximas posibles de las funciones `...Score` y las reglas en lÃ­nea es 115, no 95.
+
+-   **Fallos Silenciosos:**
+    -   `server/routes/matching.ts`, lÃ­neas 91-92: `const originLat = origin.approx_lat != null ? parseFloat(origin.approx_lat) : null;`. No hay una comprobaciÃ³n posterior con `isNaN(originLat)`.
+    -   `server/routes/matching.ts`, lÃ­nea 112: `const r = recencyScore(Number(c.created_at));`. No hay comprobaciÃ³n con `isNaN` para la conversiÃ³n `Number()`.
+
+-   **Rendimiento/DoS:**
+    -   `server/routes/matching.ts`, lÃ­neas 82-87: La consulta `SELECT * FROM cases ... LIMIT 300` carga todas las columnas para 300 filas, que luego se procesan en un bucle sÃ­ncrono (`for...of`) en el hilo de Node.js.
+
+-   **Interfaz Inconsistente:**
+    -   El backend en `server/routes/matching.ts` devuelve un objeto con `caseId`, `confidence`, `reasons`, etc.
+    -   La interfaz `MatchResult` en `src/app/utils/matching.ts` espera `{ case: Case; confidence: number; reasons: string[] }`. El cliente (`api.ts`) probablemente espera este formato, lo que causarÃ¡ un error de tipado o de tiempo de ejecuciÃ³n al intentar acceder a `result.case.id` cuando solo existe `result.caseId`.
+
+## 4. Mitigaciones Sugeridas
+
+1.  **Resolver la Deriva ArquitectÃ³nica:** Tomar una decisiÃ³n explÃ­cita:
+    a.  **Aceptar el MVP:** Actualizar `AI_MATCHING.md` para reflejar la realidad heurÃ­stica actual, documentando esto como "Fase 1" y moviendo el pipeline de IA a un documento de "hoja de ruta futura".
+    b.  **Construir hacia la VisiÃ³n:** Crear un plan por etapas para implementar el pipeline documentado, comenzando con la extracciÃ³n de la lÃ³gica de puntuaciÃ³n a una capa de servicio y la adiciÃ³n de una puerta de calidad de imagen bÃ¡sica.
+
+2.  **Eliminar la LÃ³gica Duplicada:** El frontend debe confiar exclusivamente en el backend para la lÃ³gica de negocio.
+    -   Eliminar el fichero `src/app/utils/matching.ts` por completo para evitar su uso accidental.
+    -   Asegurar que todas las vistas que necesiten mostrar coincidencias utilicen el `matchingRealAdapter` que llama a la API del backend.
+
+3.  **Corregir el CÃ¡lculo de Confianza:**
+    -   Definir una constante `MAX_POSSIBLE_SCORE` en `server/routes/matching.ts` con el valor correcto (115).
+    -   Actualizar la fÃ³rmula: `const confidence = Math.round((score / MAX_POSSIBLE_SCORE) * 100);`.
+    -   Reevaluar si el tope artificial de `95` en `Math.min` tiene un propÃ³sito de producto; si no, eliminarlo para que la confianza pueda llegar a 100.
+
+4.  **Hacer el Manejo de Datos mÃ¡s Robusto:**
+    -   DespuÃ©s de cada `parseFloat` o `Number`, aÃ±adir una comprobaciÃ³n `if (isNaN(variable))`. Si es `NaN`, se debe registrar una advertencia (`console.warn`) y omitir esa parte de la puntuaciÃ³n de forma explÃ­cita, en lugar de fallar silenciosamente.
+
+5.  **Mejorar el Rendimiento y la Resiliencia:**
+    -   Modificar la consulta SQL para seleccionar solo las columnas necesarias para la puntuaciÃ³n (p. ej., `id`, `approx_lat`, `approx_lng`, `created_at`, `size`, `colors`, `traits`).
+    -   Considerar mover el cÃ¡lculo de distancia a la base de datos (p. ej., con PostGIS si se usa PostgreSQL), lo que permite ordenar por distancia y reducir el conjunto de candidatos de manera mÃ¡s eficiente.
+    -   Implementar limitaciÃ³n de velocidad (rate limiting) en el endpoint `/api/matching/cases/:id` para prevenir abusos.
+
+## 5. Victorias RÃ¡pidas
+
+1.  **Corregir el denominador de la confianza:** Cambiar `95` por `115` (o el valor correcto tras una revisiÃ³n) en `server/routes/matching.ts`. Este es un cambio de una lÃ­nea que corrige un error fundamental.
+2.  **AÃ±adir validaciones `isNaN`:** Agregar las comprobaciones para `lat`, `lng` y `created_at` para prevenir fallos silenciosos.
+3.  **Eliminar el cÃ³digo muerto:** Si se confirma que `src/app/utils/matching.ts` no se utiliza, eliminarlo del repositorio para reducir la confusiÃ³n.
+4.  **Corregir la interfaz del cliente:** Ajustar el tipo de dato que `matchingApi.run` espera en `src/app/services/api.ts` para que coincida con la respuesta real del backend, o ajustar el backend para que devuelva la forma esperada.
+
+## 6. Preguntas Abiertas
+
+1.  Â¿CuÃ¡l es el propÃ³sito de `src/app/utils/matching.ts`? Â¿Es cÃ³digo heredado o tiene un uso activo que no es visible en este paquete (p. ej., modo sin conexiÃ³n)?
+2.  Â¿La desviaciÃ³n del documento `AI_MATCHING.md` es una simplificaciÃ³n temporal intencionada para el MVP, o es una indicaciÃ³n de que la estrategia del producto ha cambiado?
+3.  La documentaciÃ³n de la ruta (`server/routes/matching.ts`) indica que "Cualquier usuario autenticado puede ejecutar matching en cualquier caso activo". Â¿Es este el comportamiento deseado? Â¿Se han considerado las implicaciones de privacidad o de uso de recursos?
+4.  Â¿CÃ³mo se debe mapear la `confidence` numÃ©rica (0-100) a las bandas de "Probable Match" y "Strong Match" definidas en `AI_MATCHING.md`? Â¿DeberÃ­a el backend devolver esta banda en lugar de (o ademÃ¡s de) un nÃºmero?
+
+===== FILE: 02_tests =====
+Claro, aquÃ­ tienes el plan de pruebas prÃ¡ctico para la superficie `matching`, diseÃ±ado como un estratega de pruebas senior para PETTODO.
+
+---
+
+# Plan de Pruebas: Superficie de Matching de PETTODO
+
+## 1. EvaluaciÃ³n de Cobertura
+
+Una revisiÃ³n de los ficheros proporcionados revela brechas de cobertura significativas que deben ser abordadas para garantizar la fiabilidad y correcciÃ³n de la funcionalidad de matching.
+
+-   **Pruebas Unitarias Faltantes:** No hay pruebas unitarias para ninguna de las funciones de ayuda de puntuaciÃ³n en `server/routes/matching.ts` (ej. `recencyScore`, `distanceScore`, `colorOverlap`). Estas funciones de lÃ³gica pura son candidatas ideales para pruebas unitarias pero carecen de ellas por completo. Lo mismo ocurre con las funciones duplicadas en el frontend (`src/app/utils/matching.ts`).
+
+-   **Pruebas de IntegraciÃ³n Faltantes:** El endpoint principal de la API, `GET /api/matching/cases/:id`, no tiene ninguna prueba de integraciÃ³n. La interacciÃ³n entre la lÃ³gica de la ruta, el middleware `verifyToken` y las consultas a la base de datos (`db.query`) es completamente ciega. Esta es la brecha mÃ¡s crÃ­tica.
+
+-   **Cobertura de Modos de Fallo:** El manejo de errores existe en el cÃ³digo (`try/catch`, `404` si no se encuentra el caso), pero no estÃ¡ verificado por ninguna prueba. Los fallos de la base de datos, la entrada de datos nulos o malformados, y los errores de autenticaciÃ³n no estÃ¡n cubiertos.
+
+-   **Comprobaciones de AutenticaciÃ³n y Permisos:** El endpoint utiliza el middleware `verifyToken`, pero no hay pruebas que confirmen que las solicitudes no autenticadas son rechazadas correctamente con un `401 Unauthorized`.
+
+-   **Discrepancias entre DocumentaciÃ³n y CÃ³digo:**
+    1.  **LÃ³gica Duplicada:** Existe una divergencia peligrosa entre la lÃ³gica de puntuaciÃ³n del backend (`server/routes/matching.ts`) y una implementaciÃ³n similar pero sutilmente diferente en el frontend (`src/app/utils/matching.ts`). Por ejemplo, los umbrales de confianza (15 en backend, 20 en frontend) y los cÃ¡lculos de puntuaciÃ³n para colores y rasgos difieren.
+    2.  **VisiÃ³n vs. Realidad:** El documento `AI_MATCHING.md` describe un pipeline de IA de varias etapas (puerta de calidad, extracciÃ³n de embeddings) que no se corresponde con la implementaciÃ³n heurÃ­stica actual basada en reglas.
+    3.  **Etiquetas de Coincidencia:** La documentaciÃ³n especifica bandas de coincidencia para el usuario ("Probable Match", "Strong Match"), mientras que la API devuelve una puntuaciÃ³n de `confidence` numÃ©rica. Falta la lÃ³gica para mapear esta puntuaciÃ³n a las etiquetas aprobadas.
+
+## 2. Pruebas Faltantes de Mayor Valor
+
+Para maximizar el impacto y reducir el riesgo, debemos priorizar las siguientes pruebas.
+
+1.  **[Bloqueante] Prueba de IntegraciÃ³n para `GET /api/matching/cases/:id`:** Una prueba completa que simule una llamada a la API, mockee la base de datos y verifique que un conjunto de casos candidatos se clasifica y devuelve correctamente. Esto valida el flujo de trabajo crÃ­tico de la superficie.
+
+2.  **[Bloqueante] Pruebas Unitarias para los Helpers de PuntuaciÃ³n (Backend):** Pruebas para `recencyScore`, `distanceScore`, `colorOverlap`, etc. Esto asegura que el nÃºcleo del algoritmo de clasificaciÃ³n es correcto y estable, protegiÃ©ndolo contra regresiones.
+
+3.  **[Bloqueante] Pruebas de Modos de Fallo y Seguridad para la API:** Casos de prueba que confirmen el comportamiento correcto cuando el caso de origen no existe (`404`), cuando el token de autenticaciÃ³n falta o es invÃ¡lido (`401`), y cuando la base de datos falla (`500`).
+
+4.  **[Bloqueante] Prueba de Contrato de Respuesta de la API:** Una prueba para asegurar que la estructura de la respuesta de la API (`caseId`, `confidence`, `reasons`, `caution`, `nextAction`) se adhiere a los requisitos del producto definidos en la documentaciÃ³n.
+
+5.  **[Recomendable] Prueba de Consistencia de LÃ³gica:** Identificar la divergencia entre la lÃ³gica de puntuaciÃ³n del frontend y del backend. La prueba debe afirmar que la lÃ³gica del backend es la Ãºnica fuente de verdad, seÃ±alando la redundancia del frontend como un problema tÃ©cnico a resolver.
+
+## 3. Casos de Prueba Sugeridos
+
+AquÃ­ hay una lista de casos de prueba accionables para implementar.
+
+---
+
+### Pruebas Unitarias (Helpers del Servidor - `server/routes/matching.ts`)
+
+| Nombre de la Prueba | Arrange (Preparar) | Act (Actuar) | Assert (Confirmar) | Prioridad |
+| :--- | :--- | :--- | :--- | :--- |
+| `unit_recencyScore_returns_correct_tiers` | Mockear `Date.now()`. Crear timestamps para <2h, <6h, <24h, <72h, >72h. | Llamar a `recencyScore` con cada timestamp. | Confirmar que se devuelven la puntuaciÃ³n (`score`) y el motivo (`reason`) correctos para cada tramo. | **Bloqueante** |
+| `unit_distanceScore_returns_correct_tiers` | Definir distancias en km para <0.5, <1, <2, <5, >5. | Llamar a `distanceScore` con cada distancia. | Confirmar que se devuelven la puntuaciÃ³n (`score`) y el motivo (`reason`) correctos para cada tramo. | **Bloqueante** |
+| `unit_colorOverlap_is_case_insensitive` | `a = ['Blanco', 'NEGRO']`, `b = ['blanco', 'marron']`. | Llamar a `colorOverlap(a, b)`. | Confirmar que el resultado es `1`. | **Bloqueante** |
+| `unit_colorOverlap_handles_null_or_empty` | `a = null`, `b = ['blanco']`. O `a = []`. | Llamar a `colorOverlap` con entradas nulas o vacÃ­as. | Confirmar que la funciÃ³n no falla y devuelve `0`. | Recomendable |
+| `unit_nextActionForType_returns_correct_action` | Tipos `'found'` y `'lost'`. | Llamar a `nextActionForType` con cada tipo. | Confirmar que devuelve `contact_finder` y `view_sighting` respectivamente. | **Bloqueante** |
+| `unit_formatTimeAgo_formats_correctly` | Timestamps para hace 5 min, 2 horas, 3 dÃ­as. | Llamar a `formatTimeAgo` para cada uno. | Confirmar que devuelve "5 min ago", "2 hours ago", "3 days ago". | Recomendable |
+
+---
+
+### Pruebas de IntegraciÃ³n (Endpoint `GET /api/matching/cases/:id`)
+
+| Nombre de la Prueba | Arrange (Preparar) | Act (Actuar) | Assert (Confirmar) | Prioridad |
+| :--- | :--- | :--- | :--- | :--- |
+| `integration_getMatching_returns_401_without_token` | - | Hacer una peticiÃ³n a `/api/matching/cases/:id` sin cabecera `Authorization`. | Confirmar que la respuesta es `401 Unauthorized`. | **Bloqueante** |
+| `integration_getMatching_returns_404_for_nonexistent_case` | Mockear `db.query` para devolver `rows: []` para la consulta del caso de origen. | Hacer una peticiÃ³n a `/api/matching/cases/non-existent-id`. | Confirmar que la respuesta es `404` con `{ error: 'case_not_found' }`. | **Bloqueante** |
+| `integration_getMatching_returns_500_on_db_error` | Mockear `db.query` para que lance una excepciÃ³n en la segunda llamada (candidatos). | Hacer una peticiÃ³n a `/api/matching/cases/:id`. | Confirmar que la respuesta es `500` con `{ error: 'matching_failed' }`. | **Bloqueante** |
+| `integration_getMatching_perfect_match_is_top_result` | Mockear DB: 1 caso de origen "perdido", 1 candidato "encontrado" con todos los atributos coincidentes (ubicaciÃ³n, tamaÃ±o, color, rasgos). | Hacer una peticiÃ³n para el caso de origen. | Confirmar que el candidato estÃ¡ en primer lugar con alta confianza y los motivos correctos ("very close", "similar size", "similar color"). | **Bloqueante** |
+| `integration_getMatching_filters_low_confidence_matches` | Mockear DB: 1 caso de origen, 1 candidato con atributos que puntÃºan por debajo de 15. | Hacer una peticiÃ³n para el caso de origen. | Confirmar que la lista de resultados estÃ¡ vacÃ­a. | **Bloqueante** |
+| `integration_getMatching_selects_correct_candidate_types` | Mockear DB: Origen "perdido", candidatos de tipo "perdido", "encontrado", "avistado". | Hacer una peticiÃ³n para el caso de origen "perdido". | Confirmar que la consulta a la DB para candidatos solo pide tipos "encontrado" y "avistado". | **Bloqueante** |
+| `integration_getMatching_excludes_inactive_candidates` | Mockear DB: 1 candidato con `status = 'archived'`. | Hacer una peticiÃ³n. | Confirmar que la consulta a la DB filtra por `status = 'active'`. El candidato inactivo no debe ser devuelto. | Recomendable |
+| `integration_getMatching_response_contains_mandatory_fields` | Mockear DB para devolver al menos un resultado vÃ¡lido. | Hacer una peticiÃ³n. | Confirmar que cada objeto en la respuesta contiene `caseId`, `confidence`, `reasons`, `caution`, y `nextAction`. | **Bloqueante** |
+| `integration_getMatching_handles_null_data_gracefully` | Mockear DB: Candidato con `approx_lat`, `colors`, `traits` como `null`. | Hacer una peticiÃ³n. | Confirmar que el endpoint no falla y el candidato se puntÃºa omitiendo las secciones con datos nulos. | Recomendable |
+
+## 4. Estrategia de Mocking
+
+Para ejecutar estas pruebas de forma aislada y determinista, se requiere una estrategia de mocking clara.
+
+-   **`db.query`**: Debe ser mockeado usando un framework como `jest.mock`. Para cada prueba de integraciÃ³n, el mock debe ser configurado para devolver respuestas especÃ­ficas:
+    -   Una llamada para el caso de origen (`SELECT * FROM cases WHERE id = $1`).
+    -   Una segunda llamada para los candidatos (`SELECT * FROM cases WHERE type = ANY(...)`).
+    -   Se puede configurar para que devuelva un array vacÃ­o o lance un error para probar los modos de fallo.
+
+-   **`verifyToken` (Middleware):** Este middleware debe ser mockeado. Para las pruebas de Ã©xito, el mock simplemente llamarÃ¡ a `next()` y opcionalmente aÃ±adirÃ¡ un usuario simulado al objeto `req`. Para las pruebas de fallo de autenticaciÃ³n, el mock devolverÃ¡ directamente una respuesta `401`.
+
+-   **`Date.now()`**: CrÃ­tico para probar `recencyScore`. Debe ser mockeado a un valor constante en las pruebas unitarias y de integraciÃ³n para que los cÃ¡lculos de tiempo sean predecibles. `jest.spyOn(Date, 'now').mockReturnValue(...)` es ideal para esto.
+
+## 5. Fixtures de Datos Necesarios
+
+Necesitaremos un conjunto de objetos de "caso" reutilizables para alimentar nuestros mocks de base de datos. Se recomienda una funciÃ³n "factory" que cree un caso base que pueda ser extendido.
+
+```javascript
+// Fixture factory
+const createCaseFixture = (overrides) => ({
+  id: 'uuid-case-' + Math.random(),
+  type: 'lost',
+  status: 'active',
+  approx_lat: '40.7128',
+  approx_lng: '-74.0060',
+  created_at: Date.now() - 1000 * 60 * 60, // 1 hour ago
+  size: 'medium',
+  colors: ['white', 'black'],
+  traits: ['friendly', 'fluffy'],
+  // ... otros campos por defecto
+  ...overrides,
+});
+
+// Ejemplos de fixtures
+const originCaseLost = createCaseFixture({ id: 'origin-1', type: 'lost' });
+
+const perfectMatchCandidate = createCaseFixture({
+  id: 'candidate-1',
+  type: 'found',
+  approx_lat: '40.7129', // Muy cerca
+  approx_lng: '-74.0061',
+  created_at: Date.now() - 1000 * 60 * 30, // Muy reciente
+  size: 'medium',
+  colors: ['black', 'white'],
+  traits: ['fluffy tail'],
+});
+
+const partialMatchCandidate = createCaseFixture({
+  id: 'candidate-2',
+  type: 'sighted',
+  approx_lat: '40.7328', // a 2km
+  created_at: Date.now() - 1000 * 60 * 60 * 25, // hace 1 dÃ­a
+  size: 'large', // no coincide
+  colors: ['brown'],
+  traits: ['friendly'],
+});
+
+const inactiveCandidate = createCaseFixture({
+  id: 'candidate-3',
+  type: 'found',
+  status: 'resolved',
+});
+```
+
+## 6. Orden de EjecuciÃ³n
+
+Se recomienda el siguiente orden para implementar el plan de pruebas y abordar los riesgos de manera incremental.
+
+1.  **Implementar Pruebas Unitarias (Bloqueante):** Comenzar con las pruebas para las funciones puras de puntuaciÃ³n en `server/routes/matching.ts`. Son rÃ¡pidas de escribir, no tienen dependencias externas y validan el corazÃ³n del algoritmo.
+
+2.  **Implementar Pruebas de Fallo y Seguridad de la API (Bloqueante):** Escribir las pruebas para los casos `401`, `404` y `500`. Esto asegura que las protecciones bÃ¡sicas y el manejo de errores estÃ©n funcionando antes de probar la lÃ³gica de negocio.
+
+3.  **Implementar Pruebas de IntegraciÃ³n "Happy Path" (Bloqueante):** Abordar los casos de Ã©xito principales, como la coincidencia perfecta y parcial. Esto verifica que la funcionalidad principal cumple con los requisitos.
+
+4.  **Implementar Pruebas de Conformidad con la DocumentaciÃ³n (Bloqueante):** AÃ±adir las aserciones que garantizan que el contrato de la API (campos obligatorios, mensaje de precauciÃ³n) se respeta.
+
+5.  **Crear Tarea TÃ©cnica para Sincronizar LÃ³gica FE/BE:** La divergencia de lÃ³gica entre el frontend y el backend es un riesgo de mantenimiento crÃ­tico. Se debe crear un ticket para **eliminar la funciÃ³n `rankMatches` del frontend** y confiar Ãºnicamente en la API del backend como la fuente de verdad para el matching. No es una prueba, sino una acciÃ³n correctiva clave derivada de este anÃ¡lisis.
+
+6.  **Implementar Pruebas de Robustez (Recomendable):** Una vez que la funcionalidad principal estÃ© cubierta, aÃ±adir pruebas para casos extremos como datos nulos o malformados para fortalecer el sistema.
+
+===== FILE: 03_patch =====
+De acuerdo. Como planificador senior de implementaciÃ³n para PETTODO, he revisado el "surface bundle" para `matching`. A continuaciÃ³n, presento un plan de parcheo prÃ¡ctico y seguro, enfocado en cambios mÃ­nimos y en espaÃ±ol, como se solicitÃ³.
+
+---
+
+### **Plan de Parcheo PETTODO: `matching`**
+
+### 1. Objetivo del Parche
+
+El objetivo principal de este parche es estabilizar la funcionalidad de `matching` resolviendo inconsistencias crÃ­ticas y errores entre el backend, el cliente frontend y la lÃ³gica duplicada. El sistema actual se basa en heurÃ­sticas, no en la IA descrita en la documentaciÃ³n canÃ³nica. Este parche se centrarÃ¡ en arreglar el sistema *existente*, no en implementar la visiÃ³n de IA a futuro.
+
+Los objetivos especÃ­ficos son:
+1.  **Corregir un error de cÃ¡lculo de confianza** en el endpoint del backend que infla artificialmente las puntuaciones.
+2.  **Eliminar la lÃ³gica de matching duplicada e inconsistente** del frontend para consolidar la fuente de verdad en el backend.
+3.  **Sincronizar el contrato de datos (payload)** entre la respuesta de la API del backend y lo que el cliente frontend espera, para evitar errores en tiempo de ejecuciÃ³n.
+
+### 2. Cambios Propuestos
+
+Se proponen los siguientes cambios, priorizando la estabilidad y la seguridad.
+
+#### Elementos CrÃ­ticos (Must-fix)
+
+1.  **Backend (`server/routes/matching.ts`):** Corregir el cÃ¡lculo del `confidence`. El denominador actual (`95`) es incorrecto, ya que la puntuaciÃ³n mÃ¡xima posible es `115`. Esto causa que los porcentajes de confianza sean mÃ¡s altos de lo que deberÃ­an.
+2.  **Frontend (`src/app/services/api.ts`):** Actualizar la interfaz `MatchResult` que el cliente espera. Actualmente, hay una discrepancia entre la estructura de datos que devuelve la API y la que el cliente (`matchingApi.run`) promete, lo que probablemente cause fallos en la renderizaciÃ³n de resultados.
+
+#### Mejoras y Limpieza (Optional but Recommended)
+
+1.  **Frontend (`src/app/utils/matching.ts`):** Eliminar este archivo por completo. Contiene una reimplementaciÃ³n del algoritmo de matching que es inconsistente con el backend y ya no parece estar en uso por la vÃ­a principal (`matchingReal.ts`), generando un riesgo de mantenimiento y confusiÃ³n.
+
+### 3. Plan a Nivel de Archivo
+
+#### `server/routes/matching.ts`
+*   **AcciÃ³n (CrÃ­tica):** Modificar la lÃ³gica de cÃ¡lculo de confianza.
+*   **UbicaciÃ³n:** LÃ­nea `149`.
+*   **Cambio:**
+    *   **CÃ³digo actual:**
+        ```typescript
+        const confidence = Math.min(Math.round((score / 95) * 100), 95);
+        ```
+    *   **AnÃ¡lisis:** La puntuaciÃ³n mÃ¡xima teÃ³rica es `30 (distancia) + 30 (recencia) + 20 (tamaÃ±o) + 20 (colores) + 15 (rasgos) = 115`.
+    *   **CÃ³digo propuesto:**
+        ```typescript
+        const MAX_SCORE = 115;
+        const confidence = Math.min(Math.round((score / MAX_SCORE) * 100), 95);
+        ```
+    *   **JustificaciÃ³n:** Esto normaliza la puntuaciÃ³n de confianza correctamente segÃºn la suma de los pesos de las heurÃ­sticas, proporcionando una mÃ©trica mÃ¡s precisa y honesta.
+
+#### `src/app/utils/matching.ts`
+*   **AcciÃ³n (Mejora):** Eliminar el archivo.
+*   **JustificaciÃ³n:** Este archivo contiene lÃ³gica de ranking obsoleta y redundante que es ejecutada en el cliente. El adaptador `matchingReal.ts` confirma que la estrategia actual es llamar a la API del backend. Mantener este cÃ³digo es un riesgo.
+*   **AcciÃ³n de seguimiento:** Tras eliminar el archivo, se debe realizar una bÃºsqueda en todo el cÃ³digo base para encontrar cualquier importaciÃ³n de `rankMatches` desde `app/utils/matching` y refactorizar esos componentes para que utilicen el servicio `IMatchingService` (`matchingRealAdapter`).
+
+#### `src/app/services/api.ts`
+*   **AcciÃ³n (CrÃ­tica):** Sincronizar la interfaz del resultado del matching.
+*   **UbicaciÃ³n:** La definiciÃ³n de `MatchResult` (probablemente en `src/app/services/interfaces.ts`, pero referenciada aquÃ­).
+*   **Problema:** La interfaz `MatchResult` que consume el frontend no coincide con los campos que la API (`/api/matching/cases/:id`) realmente devuelve.
+*   **AcciÃ³n propuesta:** Actualizar (o definir) la interfaz `MatchResult` para que coincida con el payload del backend. Basado en el cÃ³digo de `server/routes/matching.ts`, la interfaz correcta deberÃ­a ser:
+    ```typescript
+    // Esta interfaz debe reemplazar la existente para los resultados de matching
+    export interface MatchResult {
+      caseId: string;
+      confidence: number;
+      reasons: string[];
+      location: string;
+      time: string;
+      timeLabel: string;
+      description: string;
+      size: string;
+      colors: string[];
+      candidateType: 'lost' | 'found' | 'sighted';
+      caution: string;
+      nextAction: string;
+    }
+    ```
+*   **JustificaciÃ³n:** Este cambio es fundamental para que el frontend pueda procesar y mostrar los resultados de matching sin errores.
+
+#### `docs/02_build/AI_MATCHING.md`
+*   **AcciÃ³n:** No tocar este archivo.
+*   **JustificaciÃ³n:** Este documento es canÃ³nico y describe la visiÃ³n del producto a futuro. El parche actual se enfoca en corregir la implementaciÃ³n existente, que es una versiÃ³n MVP basada en heurÃ­sticas. Modificar el documento estarÃ­a fuera del alcance y crearÃ­a confusiÃ³n.
+
+### 4. Riesgos y Salvaguardas
+
+*   **Riesgo 1: La correcciÃ³n de la confianza reduce los porcentajes y filtra mÃ¡s resultados.**
+    *   **DescripciÃ³n:** Al usar el denominador correcto (115 en lugar de 95), todos los puntajes de confianza disminuirÃ¡n. Esto podrÃ­a causar que menos candidatos superen el umbral de `confidence < 15` en el backend.
+    *   **Salvaguarda:** Este es un efecto esperado y deseado para tener una mÃ©trica correcta. Se debe comunicar al equipo de QA y producto. Se debe monitorear despuÃ©s del despliegue si el nÃºmero de resultados devueltos disminuye drÃ¡sticamente. El umbral de `15` puede requerir un ajuste si se considera que se estÃ¡n perdiendo demasiados resultados relevantes.
+
+*   **Riesgo 2: Cambios en la interfaz `MatchResult` rompen componentes de la UI.**
+    *   **DescripciÃ³n:** Al actualizar la interfaz `MatchResult`, cualquier componente que la use directamente fallarÃ¡ en la compilaciÃ³n o en tiempo de ejecuciÃ³n.
+    *   **Salvaguarda:** La tarea de desarrollo debe incluir la refactorizaciÃ³n de todos los componentes de la UI que consumen estos datos para que usen la nueva estructura y sus campos. Se requiere una prueba exhaustiva del flujo de matching de extremo a extremo.
+
+*   **Riesgo 3: La eliminaciÃ³n de `src/app/utils/matching.ts` rompe una funcionalidad desconocida (ej. offline).**
+    *   **DescripciÃ³n:** Es posible, aunque poco probable, que alguna parte de la aplicaciÃ³n utilice esta funciÃ³n para un cÃ¡lculo sÃ­ncrono o sin conexiÃ³n.
+    *   **Salvaguarda:** Antes de la eliminaciÃ³n, realizar una bÃºsqueda global en el cÃ³digo fuente para `rankMatches` importado desde `app/utils/matching`. Si se encuentra un uso legÃ­timo, el plan debe ser revisado para alinear la lÃ³gica en lugar de eliminarla. Si no se encuentran usos, la eliminaciÃ³n es segura.
+
+### 5. Impacto en las Pruebas
+
+*   **Pruebas Unitarias:**
+    *   Se deben actualizar las pruebas unitarias para `server/routes/matching.ts` para que validen el nuevo cÃ¡lculo de `confidence` con el denominador `115`.
+    *   Las pruebas unitarias relacionadas con `src/app/utils/matching.ts` deben ser eliminadas.
+*   **Pruebas de IntegraciÃ³n:**
+    *   Las pruebas de integraciÃ³n para el endpoint `GET /api/matching/cases/:id` deben ser actualizadas para verificar el nuevo schema de respuesta y confirmar que la confianza se calcula correctamente.
+*   **Pruebas E2E / Manuales (QA):**
+    *   El equipo de QA debe realizar una regresiÃ³n completa del flujo de matching en la interfaz de usuario.
+    *   Verificar que los resultados se muestren correctamente con los datos del nuevo payload.
+    *   Prestar especial atenciÃ³n a la percepciÃ³n del usuario sobre los nuevos puntajes de confianza (mÃ¡s bajos) y si la calidad de los resultados sigue siendo aceptable.
+
+### 6. RecomendaciÃ³n de Despliegue
+
+1.  **Secuencia de ImplementaciÃ³n:**
+    1.  **Backend (PR 1):** Aplicar el cambio en el cÃ¡lculo de confianza en `server/routes/matching.ts`. Este cambio puede ser desplegado de manera independiente, ya que solo corrige un valor interno.
+    2.  **Frontend (PR 2):** Realizar todos los cambios del frontend en una sola rama/PR:
+        *   Eliminar `src/app/utils/matching.ts`.
+        *   Actualizar la interfaz `MatchResult` en `src/app/services/api.ts` (o `interfaces.ts`).
+        *   Refactorizar todos los componentes de la UI afectados para que se alineen con la nueva interfaz.
+
+2.  **Estrategia de Despliegue:**
+    *   Desplegar el PR del backend (1) y el del frontend (2) de manera coordinada y simultÃ¡nea. Esto asegura que el cliente y el servidor estÃ©n siempre sincronizados.
+    *   Monitorear los logs del backend para el endpoint `/api/matching/cases/:id` y las mÃ©tricas de error del frontend inmediatamente despuÃ©s del despliegue.
+
+3.  **Plan de Rollback (ReversiÃ³n):**
+    *   El rollback es sencillo y consiste en revertir los commits correspondientes a los PRs.
+    *   Dado que los cambios estÃ¡n acoplados (contrato de datos), si se necesita revertir, se deben revertir tanto el backend como el frontend a sus versiones anteriores para mantener la consistencia.
+
+===== FILE: 04_docs =====
+Claro, aquÃ­ tienes la auditorÃ­a de cÃ³digo vs. documentaciÃ³n para la superficie `matching` de PETTODO, presentada en espaÃ±ol.
+
+---
+
+### 1. Resumen de AlineaciÃ³n
+
+El sistema de `matching` tiene un endpoint de backend funcional que se alinea con el *espÃ­ritu* de la documentaciÃ³n: actÃºa como un motor de sugerencias, utiliza mÃºltiples seÃ±ales (ubicaciÃ³n, rasgos, etc.) y devuelve una puntuaciÃ³n con razones y advertencias. Esto cumple con la regla central de ser un "sistema de sugerencia y revisiÃ³n" en lugar de un orÃ¡culo de identidad.
+
+Sin embargo, existe una brecha significativa entre las aspiraciones de la documentaciÃ³n (titulada `AI_MATCHING`) y la implementaciÃ³n actual, que es puramente heurÃ­stica y no utiliza inteligencia artificial ni anÃ¡lisis de imÃ¡genes. AdemÃ¡s, existen problemas arquitectÃ³nicos notables, como la duplicaciÃ³n de la lÃ³gica de puntuaciÃ³n entre el frontend y el backend, y el incumplimiento de varias promesas clave de la documentaciÃ³n, como la detecciÃ³n de duplicados y el uso de bandas de coincidencia de cara al usuario.
+
+### 2. Coincidencias Confirmadas
+
+- **Sistema de Sugerencias:** La implementaciÃ³n se adhiere a la regla principal de la documentaciÃ³n (SecciÃ³n 2) al funcionar como un sistema de sugerencias y no como una prueba definitiva de identidad. El endpoint devuelve candidatos clasificados para que el usuario los revise.
+- **MÃºltiples SeÃ±ales:** El algoritmo de puntuaciÃ³n utiliza una combinaciÃ³n de seÃ±ales como se describe en la documentaciÃ³n (SecciÃ³n 6), incluyendo la ubicaciÃ³n (`distanceScore`), la antigÃ¼edad del reporte (`recencyScore`), el tamaÃ±o, los colores y los rasgos.
+- **Salida Orientada al Usuario:** El resultado de la API incluye los cuatro componentes obligatorios definidos en la documentaciÃ³n (SecciÃ³n 7.1 y 9):
+    - **PuntuaciÃ³n:** El campo `confidence`.
+    - **Razones:** El array `reasons` (p. ej., 'very close to your area', 'similar size').
+    - **Advertencia:** Un campo `caution` con un texto fijo.
+    - **Siguiente AcciÃ³n:** Un campo `nextAction` que guÃ­a al usuario.
+- **Seguridad:** El endpoint estÃ¡ protegido y requiere autenticaciÃ³n (`verifyToken`), asegurando que solo los usuarios registrados puedan ejecutar la bÃºsqueda de coincidencias.
+- **Contexto de Casos:** La lÃ³gica de negocio distingue correctamente entre casos de "perdido" (`lost`) y casos de "encontrado/avistado" (`found`/`sighted`), buscando solo candidatos del tipo opuesto, lo cual es contextualmente correcto para este flujo.
+
+### 3. Desviaciones o Carencias
+
+- **Ausencia de IA y AnÃ¡lisis de ImÃ¡genes:** La desviaciÃ³n mÃ¡s importante. La documentaciÃ³n se titula `AI_MATCHING` y describe un pipeline detallado con puertas de calidad de imagen (Etapa B), extracciÃ³n de caracterÃ­sticas/vectores de embedding (Etapa E) y similitud de imÃ¡genes (Etapa G). La implementaciÃ³n actual (`server/routes/matching.ts`) es puramente heurÃ­stica y no realiza ningÃºn tipo de anÃ¡lisis de imagen o IA. Compara metadatos de texto y coordenadas, pero ignora por completo el contenido visual de las fotos, una promesa central de la documentaciÃ³n.
+- **LÃ³gica de PuntuaciÃ³n Duplicada:** Existe una implementaciÃ³n casi idÃ©ntica pero sutilmente diferente de la lÃ³gica de puntuaciÃ³n en el frontend (`src/app/utils/matching.ts`) y en el backend (`server/routes/matching.ts`). El adaptador de servicio real (`matchingRealAdapter`) utiliza el backend, lo que convierte al cÃ³digo del frontend en un riesgo de mantenimiento y una fuente de confusiÃ³n. Por ejemplo, los umbrales de confianza para filtrar resultados son diferentes (frontend `>= 20`, backend `> 15`).
+- **TerminologÃ­a de Coincidencia Faltante:** La documentaciÃ³n exige explÃ­citamente bandas de coincidencia orientadas al usuario como "Probable Match" y "Strong Match" (SecciÃ³n 7.2). La API solo devuelve un porcentaje numÃ©rico de `confidence`. No hay evidencia en el cÃ³digo proporcionado de cÃ³mo este nÃºmero se traduce a las bandas requeridas, ni quÃ© umbrales se utilizan.
+- **Promesas de DetecciÃ³n de Duplicados Sin Implementar:** La documentaciÃ³n dedica secciones enteras (10 y 11) a la importancia de la detecciÃ³n de duplicados, especialmente al crear nuevos perfiles de mascotas o "Community Dogs". El endpoint existente solo compara casos de tipos opuestos (`lost` vs `found`) y no parece estar diseÃ±ado para el flujo de "crear nuevo perfil y verificar duplicados existentes".
+- **CÃ¡lculo de `confidence` Opaco:** La puntuaciÃ³n de confianza se calcula con la fÃ³rmula `(score / 95) * 100`. El denominador `95` parece ser un nÃºmero mÃ¡gico, ya que la puntuaciÃ³n mÃ¡xima teÃ³rica, basada en las funciones del cÃ³digo, es 115 (30 dist. + 30 rec. + 20 tamaÃ±o + 20 color + 15 rasgos). Esto hace que la normalizaciÃ³n sea confusa e incorrecta.
+- **Contrato de API Inconsistente:** La interfaz `MatchResult` definida en el cÃ³digo del frontend (`src/app/utils/matching.ts`) espera un objeto anidado (`case: Case`). Sin embargo, la respuesta real de la API del backend es una estructura plana. Aunque el cliente de la API (`api.ts`) puede manejar esto, indica una falta de sincronizaciÃ³n entre las expectativas del frontend y la implementaciÃ³n del backend.
+
+### 4. Riesgos Creados por la DesviaciÃ³n
+
+- **Reclamos de Producto EngaÃ±osos:** Comercializar la funciÃ³n como "AI Matching" es una exageraciÃ³n significativa que puede daÃ±ar la confianza del usuario. La documentaciÃ³n advierte explÃ­citamente contra parecer un "producto de IA falso con resultados cosmÃ©ticos", que es precisamente el riesgo que crea la implementaciÃ³n actual.
+- **Pesadilla de Mantenimiento:** La lÃ³gica de puntuaciÃ³n duplicada significa que cualquier ajuste debe realizarse en dos lugares. Es casi seguro que divergirÃ¡n con el tiempo, llevando a comportamientos inconsistentes si el cÃ³digo del frontend se utiliza para alguna vista previa o modo sin conexiÃ³n.
+- **PÃ©rdida de Valor del Producto:** La falta de anÃ¡lisis de imÃ¡genes significa que el sistema ignora la seÃ±al mÃ¡s potente. Un usuario puede subir una foto borrosa o irrelevante y el sistema intentarÃ¡ encontrar coincidencias basÃ¡ndose Ãºnicamente en metadatos, perdiendo la promesa clave del producto.
+- **Experiencia de Usuario Inconsistente:** Sin una asignaciÃ³n clara del `confidence` a las bandas "Strong/Probable Match", los equipos de UI podrÃ­an implementar umbrales arbitrarios, resultando en una experiencia de usuario inconsistente y confusa que no sigue las directrices del producto.
+- **Fragilidad del Algoritmo:** El sistema de puntuaciÃ³n heurÃ­stico y con nÃºmeros mÃ¡gicos es frÃ¡gil. PequeÃ±os cambios en los datos de entrada o la adiciÃ³n de nuevos factores de puntuaciÃ³n pueden desequilibrar todo el sistema sin una forma clara de razonar sobre el impacto.
+
+### 5. Seguimientos Recomendados
+
+1.  **Aclarar la Estrategia de "IA":** El equipo debe decidir si la documentaciÃ³n de `AI_MATCHING` es un documento de visiÃ³n a futuro o un requisito para el MVP.
+    - Si es un requisito del MVP, se debe priorizar la implementaciÃ³n de un anÃ¡lisis de imagen real, aunque sea simple (p. ej., hash perceptual para similitud bÃ¡sica) para cerrar la brecha.
+    - Si es una visiÃ³n a futuro, se debe crear un nuevo documento que describa con precisiÃ³n el sistema heurÃ­stico actual para evitar la confusiÃ³n y alinear las expectativas.
+2.  **Eliminar la LÃ³gica Duplicada:** Auditar el propÃ³sito de `src/app/utils/matching.ts`. Si es cÃ³digo muerto, debe ser eliminado. Si tiene un propÃ³sito legÃ­timo (p. ej., modo sin conexiÃ³n), debe ser documentado y su lÃ³gica debe ser sincronizada con el backend, que es la fuente canÃ³nica de verdad.
+3.  **Implementar los Mandatos de la DocumentaciÃ³n:**
+    - **Bandas de Coincidencia:** Implementar la lÃ³gica en el cliente o en un BFF (Backend-For-Frontend) para mapear la puntuaciÃ³n numÃ©rica de `confidence` a las bandas "Strong Match" y "Probable Match" requeridas. Documentar los umbrales elegidos.
+    - **DetecciÃ³n de Duplicados:** DiseÃ±ar e implementar los endpoints y flujos de trabajo necesarios para abordar la detecciÃ³n de duplicados al crear nuevos perfiles de mascotas y "Community Dogs", como se promete en la documentaciÃ³n.
+4.  **Refactorizar la LÃ³gica de PuntuaciÃ³n:** Reemplazar el nÃºmero mÃ¡gico `95` con una constante calculada o documentada que represente la puntuaciÃ³n mÃ¡xima esperada. AÃ±adir comentarios en el cÃ³digo (`server/routes/matching.ts`) que expliquen la ponderaciÃ³n y la lÃ³gica de normalizaciÃ³n.
+5.  **Corregir el Contrato de la API:** Asegurarse de que las definiciones de tipos en el frontend que consumen la respuesta de `/api/matching/cases/:id` coincidan con la estructura plana que el servidor realmente devuelve.

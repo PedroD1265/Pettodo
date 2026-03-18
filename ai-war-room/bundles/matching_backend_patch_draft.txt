@@ -1,0 +1,886 @@
+﻿===== FILE: backend_matching_route =====
+import { Router, type Response } from 'express';
+import { verifyToken, type AuthenticatedRequest } from '../middleware/verifyToken.js';
+import { query } from '../db.js';
+
+const router = Router();
+
+const MAX_SCORE = 115;
+const MAX_CONFIDENCE = 95;
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeToken(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function recencyScore(createdAt: number | null): { score: number; reason: string | null } {
+  if (createdAt == null) return { score: 0, reason: null };
+
+  const hoursAgo = (Date.now() - createdAt) / (1000 * 60 * 60);
+  if (!Number.isFinite(hoursAgo)) return { score: 0, reason: null };
+
+  if (hoursAgo < 2) return { score: 30, reason: 'very recent sighting' };
+  if (hoursAgo < 6) return { score: 22, reason: 'recent report' };
+  if (hoursAgo < 24) return { score: 15, reason: 'within last 24 hours' };
+  if (hoursAgo < 72) return { score: 8, reason: null };
+  return { score: 2, reason: null };
+}
+
+function distanceScore(km: number | null): { score: number; reason: string | null } {
+  if (km == null || !Number.isFinite(km)) return { score: 0, reason: null };
+
+  if (km < 0.5) return { score: 30, reason: 'very close to your area' };
+  if (km < 1) return { score: 22, reason: 'near your area' };
+  if (km < 2) return { score: 15, reason: `${km.toFixed(1)} km away` };
+  if (km < 5) return { score: 8, reason: `${km.toFixed(1)} km away` };
+  return { score: 2, reason: null };
+}
+
+function colorOverlap(a: unknown, b: unknown): number {
+  const aSet = new Set(toStringArray(a).map((s) => normalizeToken(s)));
+  return toStringArray(b).filter((c) => aSet.has(normalizeToken(c))).length;
+}
+
+function traitOverlap(a: unknown, b: unknown): number {
+  const originTraits = toStringArray(a).map((s) => normalizeToken(s));
+  const candidateTraits = new Set(toStringArray(b).map((s) => normalizeToken(s)));
+  const seen = new Set<string>();
+
+  let count = 0;
+  for (const trait of originTraits) {
+    if (!trait || seen.has(trait)) continue;
+    if (candidateTraits.has(trait)) {
+      count += 1;
+      seen.add(trait);
+    }
+  }
+
+  return count;
+}
+
+function formatTimeAgo(createdAt: number | null): string {
+  if (createdAt == null) return 'unknown';
+
+  const ms = Date.now() - createdAt;
+  if (!Number.isFinite(ms)) return 'unknown';
+
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+}
+
+const CAUTION =
+  'Suggestion based on location, size, and traits. Visual confirmation is required before any action.';
+
+function nextActionForType(type: string): string {
+  if (type === 'found') return 'contact_finder';
+  return 'view_sighting';
+}
+
+router.get('/matching/cases/:id', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const originRes = await query('SELECT * FROM cases WHERE id = $1', [id]);
+    if (originRes.rows.length === 0) {
+      res.status(404).json({ error: 'case_not_found' });
+      return;
+    }
+    const origin = originRes.rows[0];
+
+    const candidateTypes: string[] = origin.type === 'lost' ? ['found', 'sighted'] : ['lost'];
+
+    const candidatesRes = await query(
+      `SELECT * FROM cases
+       WHERE type = ANY($1::text[]) AND status = 'active' AND id != $2
+       ORDER BY created_at DESC
+       LIMIT 300`,
+      [candidateTypes, id]
+    );
+
+    const originLat = toFiniteNumber(origin.approx_lat);
+    const originLng = toFiniteNumber(origin.approx_lng);
+    const originColors = toStringArray(origin.colors);
+    const originTraits = toStringArray(origin.traits);
+    const originSize = typeof origin.size === 'string' ? origin.size.trim().toLowerCase() : '';
+
+    const results: Array<{ confidence: number; [key: string]: unknown }> = [];
+
+    for (const c of candidatesRes.rows) {
+      let score = 0;
+      const reasons: string[] = [];
+
+      const cLat = toFiniteNumber(c.approx_lat);
+      const cLng = toFiniteNumber(c.approx_lng);
+      if (originLat != null && originLng != null && cLat != null && cLng != null) {
+        const km = haversineKm(originLat, originLng, cLat, cLng);
+        const d = distanceScore(km);
+        score += d.score;
+        if (d.reason) reasons.push(d.reason);
+      }
+
+      const createdAt = toFiniteNumber(c.created_at);
+      const r = recencyScore(createdAt);
+      score += r.score;
+      if (r.reason) reasons.push(r.reason);
+
+      const cSize = typeof c.size === 'string' ? c.size.trim().toLowerCase() : '';
+      if (originSize && cSize && originSize === cSize) {
+        score += 20;
+        reasons.push('similar size');
+      }
+
+      const candidateColors = toStringArray(c.colors);
+      const colorMatches = colorOverlap(originColors, candidateColors);
+      if (colorMatches > 0) {
+        score += Math.min(colorMatches * 10, 20);
+        reasons.push('similar color');
+      }
+
+      const traitMatches = traitOverlap(originTraits, c.traits);
+      if (traitMatches > 0) {
+        score += Math.min(traitMatches * 5, 15);
+        reasons.push('matching trait');
+      }
+
+      const confidenceRaw = (score / MAX_SCORE) * 100;
+      const confidence = Number.isFinite(confidenceRaw)
+        ? Math.min(Math.max(Math.round(confidenceRaw), 0), MAX_CONFIDENCE)
+        : 0;
+      if (confidence < 15) continue;
+
+      results.push({
+        caseId: c.id,
+        confidence,
+        reasons: reasons.slice(0, 3),
+        location: c.location ?? '',
+        time: formatTimeAgo(createdAt),
+        timeLabel: c.time_label ?? '',
+        description: c.description ?? '',
+        size: c.size ?? '',
+        colors: candidateColors,
+        candidateType: c.type,
+        caution: CAUTION,
+        nextAction: nextActionForType(c.type),
+      });
+    }
+
+    const sorted = results.sort((a, b) => b.confidence - a.confidence).slice(0, 20);
+
+    res.json(sorted);
+  } catch (err: unknown) {
+    console.error('[matching] GET /matching/cases/:id error:', err);
+    res.status(500).json({ error: 'matching_failed' });
+  }
+});
+
+export { MAX_SCORE, recencyScore, distanceScore, colorOverlap };
+export default router;
+
+
+===== FILE: matching_synthesis =====
+# Executive Decision
+
+Este paquete sintetiza cuatro anÃ¡lisis previos (`risk`, `tests`, `patch`, `docs`) sobre la superficie `matching` de PETTODO en un plan de implementaciÃ³n unificado y accionable. La directiva es clara: estabilizar la funcionalidad existente antes de abordar la visiÃ³n de IA a largo plazo.
+
+La implementaciÃ³n actual es un MVP heurÃ­stico que sufre de tres problemas crÃ­ticos: un error fundamental en el cÃ¡lculo de la confianza, lÃ³gica de negocio duplicada e inconsistente entre el backend y el frontend, y un contrato de API roto que impide que el cliente consuma los datos correctamente.
+
+Este plan de trabajo prioriza la correcciÃ³n, la consistencia y la eliminaciÃ³n de deuda tÃ©cnica inmediata. Se centra en arreglar el sistema existente para que sea fiable, mantenible y sirva como una base estable para futuras mejoras. Las tareas estÃ¡n ordenadas para minimizar el riesgo y maximizar el valor, asegurando que el sistema de `matching` funcione como se espera *ahora*. La implementaciÃ³n de la visiÃ³n de IA descrita en `AI_MATCHING.md` se aplaza explÃ­citamente hasta que esta estabilizaciÃ³n estÃ© completa.
+
+# Top 3 Real Risks
+
+| ID | Severity | Why it matters | What to change |
+| :--- | :--- | :--- | :--- |
+| **R-01** | **High** | **Flawed Confidence Score:** El cÃ¡lculo de `confidence` usa un denominador incorrecto (95 en vez de 115), inflando artificialmente la puntuaciÃ³n y haciendo que la mÃ©trica principal de la funcionalidad sea fundamentalmente errÃ³nea y poco fiable. | Corregir la fÃ³rmula de `confidence` en `server/routes/matching.ts` para que use el denominador correcto (`115`), reflejando la puntuaciÃ³n mÃ¡xima posible. |
+| **R-02** | **Critical** | **Duplicated and Divergent Business Logic:** Existe una reimplementaciÃ³n de la lÃ³gica de matching en el frontend (`src/app/utils/matching.ts`) que es inconsistente con el backend. Esto garantiza bugs, crea una pesadilla de mantenimiento y confunde sobre cuÃ¡l es la fuente de verdad. | Eliminar por completo el archivo `src/app/utils/matching.ts` y refactorizar cualquier posible uso para que dependa exclusivamente de la API del backend, que debe ser la Ãºnica fuente de verdad. |
+| **R-03** | **Critical** | **Broken API Contract:** El frontend espera una estructura de datos (`MatchResult` con un objeto `case` anidado) que no coincide con la respuesta plana que la API del backend realmente devuelve (`caseId`, etc.). Esto rompe el flujo de datos y causa errores en tiempo de ejecuciÃ³n, impidiendo que los resultados se muestren. | Modificar la interfaz `MatchResult` en el cÃ³digo del cliente para que refleje la estructura de datos plana que la API del backend produce. |
+
+# Top 5 Tests To Build First
+
+| test name | purpose | why now |
+| :--- | :--- | :--- |
+| **T-01: `test_api_unauthenticated_access_is_rejected`** | Asegurar que el endpoint `matching` rechaza peticiones sin un token de autenticaciÃ³n vÃ¡lido con un cÃ³digo `401`. | Es la primera lÃ­nea de defensa de seguridad y debe estar garantizada antes de probar cualquier lÃ³gica de negocio. |
+| **T-02: `test_unit_scoring_helpers_are_correct`** | Validar que las funciones puras de puntuaciÃ³n (`recencyScore`, `distanceScore`, etc.) en `server/routes/matching.ts` devuelven los valores esperados para entradas conocidas. | El nÃºcleo del algoritmo de matching reside en estas funciones. Asegurar su correcciÃ³n es vital, especialmente al corregir la fÃ³rmula de `confidence` (R-01). |
+| **T-03: `test_integration_perfect_match_returns_correct_top_result`** | Probar el flujo completo de la API (con una DB mockeada) para un caso de origen y un candidato "perfecto", verificando que el resultado tiene la `confidence` correcta (usando el nuevo cÃ¡lculo) y la estructura de respuesta adecuada. | Valida que la soluciÃ³n a los riesgos R-01 (cÃ¡lculo) y R-03 (contrato) funciona correctamente de forma integrada. |
+| **T-04: `test_integration_low_confidence_matches_are_filtered`** | Verificar que los candidatos cuya puntuaciÃ³n final resulta en una `confidence` por debajo del umbral de negocio (actualmente 15) son excluidos de la respuesta final. | Confirma que el filtro de calidad de resultados funciona como se espera, lo cual es aÃºn mÃ¡s importante despuÃ©s de corregir el cÃ¡lculo de `confidence` que afectarÃ¡ a todas las puntuaciones. |
+| **T-05: `test_integration_nonexistent_case_returns_404`** | Comprobar que si se solicita matching para un `caseId` que no existe en la base de datos, la API responde con un `404 Not Found`. | Asegura el manejo de errores bÃ¡sico y previene fallos inesperados en un escenario de uso comÃºn. |
+
+# Ordered Implementation Plan
+
+| step number | files to touch | exact change objective | risk level | acceptance criteria |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | `server/routes/matching.ts` | **Corregir cÃ¡lculo de confianza.** Introducir una constante `MAX_SCORE = 115` y actualizar la fÃ³rmula de `confidence` para usar `(score / MAX_SCORE)`. | **Low** | - Una nueva constante `MAX_SCORE` con valor `115` es definida.<br>- La fÃ³rmula de `confidence` es actualizada a `Math.min(Math.round((score / MAX_SCORE) * 100), 95)`.<br>- Una prueba unitaria que simula `score = 115` debe dar como resultado `confidence = 95`.<br>- Una prueba que simula `score = 95` debe dar como resultado `confidence = 83`. |
+| **2** | `src/app/services/api.ts`<br>(o donde se defina `MatchResult`) | **Sincronizar el contrato de API del cliente.** Modificar la interfaz `MatchResult` para que sea una estructura plana que coincida con la respuesta del backend (e.g., `caseId: string` en lugar de `case: Case`). | **Medium** | - La interfaz `MatchResult` es actualizada para ser plana, conteniendo campos como `caseId`, `reasons`, `location`, `time`, `caution`, etc.<br>- El proyecto de frontend falla al compilar debido a errores de tipo en los componentes que usan la antigua interfaz. Esto es esperado e indica que el paso fue exitoso. |
+| **3** | `src/app/utils/matching.ts` | **Eliminar lÃ³gica de matching duplicada.** Borrar el archivo `src/app/utils/matching.ts` y eliminar todas sus importaciones en el resto del codebase. | **Medium** | - El archivo `src/app/utils/matching.ts` ya no existe en el repositorio.<br>- Una bÃºsqueda global por `import` que referencie a `app/utils/matching` no devuelve resultados.<br>- El proyecto compila (despuÃ©s del paso 4). |
+| **4** | `src/app/**/*.tsx`<br>(y otros archivos de componentes) | **Refactorizar componentes de UI.** Actualizar todos los componentes que consumÃ­an `MatchResult` o usaban `rankMatches` para que ahora utilicen la nueva interfaz plana y obtengan sus datos exclusivamente a travÃ©s del `matchingRealAdapter`. | **High** | - El proyecto de frontend compila sin errores de tipo relacionados con `MatchResult`.<br>- La pÃ¡gina de resultados de matching se renderiza correctamente, mostrando todos los datos (motivos, descripciÃ³n, etc.) desde la nueva estructura de datos plana (e.g., `result.caseId` en lugar de `result.case.id`).<br>- No hay regresiones visuales o funcionales en la UI de matching. |
+
+# Do Not Touch Yet
+
+-   **`docs/02_build/AI_MATCHING.md`:** No modificar este documento. Representa la visiÃ³n a largo plazo. Modificarlo ahora para que coincida con el MVP actual crearÃ­a confusiÃ³n estratÃ©gica. El trabajo de este paquete es arreglar la implementaciÃ³n, no rebajar la visiÃ³n.
+-   **OptimizaciÃ³n de Rendimiento de la Base de Datos:** No implementar optimizaciones de consulta (e.g., `SELECT` selectivo de columnas, mover cÃ¡lculos de distancia a PostGIS). La prioridad es la correcciÃ³n funcional. El rendimiento es un problema secundario que debe abordarse en un paquete de trabajo separado.
+-   **Ajuste Fino de Umbrales:** No cambiar el umbral de filtrado (`confidence < 15`) ni el tope de confianza (`95`). Aunque la correcciÃ³n del cÃ¡lculo afectarÃ¡ los valores, debemos desplegar el arreglo primero y luego, si es necesario, ajustar estos umbrales basÃ¡ndonos en datos de producciÃ³n, no en suposiciones.
+-   **ImplementaciÃ³n de Bandas de Confianza ("Strong/Probable Match"):** No implementar la lÃ³gica para mapear la `confidence` numÃ©rica a las etiquetas de texto ("Strong Match", etc.). Esta es una tarea de UI/Producto que debe construirse sobre la base de una puntuaciÃ³n de confianza ya corregida y estable.
+
+# Final Implementer Prompt
+
+```markdown
+# Tarea: Estabilizar el servicio de `matching` de PETTODO
+
+ActÃºa como un desarrollador full-stack senior. Aplica los siguientes cambios de forma secuencial para corregir bugs crÃ­ticos y eliminar cÃ³digo duplicado en la superficie `matching`.
+
+1.  **Backend (`server/routes/matching.ts`):**
+    -   Define una constante `const MAX_SCORE = 115;`.
+    -   Actualiza la lÃ­nea de cÃ¡lculo de `confidence` para que use `(score / MAX_SCORE)`.
+
+2.  **Frontend (API Contract):**
+    -   Localiza la interfaz `MatchResult` (probablemente en `src/app/services/api.ts` o `interfaces.ts`).
+    -   ReemplÃ¡zala con una estructura plana que coincida con la respuesta real de la API: `caseId: string`, `confidence: number`, `reasons: string[]`, `location: string`, `time: string`, `timeLabel: string`, `description: string`, `size: string`, `colors: string[]`, `candidateType: 'lost' | 'found' | 'sighted'`, `caution: string`, `nextAction: string`.
+
+3.  **Frontend (Cleanup):**
+    -   Elimina el archivo `src/app/utils/matching.ts` por completo.
+    -   Busca en todo el proyecto y elimina cualquier importaciÃ³n rota que apunte a ese archivo.
+
+4.  **Frontend (UI Refactor):**
+    -   Corrige todos los errores de compilaciÃ³n de TypeScript causados por los pasos anteriores.
+    -   Refactoriza los componentes de la UI para que consuman la nueva interfaz `MatchResult` plana. AsegÃºrate de que el acceso a los datos sea correcto (e.g., `result.caseId` en lugar de `result.case.id`). El flujo de datos debe provenir exclusivamente del servicio que llama a la API.
+```
+
+===== FILE: matching_backend_testpack =====
+# Test Pack Decision
+
+# Blocking Tests
+
+AquÃ­ estÃ¡ la lista de tests bloqueantes y de alta confianza para el endpoint `GET /api/matching/cases/:id`. Cada test estÃ¡ diseÃ±ado para ser atÃ³mico y verificar una pieza crÃ­tica de la lÃ³gica del backend.
+
+---
+
+1.  **test name**: `should return 401 Unauthorized if no token is provided`
+    *   **purpose**: Verificar que el middleware `verifyToken` protege correctamente la ruta.
+    *   **arrange**: NingÃºn mock es necesario. El middleware se encargarÃ¡ del rechazo.
+    *   **act**: Realizar una peticiÃ³n `GET` a `/api/matching/cases/some-case-id` sin el header `Authorization`.
+    *   **assert**:
+        *   La respuesta debe tener un status `401`.
+        *   El cuerpo de la respuesta debe contener un error relacionado con la autenticaciÃ³n.
+
+2.  **test name**: `should return 404 Not Found if origin case does not exist`
+    *   **purpose**: Validar el manejo de un ID de caso de origen que no se encuentra en la base de datos.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `mockQuery`: Para la primera consulta (bÃºsqueda del caso de origen), debe resolver a `{ rows: [] }`.
+    *   **act**: Realizar una peticiÃ³n `GET` a `/api/matching/cases/non-existent-id` con un token de autenticaciÃ³n vÃ¡lido.
+    *   **assert**:
+        *   La respuesta debe tener un status `404`.
+        *   El cuerpo de la respuesta debe ser `{ error: 'case_not_found' }`.
+        *   `mockQuery` debe haber sido llamado solo una vez.
+
+3.  **test name**: `should return 500 Internal Server Error if database query fails`
+    *   **purpose**: Asegurar que los errores inesperados de la base de datos son capturados y manejados, evitando que el servidor se caiga.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `mockQuery`: Debe ser configurado para lanzar un error (`.mockRejectedValueOnce(new Error('DB connection lost'))`).
+    *   **act**: Realizar una peticiÃ³n `GET` a `/api/matching/cases/any-id` con un token de autenticaciÃ³n vÃ¡lido.
+    *   **assert**:
+        *   La respuesta debe tener un status `500`.
+        *   El cuerpo de la respuesta debe ser `{ error: 'matching_failed', message: 'DB connection lost' }`.
+
+4.  **test name**: `should return an empty array if no potential candidates are found`
+    *   **purpose**: Verificar el comportamiento cuando existen casos del tipo opuesto, pero ninguno estÃ¡ `active`.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen vÃ¡lido (ej. `type: 'lost'`).
+        *   `mockQuery` (segunda llamada): Resuelve con `{ rows: [] }` para simular que no se encontraron candidatos activos.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   La respuesta debe tener un status `200`.
+        *   El cuerpo de la respuesta debe ser un array vacÃ­o `[]`.
+
+5.  **test name**: `should return correctly ranked matches based on confidence score`
+    *   **purpose**: Confirmar que el algoritmo de ranking funciona y los resultados se ordenan de mayor a menor confianza.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `vi.spyOn(Date, 'now')`: Mockear `Date.now()` a un valor fijo para que los scores de `recency` sean predecibles.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen `lost`.
+        *   `mockQuery` (segunda llamada): Resuelve con tres candidatos `found`:
+            1.  Candidato A: Coincidencia perfecta (muy cerca, muy reciente, mismo tamaÃ±o, colores, etc.). Score alto.
+            2.  Candidato B: Coincidencia media (lejos, algo reciente, sin coincidencia de tamaÃ±o). Score medio.
+            3.  Candidato C: Coincidencia baja (muy lejos, antiguo, diferente tamaÃ±o). Score bajo pero > 15.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   La respuesta debe tener un status `200`.
+        *   El cuerpo debe ser un array de 3 elementos.
+        *   El orden debe ser `[candidato_A, candidato_B, candidato_C]`.
+        *   `res.body[0].caseId` debe ser el ID del candidato A.
+        *   `res.body[0].confidence` debe ser mayor que `res.body[1].confidence`.
+        *   `res.body[1].confidence` debe ser mayor que `res.body[2].confidence`.
+
+6.  **test name**: `should filter out candidates with confidence score below 15`
+    *   **purpose**: Verificar que la lÃ³gica `if (confidence < 15) continue;` funciona correctamente.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `vi.spyOn(Date, 'now')`: Mockear `Date.now()` a un valor fijo.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen.
+        *   `mockQuery` (segunda llamada): Resuelve con dos candidatos:
+            1.  Candidato A: Score medio (ej. confianza ~40).
+            2.  Candidato B: Score muy bajo (ej. confianza ~10), sin coincidencias significativas.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   La respuesta debe tener un status `200`.
+        *   El cuerpo debe ser un array con 1 solo elemento (Candidato A).
+        *   El array de resultados no debe contener al Candidato B.
+
+7.  **test name**: `should handle null values in location, size, colors, and traits gracefully`
+    *   **purpose**: Testear la robustez (null safety) del algoritmo de scoring. El cÃ³digo no debe fallar si los campos opcionales son nulos.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `vi.spyOn(Date, 'now')`: Mockear `Date.now()`.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen con `approx_lat`, `size`, `colors`, `traits` todos nulos.
+        *   `mockQuery` (segunda llamada): Resuelve con un candidato que sÃ­ tiene todos los datos.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen nulo.
+    *   **assert**:
+        *   La respuesta debe tener un status `200`.
+        *   El endpoint no debe lanzar un error 500.
+        *   Se debe devolver un resultado (el candidato), pero su score de confianza se basarÃ¡ solo en `recency` (ya que los demÃ¡s scores no se podrÃ¡n calcular).
+        *   `res.body[0].reasons` no debe contener razones de distancia, tamaÃ±o, color o rasgos.
+
+8.  **test name**: `should match a 'lost' case with 'found' and 'sighted' candidates only`
+    *   **purpose**: Validar que la lÃ³gica de `candidateTypes` se aplica correctamente en la consulta a la base de datos para un caso 'lost'.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen con `type: 'lost'`.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   Verificar que la segunda llamada a `mockQuery` fue hecha con los parÃ¡metros correctos. EspecÃ­ficamente, el primer argumento de la query (`$1`) debe ser `['found', 'sighted']`.
+
+9.  **test name**: `should match a 'found' case with 'lost' candidates only`
+    *   **purpose**: Validar la lÃ³gica de `candidateTypes` para un caso 'found'.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen con `type: 'found'`.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   Verificar que la segunda llamada a `mockQuery` fue hecha con el primer argumento (`$1`) igual a `['lost']`.
+
+10. **test name**: `should return a maximum of 20 results, even if more candidates match`
+    *   **purpose**: Verificar que la paginaciÃ³n final (`.slice(0, 20)`) funciona.
+    *   **arrange**:
+        *   `mockVerifyIdToken`: Simula un usuario autenticado.
+        *   `vi.spyOn(Date, 'now')`: Mockear `Date.now()`.
+        *   `mockQuery` (primera llamada): Resuelve con un caso de origen.
+        *   `mockQuery` (segunda llamada): Resuelve con 25 candidatos, todos con datos que generarÃ­an un score de confianza > 15.
+    *   **act**: Realizar una peticiÃ³n `GET` al ID del caso de origen.
+    *   **assert**:
+        *   La respuesta debe tener un status `200`.
+        *   El cuerpo de la respuesta (`res.body`) debe ser un array con una longitud de exactamente `20`.
+
+# Suggested File Structure
+
+```typescript
+// tests/matching.test.ts
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import request from 'supertest';
+
+// 1. Mocks (hoisted)
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+}));
+
+vi.mock('../server/middleware/verifyToken.js', () => ({
+  // Mockeamos el middleware completo para simplificar la prueba de autorizaciÃ³n
+  verifyToken: (req, res, next) => {
+    // Replicamos el comportamiento del mock de firebase para otros tests
+    mockVerifyIdToken()
+      .then(user => {
+        req.user = user;
+        next();
+      })
+      .catch(() => {
+        res.status(401).json({ error: 'unauthorized' });
+      });
+  }
+}));
+
+import app from '../server/app.js'; // Importar app despuÃ©s de los mocks
+
+// 2. Constantes y Helpers de Test
+const FAKE_USER = { uid: 'test-user-id', email: 'test@example.com' };
+
+const NOW = 1700000000000; // Un timestamp fijo para controlar el score de recencia
+
+const ORIGIN_CASE_LOST = {
+  id: 'case-lost-1',
+  type: 'lost',
+  status: 'active',
+  approx_lat: '40.7128',
+  approx_lng: '-74.0060', // NYC
+  size: 'Medium',
+  colors: ['brown', 'white'],
+  traits: ['friendly', 'scared'],
+  created_at: String(NOW - 3600 * 1000 * 3), // 3 hours ago
+};
+
+const PERFECT_MATCH_CANDIDATE = {
+  id: 'case-found-1',
+  type: 'found',
+  status: 'active',
+  approx_lat: '40.7130', // Muy cerca
+  approx_lng: '-74.0058',
+  size: 'Medium',
+  colors: ['BROWN'], // Case-insensitive check
+  traits: ['very friendly dog'],
+  created_at: String(NOW - 3600 * 1000 * 1), // 1 hour ago (muy reciente)
+  // ...otros campos para el response
+};
+
+const LOW_SCORE_CANDIDATE = {
+  id: 'case-found-2',
+  type: 'found',
+  status: 'active',
+  approx_lat: '34.0522', // Muy lejos (LA)
+  approx_lng: '-118.2437',
+  size: 'Large', // Diferente
+  colors: ['black'],
+  traits: ['aggressive'],
+  created_at: String(NOW - 3600 * 1000 * 100), // Muy antiguo
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+// 3. Suite de Pruebas
+describe('GET /api/matching/cases/:id', () => {
+
+  let dateSpy;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Siempre autenticar por defecto, las pruebas de no-auth lo sobreescribirÃ¡n
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+    // Mockear la fecha para resultados consistentes
+    dateSpy = vi.spyOn(Date, 'now').mockReturnValue(NOW);
+  });
+
+  afterEach(() => {
+    dateSpy.mockRestore();
+  });
+
+  // 4. Casos de prueba (it blocks)
+  it('should return 401 Unauthorized if no token is provided', async () => {
+    // ...
+  });
+
+  it('should return 404 Not Found if origin case does not exist', async () => {
+    // ...
+  });
+  
+  // ... mÃ¡s tests
+});
+```
+
+# Required Mocks
+
+1.  **`db.query`**: Es el mock mÃ¡s crÃ­tico. Debe ser flexible para simular diferentes respuestas de la base de datos en secuencia, utilizando `.mockResolvedValueOnce({ rows: [...] })`.
+    *   Primera llamada: Para obtener el caso de origen.
+    *   Segunda llamada: Para obtener la lista de candidatos.
+    *   TambiÃ©n debe poder simular un fallo con `.mockRejectedValueOnce()`.
+
+2.  **`middleware/verifyToken.js`** (o su dependencia `firebaseAdmin.js`): Para controlar el flujo de autenticaciÃ³n.
+    *   Para pruebas exitosas: `mockVerifyIdToken.mockResolvedValue(FAKE_USER)`.
+    *   Para pruebas de fallo de auth: `mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'))`.
+
+3.  **`Date.now`**: Indispensable para tener un control determinista sobre el `recencyScore`. Sin esto, los tests de ranking y confianza serÃ­an inestables. Se debe mockear con `vi.spyOn(Date, 'now').mockReturnValue(FIXED_TIMESTAMP)`.
+
+# Edge Cases To Include Now
+
+-   **Valores nulos/ausentes**: Probar un caso de origen y/o candidato donde `approx_lat`, `approx_lng`, `size`, `colors`, `traits` son `null`. El sistema debe degradarse elegantemente sin crashear.
+-   **Arrays vacÃ­os**: Probar con `colors: []` y `traits: []`. El score de esos apartados deberÃ­a ser 0.
+-   **Case-insensitivity**: Asegurar que la coincidencia de `colors` y `traits` no es sensible a mayÃºsculas/minÃºsculas (ej. "Brown" vs "brown").
+-   **El candidato es el mismo que el origen**: La query `id != $2` ya lo previene, pero un test puede verificar que si la DB (por error) devolviera el mismo caso, este no aparezca en los resultados. (Este es de menor prioridad pero bueno tenerlo en cuenta).
+-   **MÃ¡ximo de `reasons`**: El cÃ³digo usa `reasons.slice(0, 3)`. Un test con un candidato que coincida en mÃ¡s de 3 categorÃ­as (ej. distancia, recencia, tamaÃ±o, color) deberÃ­a afirmar que el array `reasons` tiene una longitud mÃ¡xima de 3.
+-   **Confidence cap**: El cÃ¡lculo es `Math.min(..., 95)`. Un test con una coincidencia "perfecta" que superarÃ­a el 95% de confianza debe afirmar que la confianza devuelta es exactamente `95`.
+
+# Do Not Test Yet
+
+-   **PrecisiÃ³n matemÃ¡tica de `haversineKm`**: No necesitamos tests unitarios para la fÃ³rmula de Haversine. Confiamos en que es correcta y solo probamos su efecto a travÃ©s del `distanceScore`.
+-   **Todas las variaciones de `formatTimeAgo`**: No testear "1 min ago", "2 min ago", "1 hour ago", "2 hours ago", "1 day ago", etc. Un solo test que verifique que el campo `time` existe y tiene un formato de string no vacÃ­o es suficiente por ahora.
+-   **El "magic number" `95` en el cÃ¡lculo de confianza**: No debemos cuestionar por quÃ© es 95 y no 100 o 115 (la suma mÃ¡xima teÃ³rica de scores). Simplemente testeamos que el cÃ¡lculo se realiza segÃºn la fÃ³rmula escrita.
+-   **Rendimiento con 300+ candidatos**: La query tiene un `LIMIT 300`. No necesitamos testear el rendimiento del bucle de scoring con miles de registros. Eso serÃ­a un test de carga/performance, no de unidad/integraciÃ³n.
+-   **ValidaciÃ³n de datos en la DB**: No vamos a testear si un `created_at` es un timestamp invÃ¡lido o si `approx_lat` no es un nÃºmero. Asumimos que los datos en la DB tienen la integridad bÃ¡sica necesaria.
+
+# Final Implementer Prompt
+
+Implementa el archivo de test `tests/matching.test.ts` usando `vitest` y `supertest` de acuerdo a la especificaciÃ³n detallada. EnfÃ³cate en mockear `db.query` y `Date.now` para crear escenarios de prueba predecibles y reproducibles. Cubre de forma prioritaria los casos de autenticaciÃ³n (401), recurso no encontrado (404), error de servidor (500), el ranking correcto por `confidence`, el filtrado de scores bajos y el manejo robusto de valores nulos en los datos de los casos. Sigue la estructura de archivo y las constantes sugeridas para mantener la consistencia con el resto del proyecto.
+
+===== FILE: matching_testfile_draft =====
+Claro, aquÃ­ tienes una nota breve sobre los supuestos y, a continuaciÃ³n, el borrador completo del archivo `tests/matching.test.ts`.
+
+### Supuestos
+*   **Punto de entrada de la App**: Asumo que `../server/app.js` es el archivo que exporta la aplicaciÃ³n Express configurada y lista para ser usada por Supertest, como se ve en los archivos de prueba de ejemplo.
+*   **AutenticaciÃ³n**: Asumo que el middleware `verifyToken` depende internamente de `firebaseAdmin.js` para validar tokens, lo cual permite mockearlo con `vi.mock('../server/firebaseAdmin.js', ...)`. Este es el patrÃ³n consistente en los archivos de prueba proporcionados.
+*   **Tipos de la Base de Datos**: Asumo que los campos numÃ©ricos como `approx_lat`, `approx_lng` y `created_at` se leen de la base de datos como strings o nÃºmeros, y el cÃ³digo los maneja correctamente con `toFiniteNumber`. Las fixtures reflejarÃ¡n esta posibilidad.
+*   **Path de Mocks**: Las rutas a los mÃ³dulos mockeados (`../server/db.js`, `../server/firebaseAdmin.js`) se basan en la estructura implÃ­cita de `tests/` en la raÃ­z del proyecto, al mismo nivel que `server/`.
+
+---
+
+AquÃ­ estÃ¡ el borrador del archivo de prueba:
+
+```typescript
+// tests/matching.test.ts
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import request from 'supertest';
+
+// 1. Mocks (hoisted)
+// =============================================
+// Mockeamos las dependencias externas clave: la base de datos y la autenticaciÃ³n.
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  // Es posible que necesites mockear otros exports de db.js si el app los usa.
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  // Asumimos que el middleware verifyToken usa este mÃ³dulo para validar el token.
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+// Importar la app DESPUÃ‰S de definir los mocks.
+import app from '../server/app.js';
+
+// 2. Fixtures y Helpers
+// =============================================
+
+// Un tipo simple para mejorar la legibilidad de las fixtures.
+// Ajustar si la definiciÃ³n real del repo es diferente.
+type CaseRow = {
+  id: string;
+  type: 'lost' | 'found' | 'sighted';
+  status: 'active' | 'resolved';
+  approx_lat: string | number | null;
+  approx_lng: string | number | null;
+  size: string | null;
+  colors: string[] | null;
+  traits: string[] | null;
+  created_at: string | number | null;
+  [key: string]: any; // Para otros campos no relevantes en el matching
+};
+
+const FAKE_USER = { uid: 'test-user-id', email: 'test@example.com' };
+
+// Usamos un timestamp fijo para que los tests de `recencyScore` sean predecibles.
+const NOW_TIMESTAMP = 1700000000000; // Un timestamp arbitrario pero constante.
+
+// Caso de origen para un perro perdido.
+const ORIGIN_CASE_LOST: CaseRow = {
+  id: 'case-lost-1',
+  type: 'lost',
+  status: 'active',
+  approx_lat: '40.7128', // NYC
+  approx_lng: '-74.0060',
+  size: 'Medium',
+  colors: ['brown', 'white'],
+  traits: ['friendly', 'scared'],
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 6), // 6 horas antes de NOW
+};
+
+// Caso de origen para un perro encontrado.
+const ORIGIN_CASE_FOUND: CaseRow = {
+  id: 'case-found-origin',
+  type: 'found',
+  status: 'active',
+  approx_lat: '34.0522', // LA
+  approx_lng: '-118.2437',
+  size: 'Small',
+  colors: ['black'],
+  traits: ['wears a red collar'],
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 25), // 25 horas antes de NOW
+};
+
+// --- Candidatos para el caso 'lost' ---
+
+const CANDIDATE_HIGH_CONFIDENCE: CaseRow = {
+  id: 'candidate-high',
+  type: 'found',
+  status: 'active',
+  approx_lat: '40.7130', // Muy cerca (menos de 0.5km) -> 30 pts
+  approx_lng: '-74.0058',
+  size: 'Medium', // Mismo tamaÃ±o -> 20 pts
+  colors: ['white', 'BROWN'], // Coincidencia de colores (case-insensitive) -> 20 pts
+  traits: ['scared', 'approachable'], // Coincidencia de rasgo -> 5 pts
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 1), // Muy reciente (1h ago) -> 30 pts
+  // Total score: 30+20+20+5+30 = 105. Confidence = round(105/115*100) = 91.
+};
+
+const CANDIDATE_MEDIUM_CONFIDENCE: CaseRow = {
+  id: 'candidate-medium',
+  type: 'sighted',
+  status: 'active',
+  approx_lat: '40.7282', // Algo lejos (~1.8km) -> 15 pts
+  approx_lng: '-74.0060',
+  size: 'Large', // Diferente tamaÃ±o -> 0 pts
+  colors: ['tan'], // Sin coincidencia de color -> 0 pts
+  traits: ['friendly'], // Coincidencia de rasgo -> 5 pts
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 12), // Reciente (12h ago) -> 15 pts
+  // Total score: 15+0+0+5+15 = 35. Confidence = round(35/115*100) = 30.
+};
+
+const CANDIDATE_LOW_CONFIDENCE: CaseRow = {
+  id: 'candidate-low',
+  type: 'found',
+  status: 'active',
+  approx_lat: '34.0522', // Muy lejos (LA) -> 2 pts
+  approx_lng: '-118.2437',
+  size: 'Small', // Diferente -> 0 pts
+  colors: ['black'], // Diferente -> 0 pts
+  traits: ['shy'], // Diferente -> 0 pts
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 100), // Muy antiguo (>72h) -> 2 pts
+  // Total score: 2+0+0+0+2 = 4. Confidence = round(4/115*100) = 3. DeberÃ­a ser filtrado.
+};
+
+const CANDIDATE_WITH_NULLS: CaseRow = {
+  id: 'candidate-nulls',
+  type: 'found',
+  status: 'active',
+  approx_lat: null, // Sin coordenadas
+  approx_lng: null,
+  size: null, // Sin tamaÃ±o
+  colors: null, // Sin colores
+  traits: [], // Traits como array vacÃ­o
+  created_at: String(NOW_TIMESTAMP - 3600 * 1000 * 5), // Reciente (5h ago) -> 22 pts
+  // Total score: 0+0+0+0+22 = 22. Confidence = round(22/115*100) = 19. DeberÃ­a aparecer.
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token-for-tests' };
+}
+
+// 3. Suite de Pruebas
+// =============================================
+describe('GET /api/matching/cases/:id', () => {
+  let dateSpy: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Por defecto, todas las pruebas asumen un usuario autenticado.
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+    // Mockeamos la fecha para que los scores de recencia sean consistentes.
+    dateSpy = vi.spyOn(Date, 'now').mockReturnValue(NOW_TIMESTAMP);
+  });
+
+  afterEach(() => {
+    dateSpy.mockRestore();
+  });
+
+  // --- Tests de Errores y Seguridad ---
+
+  it('should return 401 Unauthorized if no token is provided', async () => {
+    // Para este test, hacemos que el mock de autenticaciÃ³n falle.
+    mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'));
+
+    const res = await request(app).get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`);
+    // NOTA: El middleware `verifyToken` proporcionado en el input no tiene una rama de error
+    // explÃ­cita, sino que delega en el catch de firebase. Si tu middleware real es diferente,
+    // ajusta este test. Si usas `Authorization` header, el test serÃ­a sin `.set()`.
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'unauthorized' }); // Ajustar al mensaje de error real
+  });
+
+  it('should return 404 Not Found if origin case does not exist', async () => {
+    // La primera query a la DB (para buscar el caso de origen) no devuelve nada.
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app)
+      .get('/api/matching/cases/non-existent-id')
+      .set(authHeader());
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'case_not_found' });
+    // Solo se debe haber hecho una llamada a la DB.
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 500 Internal Server Error if a database query fails', async () => {
+    // Simulamos un error en la conexiÃ³n o en la consulta.
+    mockQuery.mockRejectedValueOnce(new Error('DB connection lost'));
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: 'matching_failed' });
+  });
+
+  // --- Tests de LÃ³gica de Matching ---
+
+  it('should return 200 with an empty array if no potential candidates are found', async () => {
+    // El caso de origen existe...
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    // ...pero la bÃºsqueda de candidatos no devuelve nada.
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('should return correctly ranked matches ordered by confidence score', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    // Devolvemos los candidatos en un orden aleatorio para probar la ordenaciÃ³n.
+    mockQuery.mockResolvedValueOnce({
+      rows: [CANDIDATE_MEDIUM_CONFIDENCE, CANDIDATE_HIGH_CONFIDENCE],
+    });
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+
+    // El primer resultado debe ser el de mayor confianza.
+    expect(res.body[0].caseId).toBe(CANDIDATE_HIGH_CONFIDENCE.id);
+    expect(res.body[0].confidence).toBe(91); // 105/115 * 100 = 91.3 -> 91
+
+    // El segundo resultado debe ser el de confianza media.
+    expect(res.body[1].caseId).toBe(CANDIDATE_MEDIUM_CONFIDENCE.id);
+    expect(res.body[1].confidence).toBe(30); // 35/115 * 100 = 30.4 -> 30
+
+    // Verificamos el orden.
+    expect(res.body[0].confidence).toBeGreaterThan(res.body[1].confidence);
+  });
+
+  it('should filter out candidates with confidence score below 15', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [CANDIDATE_MEDIUM_CONFIDENCE, CANDIDATE_LOW_CONFIDENCE],
+    });
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    expect(res.status).toBe(200);
+    // Solo el candidato de confianza media debe aparecer.
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].caseId).toBe(CANDIDATE_MEDIUM_CONFIDENCE.id);
+    expect(res.body[0].confidence).toBe(30); // confidence(30) > 15
+    // El candidato con confidence(3) < 15 no debe estar.
+  });
+
+  it('should handle null or empty values in candidate data gracefully (null safety)', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    mockQuery.mockResolvedValueOnce({ rows: [CANDIDATE_WITH_NULLS] });
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    // El endpoint no debe crashear.
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].caseId).toBe(CANDIDATE_WITH_NULLS.id);
+    // La confianza se basa solo en la recencia (22 pts).
+    expect(res.body[0].confidence).toBe(19); // 22/115 * 100 = 19.1 -> 19
+  });
+
+  it('should return a maximum of 20 results, even if more candidates match', async () => {
+    // Creamos 25 candidatos idÃ©nticos de alta confianza.
+    const manyCandidates = Array.from({ length: 25 }, (_, i) => ({
+      ...CANDIDATE_HIGH_CONFIDENCE,
+      id: `candidate-clone-${i}`,
+    }));
+
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    mockQuery.mockResolvedValueOnce({ rows: manyCandidates });
+
+    const res = await request(app)
+      .get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`)
+      .set(authHeader());
+
+    expect(res.status).toBe(200);
+    // El resultado debe estar truncado a 20.
+    expect(res.body).toHaveLength(20);
+  });
+
+  // --- Tests de LÃ³gica de BÃºsqueda ---
+
+  it("should search for 'found' and 'sighted' candidates for a 'lost' origin case", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_LOST] });
+    // Simulamos una respuesta vacÃ­a para los candidatos para que el test sea rÃ¡pido.
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await request(app).get(`/api/matching/cases/${ORIGIN_CASE_LOST.id}`).set(authHeader());
+
+    // Verificamos que se hicieron dos llamadas a la DB.
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+
+    // Verificamos los parÃ¡metros de la SEGUNDA llamada a la DB (la de los candidatos).
+    const candidateQueryArgs = mockQuery.mock.calls[1][1];
+    expect(candidateQueryArgs).toEqual([
+      ['found', 'sighted'], // $1: candidateTypes
+      ORIGIN_CASE_LOST.id, // $2: origin.id
+    ]);
+  });
+
+  it("should search for 'lost' candidates for a 'found' origin case", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [ORIGIN_CASE_FOUND] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await request(app).get(`/api/matching/cases/${ORIGIN_CASE_FOUND.id}`).set(authHeader());
+
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+
+    const candidateQueryArgs = mockQuery.mock.calls[1][1];
+    expect(candidateQueryArgs).toEqual([
+      ['lost'], // $1: candidateTypes
+      ORIGIN_CASE_FOUND.id, // $2: origin.id
+    ]);
+  });
+});
+```

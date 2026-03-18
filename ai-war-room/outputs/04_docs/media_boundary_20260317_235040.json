@@ -1,0 +1,46 @@
+{
+  "surface": "media_boundary",
+  "model": "gemini-2.5-pro",
+  "transport": "vertex_ai_rest_express_mode",
+  "request_url": "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-pro:generateContent?key=***",
+  "prompt_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\prompts\\docs_vs_code.md",
+  "bundle_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\bundles\\media_boundary.txt",
+  "response": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Claro, aquí tienes la auditoría de la superficie `media_boundary` en español.\n\n---\n\n### 1. Resumen de Alineación\n\nEn general, la superficie `media_boundary` muestra una buena alineación entre la implementación del backend (`server/routes/images.ts`), la capa de abstracción de almacenamiento (`server/blobStorage.ts`) y los contratos del cliente definidos en `src/app/services/api.ts`. La lógica principal para la emisión de URLs de carga, la asociación de imágenes con mascotas (`pet`) y casos (`case`), y su posterior gestión (listado y borrado) está implementada y es funcional.\n\nLos tests existentes en `tests/images.test.ts` cubren las rutas de éxito y de error más importantes para los endpoints de `pet` y `storage`, lo que confirma el comportamiento básico.\n\nSin embargo, se han identificado algunas áreas de deriva (drift), ambigüedad y, sobre todo, brechas significativas en la cobertura de tests. Estas brechas ocultan posibles inconsistencias, especialmente en la gestión de imágenes para `case` y en casos de uso más complejos como la gestión de la imagen principal (`isPrimary`) y los fallos en la eliminación de blobs.\n\n### 2. Coincidencias Confirmadas\n\n- **Consistencia de API y Contratos:** Los endpoints definidos en el backend (`/api/storage/upload-url`, `/api/pets/:id/images`, `/api/cases/:id/images`, etc.) coinciden perfectamente con las funciones y tipos definidos en el servicio del frontend (`imageApi` en `api.ts`). Las estructuras de datos como `ImageRef` y `UploadUrlResponse` son consistentes.\n- **Verificación de Propiedad:** Todos los endpoints que operan sobre una entidad (`pet` o `case`) implementan correctamente una comprobación para asegurar que el usuario autenticado es el propietario del recurso antes de proceder.\n- **Gestión de la Imagen Principal:** La lógica para gestionar la propiedad `isPrimary` está implementada. Al subir una nueva imagen y marcarla como principal, el sistema primero anula esta marca en cualquier otra imagen asociada a la misma entidad, asegurando que solo haya una imagen principal.\n- **Ruta de Carga Temporal:** El endpoint `POST /api/storage/upload-url` genera correctamente una ruta de almacenamiento temporal (`temp/<uid>/...`) cuando no se especifica una entidad, permitiendo cargas que se asociarán más tarde.\n- **Manejo de Configuración de Storage:** El sistema verifica si el almacenamiento está configurado (`isStorageConfigured`) y devuelve un error `503 Service Unavailable` si no lo está, lo cual es un comportamiento robusto y está cubierto por los tests.\n- **Eliminación Completa:** La lógica de `DELETE` elimina tanto el registro de la base de datos (`pet_images` o `case_images`) como el archivo físico (blob) del almacenamiento.\n\n### 3. Deriva o Brechas (Drift Or Gaps)\n\n- **Deriva en el Manejo de Errores de Borrado:**\n  - **Implementación:** El código en `DELETE /.../images/:imageId` ignora deliberadamente los errores que puedan ocurrir al eliminar el blob del almacenamiento (`deleteBlob(blob_path).catch(() => {})`).\n  - **Problema:** Esto significa que si la eliminación del archivo falla (por permisos, un error transitorio de red, etc.), la API igualmente responderá con éxito (HTTP 200). Esto no está documentado como una decisión de diseño y crea \"blobs huérfanos\".\n\n- **Duplicación de Código:**\n  - **Implementación:** La lógica para los endpoints de imágenes de `pets` es casi idéntica a la de `cases`. Las rutas `POST`, `GET` y `DELETE` están duplicadas, cambiando solo los nombres de las tablas (`pet_images` vs `case_images`) y el campo de propietario (`owner_uid` vs `created_by`).\n  - **Problema:** Esta duplicación aumenta el coste de mantenimiento y el riesgo de introducir inconsistencias. Un futuro cambio o corrección de errores podría aplicarse en un lugar y olvidarse en el otro.\n\n- **Brechas en la Cobertura de Tests:**\n  - **Faltan Tests para `Case`:**\n    - El test para `DELETE /api/cases/:id/images/:imageId` está completamente ausente. Es una ruta crítica que no tiene ninguna cobertura.\n    - El test para `POST /api/storage/upload-url` no verifica el flujo cuando se proporciona `entityType: 'case'`.\n  - **Tests Incompletos para `isPrimary`:** El test que verifica la lógica de `isPrimary` en `POST /api/pets/:id/images` solo cubre el escenario donde no hay una imagen principal preexistente. No valida que, si ya existe una, esta sea correctamente \"degradada\".\n  - **Tests de Ordenación Ausentes:** Los tests para `GET /.../images` usan un mock que devuelve una sola imagen, por lo que no verifican que la cláusula `ORDER BY sort_order ASC, created_at ASC` funcione como se espera.\n  - **Falta Test para Falla de `deleteBlob`:** No hay un test que simule un fallo en `deleteBlob` y confirme que la respuesta de la API sigue siendo `200 OK`. Este test documentaría el comportamiento actual y evidenciaría el riesgo de los blobs huérfanos.\n\n### 4. Riesgos Creados por la Deriva\n\n1.  **Costes de Almacenamiento y Problemas de Datos:** La creación de blobs huérfanos debido a fallos silenciosos en la eliminación incrementará los costes de almacenamiento a lo largo del tiempo. Además, puede generar problemas de integridad de datos y de cumplimiento normativo (p. ej., el \"derecho al olvido\" del RGPD).\n2.  **Inconsistencia de Comportamiento:** La duplicación de código entre la gestión de imágenes de `pets` y `cases` crea un riesgo real de que futuras modificaciones se apliquen solo a una de las entidades, llevando a comportamientos divergentes e inesperados en la API.\n3.  **Regresiones Ocultas:** Las brechas en los tests (especialmente la ausencia total del test de eliminación para `cases`) significan que errores o regresiones pueden ser introducidos en el código sin ser detectados por el pipeline de integración continua. Un cambio en la base de datos o en la lógica de negocio podría romper esta funcionalidad sin previo aviso.\n\n### 5. Seguimientos Recomendados\n\n1.  **Clarificar la Política de Eliminación de Blobs:**\n    - **Acción:** Discutir con el equipo si el fallo silencioso en la eliminación de blobs es el comportamiento deseado.\n    - **Recomendación:** Como mínimo, registrar el error en el lado del servidor para su monitorización, aunque se decida seguir respondiendo con éxito al cliente. Para datos más críticos, considerar una estrategia de reintento o marcar el registro en la base de datos para una limpieza posterior.\n\n2.  **Refactorizar el Código Duplicado:**\n    - **Acción:** Abstraer la lógica común para la gestión de imágenes (`POST`, `GET`, `DELETE`) en una función o servicio reutilizable que pueda ser invocado tanto por los controladores de `pets` como de `cases`.\n    - **Beneficio:** Esto reducirá la duplicación, simplificará el mantenimiento y garantizará un comportamiento consistente.\n\n3.  **Ampliar la Suite de Tests:**\n    - **Acción:** Priorizar la adición de los tests que faltan:\n      - Añadir una suite de tests completa para `DELETE /api/cases/:id/images/:imageId`.\n      - Añadir un caso de prueba para `entityType: 'case'` en `POST /api/storage/upload-url`.\n      - Mejorar los tests de `POST /.../images` para simular una imagen principal preexistente y afirmar que es degradada correctamente.\n      - Modificar los tests de `GET /.../images` para que devuelvan múltiples imágenes y verifiquen el orden de la respuesta.\n      - Añadir un test que simule un error en `deleteBlob` y afirme que la respuesta sigue siendo `200 OK`, para documentar explícitamente este comportamiento."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "avgLogprobs": -0.4834080340116479
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 12469,
+      "candidatesTokenCount": 1819,
+      "totalTokenCount": 17659,
+      "trafficType": "ON_DEMAND",
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 12469
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1819
+        }
+      ],
+      "thoughtsTokenCount": 3371
+    },
+    "modelVersion": "gemini-2.5-pro",
+    "createTime": "2026-03-18T03:53:49.317370Z",
+    "responseId": "zSG6abqvE7WX2PgPzenugAI"
+  }
+}

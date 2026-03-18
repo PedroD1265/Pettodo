@@ -1,0 +1,646 @@
+﻿===== FILE: backend_matching_route =====
+import { Router, type Response } from 'express';
+import { verifyToken, type AuthenticatedRequest } from '../middleware/verifyToken.js';
+import { query } from '../db.js';
+
+const router = Router();
+
+// â”€â”€ Heuristic scoring helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function recencyScore(createdAt: number): { score: number; reason: string | null } {
+  const hoursAgo = (Date.now() - createdAt) / (1000 * 60 * 60);
+  if (hoursAgo < 2) return { score: 30, reason: 'very recent sighting' };
+  if (hoursAgo < 6) return { score: 22, reason: 'recent report' };
+  if (hoursAgo < 24) return { score: 15, reason: 'within last 24 hours' };
+  if (hoursAgo < 72) return { score: 8, reason: null };
+  return { score: 2, reason: null };
+}
+
+function distanceScore(km: number): { score: number; reason: string | null } {
+  if (km < 0.5) return { score: 30, reason: 'very close to your area' };
+  if (km < 1) return { score: 22, reason: 'near your area' };
+  if (km < 2) return { score: 15, reason: `${km.toFixed(1)} km away` };
+  if (km < 5) return { score: 8, reason: `${km.toFixed(1)} km away` };
+  return { score: 2, reason: null };
+}
+
+function colorOverlap(a: string[], b: string[]): number {
+  const aSet = new Set((a ?? []).map((s) => s.toLowerCase()));
+  return (b ?? []).filter((c) => aSet.has(c.toLowerCase())).length;
+}
+
+function formatTimeAgo(createdAt: number): string {
+  const ms = Date.now() - createdAt;
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+}
+
+const CAUTION =
+  'Suggestion based on location, size, and traits. Visual confirmation is required before any action.';
+
+function nextActionForType(type: string): string {
+  if (type === 'found') return 'contact_finder';
+  return 'view_sighting';
+}
+
+// â”€â”€ GET /api/matching/cases/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Returns ranked candidate matches for the given case from the live DB.
+// Any authenticated user can run matching on any active case.
+// Candidates: all active cases of opposite type(s), system-wide.
+
+router.get('/matching/cases/:id', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Fetch origin case (must exist, any status)
+    const originRes = await query('SELECT * FROM cases WHERE id = $1', [id]);
+    if (originRes.rows.length === 0) {
+      res.status(404).json({ error: 'case_not_found' });
+      return;
+    }
+    const origin = originRes.rows[0];
+
+    // 2. Determine candidate types
+    const candidateTypes: string[] =
+      origin.type === 'lost' ? ['found', 'sighted'] : ['lost'];
+
+    // 3. Fetch active candidates (all users, not just requester)
+    const candidatesRes = await query(
+      `SELECT * FROM cases
+       WHERE type = ANY($1::text[]) AND status = 'active' AND id != $2
+       ORDER BY created_at DESC
+       LIMIT 300`,
+      [candidateTypes, id]
+    );
+
+    // 4. Score each candidate
+    const originLat = origin.approx_lat != null ? parseFloat(origin.approx_lat) : null;
+    const originLng = origin.approx_lng != null ? parseFloat(origin.approx_lng) : null;
+
+    const results: object[] = [];
+
+    for (const c of candidatesRes.rows) {
+      let score = 0;
+      const reasons: string[] = [];
+
+      // Distance
+      const cLat = c.approx_lat != null ? parseFloat(c.approx_lat) : null;
+      const cLng = c.approx_lng != null ? parseFloat(c.approx_lng) : null;
+      if (originLat != null && originLng != null && cLat != null && cLng != null) {
+        const km = haversineKm(originLat, originLng, cLat, cLng);
+        const d = distanceScore(km);
+        score += d.score;
+        if (d.reason) reasons.push(d.reason);
+      }
+
+      // Recency
+      const r = recencyScore(Number(c.created_at));
+      score += r.score;
+      if (r.reason) reasons.push(r.reason);
+
+      // Size
+      const originSize = (origin.size ?? '').toLowerCase();
+      const cSize = (c.size ?? '').toLowerCase();
+      if (originSize && cSize && originSize === cSize) {
+        score += 20;
+        reasons.push('similar size');
+      }
+
+      // Colors
+      const colorMatches = colorOverlap(origin.colors ?? [], c.colors ?? []);
+      if (colorMatches > 0) {
+        score += Math.min(colorMatches * 10, 20);
+        reasons.push('similar color');
+      }
+
+      // Traits
+      const originTraits: string[] = origin.traits ?? [];
+      const cTraits: string[] = c.traits ?? [];
+      const sharedTraits = originTraits.filter((t) =>
+        cTraits.some(
+          (ct) =>
+            ct.toLowerCase().includes(t.toLowerCase()) ||
+            t.toLowerCase().includes(ct.toLowerCase())
+        )
+      );
+      if (sharedTraits.length > 0) {
+        score += Math.min(sharedTraits.length * 5, 15);
+        reasons.push('matching trait');
+      }
+
+      const confidence = Math.min(Math.round((score / 95) * 100), 95);
+      if (confidence < 15) continue;
+
+      results.push({
+        caseId: c.id,
+        confidence,
+        reasons: reasons.slice(0, 3),
+        location: c.location ?? '',
+        time: formatTimeAgo(Number(c.created_at)),
+        timeLabel: c.time_label ?? '',
+        description: c.description ?? '',
+        size: c.size ?? '',
+        colors: c.colors ?? [],
+        candidateType: c.type,
+        caution: CAUTION,
+        nextAction: nextActionForType(c.type),
+      });
+    }
+
+    // Sort by confidence desc, return top 20
+    const sorted = (results as { confidence: number }[])
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 20);
+
+    res.json(sorted);
+  } catch (err: any) {
+    console.error('[matching] GET /matching/cases/:id error:', err.message);
+    res.status(500).json({ error: 'matching_failed', message: err.message });
+  }
+});
+
+export default router;
+
+
+===== FILE: tests_pets_pattern =====
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-abc',
+  email: 'owner@example.com',
+  name: 'Owner',
+  picture: null,
+  email_verified: true,
+};
+
+const FAKE_PET_ROW = {
+  id: 'pet-001',
+  name: 'Buddy',
+  breed: 'Labrador',
+  size: 'Large',
+  colors: ['brown'],
+  marks: '',
+  collar: '',
+  temperament: 'friendly',
+  age: '3',
+  weight: '30kg',
+  microchip: '',
+  vaccines: '',
+  last_vaccine: '',
+  next_vaccine: '',
+  created_at: 1700000000000,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Pets API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+  });
+
+  describe('GET /api/pets', () => {
+    it('returns an array of pets', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+      const res = await request(app)
+        .get('/api/pets')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toMatchObject({ id: 'pet-001', name: 'Buddy' });
+    });
+
+    it('returns empty array when no pets exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/pets')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('POST /api/pets', () => {
+    it('returns 400 when name is missing', async () => {
+      const res = await request(app)
+        .post('/api/pets')
+        .set(authHeader())
+        .send({ breed: 'Poodle' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns 201 with created pet on valid payload', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+      const res = await request(app)
+        .post('/api/pets')
+        .set(authHeader())
+        .send({ name: 'Buddy', breed: 'Labrador', size: 'Large' });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ name: 'Buddy' });
+    });
+  });
+
+  describe('PUT /api/pets/:id', () => {
+    it('returns 200 when updating an existing pet', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...FAKE_PET_ROW, name: 'Buddy Updated' }] });
+
+      const res = await request(app)
+        .put('/api/pets/pet-001')
+        .set(authHeader())
+        .send({ name: 'Buddy Updated' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ name: 'Buddy Updated' });
+    });
+
+    it('returns 404 when pet does not exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .put('/api/pets/missing-pet')
+        .set(authHeader())
+        .send({ name: 'Ghost' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+
+  describe('DELETE /api/pets/:id', () => {
+    it('returns 200 when deleting an existing pet', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] });
+
+      const res = await request(app)
+        .delete('/api/pets/pet-001')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ deleted: true });
+    });
+
+    it('returns 404 when pet does not exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .delete('/api/pets/missing-pet')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+});
+
+
+===== FILE: tests_cases_pattern =====
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-abc',
+  email: 'reporter@example.com',
+  name: 'Reporter',
+  picture: null,
+  email_verified: true,
+};
+
+const FAKE_CASE_ROW = {
+  id: 'case_001',
+  type: 'lost',
+  status: 'active',
+  pet_id: null,
+  location: 'Central Park',
+  approx_lat: 40.78,
+  approx_lng: -73.97,
+  time_label: 'this morning',
+  description: 'Small dog, brown collar',
+  size: 'Small',
+  colors: ['brown'],
+  traits: ['friendly'],
+  direction: 'north',
+  created_at: 1700000000000,
+  updated_at: 1700000000000,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Cases API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+  });
+
+  describe('POST /api/cases', () => {
+    it('returns 400 for invalid type', async () => {
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({ type: 'invalid' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'invalid_type' });
+    });
+
+    it('returns 201 on valid lost case', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({
+          type: 'lost',
+          location: 'Central Park',
+          description: 'Small dog, brown collar',
+          size: 'Small',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ type: 'lost', status: 'active' });
+    });
+
+    it('returns 201 on valid found case', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...FAKE_CASE_ROW, type: 'found' }] });
+
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({ type: 'found', location: 'Main Street' });
+
+      expect(res.status).toBe(201);
+    });
+  });
+
+  describe('GET /api/cases', () => {
+    it('returns an array of cases', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .get('/api/cases')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toMatchObject({ id: 'case_001', type: 'lost' });
+    });
+
+    it('returns empty array when no cases exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/cases')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('GET /api/cases/:id', () => {
+    it('returns 200 for an existing case', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .get('/api/cases/case_001')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ id: 'case_001', type: 'lost' });
+    });
+
+    it('returns 404 for a missing case', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/cases/missing-case')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+});
+
+
+===== FILE: tests_public_pattern =====
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: null,
+}));
+
+import app from '../server/app.js';
+
+const FAKE_PET_ROW = {
+  id: 'pet-public-001',
+  name: 'Luna',
+  breed: 'Mixed',
+  size: 'Medium',
+  colors: ['black', 'white'],
+  marks: 'white chest',
+  collar: 'red collar',
+  temperament: 'gentle',
+  age: '2',
+  weight: '15kg',
+  microchip: 'MC12345',
+  vaccines: 'Rabies',
+  last_vaccine: '2025-01-01',
+  next_vaccine: '2026-01-01',
+  created_at: 1700000000000,
+  owner_uid: 'owner-secret-uid',
+  owner_email: 'owner@example.com',
+  owner_phone: '+15551234567',
+};
+
+describe('GET /api/public/pet/:petId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 404 when pet does not exist', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app).get('/api/public/pet/no-such-pet');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ error: 'not_found' });
+  });
+
+  it('returns 200 with pet data when pet exists', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: 'pet-public-001',
+      name: 'Luna',
+    });
+  });
+
+  it('does not expose owner_uid in public response', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body).not.toHaveProperty('owner_uid');
+    expect(res.body).not.toHaveProperty('owner_email');
+    expect(res.body).not.toHaveProperty('owner_phone');
+  });
+
+  it('includes hasOwner field but no owner identity fields', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body).toHaveProperty('hasOwner', true);
+    expect(res.body).not.toHaveProperty('owner_uid');
+  });
+
+  it('microchip is redacted to Yes/empty string not the real value', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body.microchip).not.toBe('MC12345');
+    expect(['Yes', '']).toContain(res.body.microchip);
+  });
+});
+
+
+===== FILE: services_index_context =====
+import { appConfig } from '../config/appConfig';
+import type { Services } from './interfaces';
+
+import { storageDemoAdapter } from './demo/storageDemo';
+import { smsDemoAdapter } from './demo/smsDemo';
+import { chatDemoAdapter } from './demo/chatDemo';
+import { pushDemoAdapter } from './demo/pushDemo';
+import { geoDemoAdapter } from './demo/geoDemo';
+import { aiDemoAdapter, matchingDemoAdapter } from './demo/aiDemo';
+import { authDemoAdapter } from './demo/authDemo';
+
+import { storageAzureAdapter } from './integration/storageAzure';
+import { storageAzureStub, storageGcsStub } from './integration/storageAzure.stub';
+import { smsTwilioStub } from './integration/smsTwilio.stub';
+import { chatAblyStub } from './integration/chatAbly.stub';
+import { pushFcmStub } from './integration/pushFcm.stub';
+import { geoGoogleStub } from './integration/geoGoogle.stub';
+import { aiGeminiStub } from './integration/aiGemini.stub';
+import { matchingRealAdapter } from './integration/matchingReal';
+import { authFirebaseAdapter } from './integration/authFirebase';
+
+function buildServices(): Services {
+  const isDemo = appConfig.mode === 'demo';
+
+  const storage = isDemo
+    ? storageDemoAdapter
+    : appConfig.storageProvider === 'azure'
+    ? storageAzureAdapter
+    : appConfig.storageProvider === 'gcs'
+    ? storageGcsStub
+    : storageDemoAdapter;
+
+  const sms = isDemo || appConfig.smsProvider === 'demo' ? smsDemoAdapter : smsTwilioStub;
+
+  const chat = isDemo || appConfig.chatProvider === 'demo' ? chatDemoAdapter : chatAblyStub;
+
+  const push = isDemo || appConfig.pushProvider === 'demo' ? pushDemoAdapter : pushFcmStub;
+
+  const geo = isDemo || appConfig.mapProvider === 'osm' ? geoDemoAdapter : geoGoogleStub;
+
+  const ai = isDemo || appConfig.aiProvider === 'demo' ? aiDemoAdapter : aiGeminiStub;
+
+  const matching = isDemo ? matchingDemoAdapter : matchingRealAdapter;
+
+  const auth = (isDemo || appConfig.authProvider === 'demo') ? authDemoAdapter : authFirebaseAdapter;
+
+  return { storage, sms, chat, push, geo, ai, matching, auth };
+}
+
+let _services: Services | null = null;
+
+export function getServices(): Services {
+  if (!_services) {
+    _services = buildServices();
+  }
+  return _services;
+}
+
+export function useServices(): Services {
+  return getServices();
+}
+

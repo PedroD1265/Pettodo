@@ -1,0 +1,46 @@
+{
+  "surface": "media_boundary",
+  "model": "gemini-2.5-pro",
+  "transport": "vertex_ai_rest_express_mode",
+  "request_url": "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-pro:generateContent?key=***",
+  "prompt_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\prompts\\patch_plan.md",
+  "bundle_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\bundles\\media_boundary.txt",
+  "response": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Claro, aquí tienes el plan de parche para la superficie `media_boundary`, presentado en español como se solicitó.\n\n---\n\n### 1. Meta del Parche\n\nEl objetivo de este parche es corregir un error crítico de consistencia de datos en la creación de imágenes, mejorar la robustez en la eliminación de blobs y aumentar la cobertura de pruebas para las rutas de la API de imágenes. Los cambios propuestos son mínimos y se centran en la seguridad y la fiabilidad, sin alterar los contratos de la API existentes ni realizar refactorizaciones extensas.\n\n### 2. Cambios Propuestos\n\nSe proponen los siguientes cambios, ordenados por prioridad:\n\n1.  **(Obligatorio) Implementar Transacciones de Base de Datos:** En las rutas `POST /api/pets/:id/images` y `POST /api/cases/:id/images`, las operaciones de `UPDATE` (para desmarcar la imagen primaria anterior) y de `INSERT` (para la nueva imagen) se ejecutan por separado. Si la segunda operación falla, la primera no se revierte, dejando a la entidad sin una imagen primaria. Ambas operaciones deben ser envueltas en una transacción de base de datos para garantizar la atomicidad.\n\n2.  **(Obligatorio) Ampliar Cobertura de Pruebas:** El archivo `tests/images.test.ts` carece de pruebas para la API de imágenes de casos (`Case Images API`), específicamente para el endpoint `DELETE` y para la validación de errores en el endpoint `POST`. Se deben añadir estas pruebas para alcanzar la paridad con las pruebas de imágenes de mascotas y garantizar la fiabilidad.\n\n3.  **(Mejora) Manejo de Errores en la Eliminación de Blobs:** En las rutas `DELETE /.../images/:imageId`, los errores al eliminar el blob de Azure Storage son silenciados con `.catch(() => {})`. Esto puede dejar archivos huérfanos en el almacenamiento si la eliminación falla. Se debe modificar para que, como mínimo, se registre el error en la consola del servidor, facilitando la depuración y el mantenimiento sin interrumpir el flujo del usuario.\n\n### 3. Plan a Nivel de Archivo\n\nEl plan se ejecutará en la siguiente secuencia para minimizar riesgos:\n\n1.  **Archivo: `tests/images.test.ts`**\n    *   **Acción:** Añadir nuevos casos de prueba para la `Case Images API`.\n        *   Un test para `POST /api/cases/:id/images` que envíe un cuerpo de solicitud sin `blobPath` y verifique que se recibe un error de validación `400`.\n        *   Un test para `DELETE /api/cases/:id/images/:imageId` que verifique que la imagen se elimina correctamente y se recibe una respuesta `200` con `{ \"deleted\": true }`.\n        *   Un test para `DELETE` que verifique que se devuelve un `404` si se intenta eliminar una imagen que no pertenece al usuario.\n    *   **Propósito:** Validar el comportamiento actual y asegurar que las nuevas correcciones se puedan verificar de forma automatizada. Estos tests fallarán inicialmente.\n\n2.  **Archivo: `server/routes/images.ts`**\n    *   **Acción 1 (Transacciones):** Modificar los manejadores de `POST /api/pets/:id/images` y `POST /api/cases/:id/images`.\n        *   Obtener un cliente del pool de la base de datos (`pool.connect()`).\n        *   Envolver las consultas `UPDATE` e `INSERT` dentro de un bloque `try/catch`.\n        *   Ejecutar `BEGIN` antes de las consultas, `COMMIT` al final del `try` y `ROLLBACK` en el `catch`.\n        *   Asegurarse de liberar el cliente (`client.release()`) en un bloque `finally`.\n    *   **Acción 2 (Manejo de Errores):** Modificar los manejadores de `DELETE /api/pets/:id/images/:imageId` y `DELETE /api/cases/:id/images/:imageId`.\n        *   Cambiar `await deleteBlob(blob_path).catch(() => {});` por algo como:\n          ```typescript\n          await deleteBlob(blob_path).catch(err => {\n            console.error(`Failed to delete blob ${blob_path}:`, err);\n            // No se devuelve un error al cliente para no afectar la experiencia de usuario,\n            // pero el error queda registrado para el equipo de desarrollo.\n          });\n          ```\n\n3.  **Archivo: `tests/images.test.ts`**\n    *   **Acción:** Ejecutar de nuevo toda la suite de pruebas.\n    *   **Propósito:** Confirmar que los cambios han corregido los problemas, que los nuevos tests ahora pasan y que no se han introducido regresiones en la funcionalidad existente.\n\n### 4. Riesgos y Salvaguardas\n\n*   **Riesgo:** La introducción de la gestión de transacciones manuales puede causar fugas de conexiones si el cliente de la base de datos no se libera correctamente.\n    *   **Salvaguarda:** Utilizar un patrón `try/catch/finally` estricto para garantizar que `client.release()` se llame siempre, independientemente de si la operación tuvo éxito o falló. La revisión de código debe verificar explícitamente esta lógica.\n\n*   **Riesgo:** El cambio en el manejo de errores de `deleteBlob` podría, teóricamente, registrar información sensible.\n    *   **Salvaguarda:** El cambio propuesto solo registra el `blob_path` y el objeto de error, que no contienen datos del usuario. Es una práctica segura.\n\n*   **Riesgo:** Una implementación incorrecta de la transacción podría bloquear filas en la base de datos o causar fallos inesperados en la API.\n    *   **Salvaguarda:** Las pruebas automatizadas, incluyendo las nuevas pruebas añadidas, deben cubrir tanto los casos de éxito como los de fallo para validar que la transacción se comporta como se espera (`COMMIT` en éxito, `ROLLBACK` en error).\n\n### 5. Impacto en las Pruebas\n\n*   **Pruebas Nuevas (Obligatorias):**\n    *   Se deben añadir pruebas de integración para la `Case Images API` en `tests/images.test.ts` que cubran:\n        1.  `POST` con datos inválidos (respuesta 400).\n        2.  `DELETE` de una imagen existente (respuesta 200).\n        3.  `DELETE` de una imagen no encontrada o no perteneciente al usuario (respuesta 404).\n\n*   **Pruebas Opcionales (Recomendadas):**\n    *   Para una robustez máxima, se podría añadir una prueba que simule un fallo en la consulta `INSERT` (usando `vi.mock`) y verifique que la consulta `UPDATE` anterior se revierte correctamente, confirmando el funcionamiento del `ROLLBACK`.\n\n*   **Pruebas Existentes:**\n    *   Todas las pruebas existentes deben pasar sin modificaciones, ya que no se alteran los contratos de la API ni la lógica de negocio principal.\n\n### 6. Recomendación de Despliegue\n\nLos cambios propuestos son internos al backend y no afectan a las interfaces del cliente (`src/app/services/api.ts` permanece intacto). Por lo tanto, el riesgo de impacto para el usuario final es bajo.\n\n*   **Estrategia:** Se recomienda desplegar estos cambios como un único parche.\n*   **Rollback (Reversión):** La reversión es sencilla. Consiste en revertir los cambios en el archivo `server/routes/images.ts` a su versión anterior mediante el control de versiones (Git). No se requieren cambios en el esquema de la base de datos ni migraciones, lo que simplifica enormemente el proceso de reversión si fuera necesario. El principal riesgo de no aplicar el parche es la corrupción silenciosa de datos (entidades sin imagen primaria), que este parche precisamente soluciona."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "avgLogprobs": -0.48010781627737487
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 12484,
+      "candidatesTokenCount": 1758,
+      "totalTokenCount": 17016,
+      "trafficType": "ON_DEMAND",
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 12484
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1758
+        }
+      ],
+      "thoughtsTokenCount": 2774
+    },
+    "modelVersion": "gemini-2.5-pro",
+    "createTime": "2026-03-18T04:06:22.528092Z",
+    "responseId": "viS6adydINSLmecPwbTKmAY"
+  }
+}

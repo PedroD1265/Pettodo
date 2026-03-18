@@ -1,0 +1,1 @@
+﻿# No additional Python dependencies are required for the current Vertex AI REST caller.

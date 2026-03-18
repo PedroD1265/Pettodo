@@ -1,0 +1,2433 @@
+# PETTODO Surface Bundle
+
+METADATA: {
+  "surface": "tests_gap",
+  "description": "Current backend route tests vs uncovered critical surfaces.",
+  "generated_at_utc": "2026-03-18T04:08:25.643755+00:00",
+  "repo_root": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo",
+  "surfaces_file": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\surfaces\\surfaces.json",
+  "file_count": 12,
+  "missing_count": 0,
+  "truncated_count": 1
+}
+
+=== FILE: package.json ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\package.json
+STATUS: OK
+MAX_CHARS: 16000
+NOTES: Test runner and repo scripts.
+
+```text
+{
+  "name": "@figma/my-make-file",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview --host 0.0.0.0 --port 5000",
+    "api": "tsx server/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.31.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "@popperjs/core": "^2.11.8",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-aspect-ratio": "^1.1.2",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.3",
+    "@radix-ui/react-context-menu": "^2.2.6",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-hover-card": "^1.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-menubar": "^1.1.6",
+    "@radix-ui/react-navigation-menu": "^1.2.5",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slider": "^1.2.3",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toggle": "^1.1.2",
+    "@radix-ui/react-toggle-group": "^1.1.2",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "@types/leaflet": "^1.9.21",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "cors": "^2.8.6",
+    "date-fns": "^3.6.0",
+    "dotenv": "^17.3.1",
+    "embla-carousel-react": "^8.6.0",
+    "express": "^5.2.1",
+    "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
+    "html-to-image": "^1.11.13",
+    "input-otp": "^1.4.2",
+    "jspdf": "^4.2.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.487.0",
+    "motion": "^12.23.24",
+    "next-themes": "^0.4.6",
+    "pg": "^8.20.0",
+    "qr-scanner": "^1.4.2",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.55.0",
+    "react-leaflet": "^4.2.1",
+    "react-popper": "^2.3.0",
+    "react-resizable-panels": "^2.1.7",
+    "react-responsive-masonry": "^2.7.1",
+    "react-router": "^7.13.0",
+    "react-slick": "^0.31.0",
+    "recharts": "^2.15.2",
+    "sonner": "^2.0.3",
+    "tailwind-merge": "^3.2.0",
+    "tw-animate-css": "^1.3.8",
+    "vaul": "^1.1.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/pg": "^8.18.0",
+    "@types/supertest": "^7.2.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "supertest": "^7.2.2",
+    "tailwindcss": "^4.1.12",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "vitest": "^4.1.0"
+  }
+}
+
+```
+
+
+=== FILE: server/app.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\server\app.ts
+STATUS: OK
+MAX_CHARS: 16000
+NOTES: Mounted API surface map.
+
+```text
+import express from "express";
+import cors from "cors";
+import authRoutes from "./routes/auth.js";
+import petRoutes from "./routes/pets.js";
+import importRoutes from "./routes/import.js";
+import publicRoutes from "./routes/public.js";
+import caseRoutes from "./routes/cases.js";
+import imageRoutes from "./routes/images.js";
+import protectedContactRoutes from "./routes/protected-contact.js";
+import communityDogRoutes from "./routes/community-dogs.js";
+import changeRequestRoutes from "./routes/change-requests.js";
+import evidenceRoutes from "./routes/evidence.js";
+import reviewRoutes from "./routes/reviews.js";
+import abuseRoutes from "./routes/abuse.js";
+import matchingRoutes from "./routes/matching.js";
+
+const app = express();
+
+const allowedOrigins: string[] = [
+  "http://localhost:5000",
+  "http://localhost:3000",
+];
+if (process.env.ALLOWED_ORIGINS) {
+  allowedOrigins.push(
+    ...process.env.ALLOWED_ORIGINS.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
+  );
+}
+if (process.env.REPLIT_DEV_DOMAIN) {
+  allowedOrigins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+}
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (origin.endsWith(".replit.dev") || origin.endsWith(".repl.co")) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.some((o) => origin === o || origin.startsWith(o))) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("CORS not allowed"));
+    },
+    credentials: true,
+  }),
+);
+
+app.use(express.json({ limit: "1mb" }));
+
+app.use("/api", authRoutes);
+app.use("/api", petRoutes);
+app.use("/api", importRoutes);
+app.use("/api", publicRoutes);
+app.use("/api", caseRoutes);
+app.use("/api", imageRoutes);
+app.use("/api", protectedContactRoutes);
+app.use("/api", communityDogRoutes);
+app.use("/api", changeRequestRoutes);
+app.use("/api", evidenceRoutes);
+app.use("/api", reviewRoutes);
+app.use("/api", abuseRoutes);
+app.use("/api", matchingRoutes);
+
+export default app;
+
+```
+
+
+=== FILE: server/routes/matching.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\server\routes\matching.ts
+STATUS: OK
+MAX_CHARS: 16000
+NOTES: Critical route with no dedicated test file found.
+
+```text
+import { Router, type Response } from 'express';
+import { verifyToken, type AuthenticatedRequest } from '../middleware/verifyToken.js';
+import { query } from '../db.js';
+
+const router = Router();
+
+// ── Heuristic scoring helpers ─────────────────────────────────────────────────
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function recencyScore(createdAt: number): { score: number; reason: string | null } {
+  const hoursAgo = (Date.now() - createdAt) / (1000 * 60 * 60);
+  if (hoursAgo < 2) return { score: 30, reason: 'very recent sighting' };
+  if (hoursAgo < 6) return { score: 22, reason: 'recent report' };
+  if (hoursAgo < 24) return { score: 15, reason: 'within last 24 hours' };
+  if (hoursAgo < 72) return { score: 8, reason: null };
+  return { score: 2, reason: null };
+}
+
+function distanceScore(km: number): { score: number; reason: string | null } {
+  if (km < 0.5) return { score: 30, reason: 'very close to your area' };
+  if (km < 1) return { score: 22, reason: 'near your area' };
+  if (km < 2) return { score: 15, reason: `${km.toFixed(1)} km away` };
+  if (km < 5) return { score: 8, reason: `${km.toFixed(1)} km away` };
+  return { score: 2, reason: null };
+}
+
+function colorOverlap(a: string[], b: string[]): number {
+  const aSet = new Set((a ?? []).map((s) => s.toLowerCase()));
+  return (b ?? []).filter((c) => aSet.has(c.toLowerCase())).length;
+}
+
+function formatTimeAgo(createdAt: number): string {
+  const ms = Date.now() - createdAt;
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+}
+
+const CAUTION =
+  'Suggestion based on location, size, and traits. Visual confirmation is required before any action.';
+
+function nextActionForType(type: string): string {
+  if (type === 'found') return 'contact_finder';
+  return 'view_sighting';
+}
+
+// ── GET /api/matching/cases/:id ───────────────────────────────────────────────
+// Returns ranked candidate matches for the given case from the live DB.
+// Any authenticated user can run matching on any active case.
+// Candidates: all active cases of opposite type(s), system-wide.
+
+router.get('/matching/cases/:id', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    // 1. Fetch origin case (must exist, any status)
+    const originRes = await query('SELECT * FROM cases WHERE id = $1', [id]);
+    if (originRes.rows.length === 0) {
+      res.status(404).json({ error: 'case_not_found' });
+      return;
+    }
+    const origin = originRes.rows[0];
+
+    // 2. Determine candidate types
+    const candidateTypes: string[] =
+      origin.type === 'lost' ? ['found', 'sighted'] : ['lost'];
+
+    // 3. Fetch active candidates (all users, not just requester)
+    const candidatesRes = await query(
+      `SELECT * FROM cases
+       WHERE type = ANY($1::text[]) AND status = 'active' AND id != $2
+       ORDER BY created_at DESC
+       LIMIT 300`,
+      [candidateTypes, id]
+    );
+
+    // 4. Score each candidate
+    const originLat = origin.approx_lat != null ? parseFloat(origin.approx_lat) : null;
+    const originLng = origin.approx_lng != null ? parseFloat(origin.approx_lng) : null;
+
+    const results: object[] = [];
+
+    for (const c of candidatesRes.rows) {
+      let score = 0;
+      const reasons: string[] = [];
+
+      // Distance
+      const cLat = c.approx_lat != null ? parseFloat(c.approx_lat) : null;
+      const cLng = c.approx_lng != null ? parseFloat(c.approx_lng) : null;
+      if (originLat != null && originLng != null && cLat != null && cLng != null) {
+        const km = haversineKm(originLat, originLng, cLat, cLng);
+        const d = distanceScore(km);
+        score += d.score;
+        if (d.reason) reasons.push(d.reason);
+      }
+
+      // Recency
+      const r = recencyScore(Number(c.created_at));
+      score += r.score;
+      if (r.reason) reasons.push(r.reason);
+
+      // Size
+      const originSize = (origin.size ?? '').toLowerCase();
+      const cSize = (c.size ?? '').toLowerCase();
+      if (originSize && cSize && originSize === cSize) {
+        score += 20;
+        reasons.push('similar size');
+      }
+
+      // Colors
+      const colorMatches = colorOverlap(origin.colors ?? [], c.colors ?? []);
+      if (colorMatches > 0) {
+        score += Math.min(colorMatches * 10, 20);
+        reasons.push('similar color');
+      }
+
+      // Traits
+      const originTraits: string[] = origin.traits ?? [];
+      const cTraits: string[] = c.traits ?? [];
+      const sharedTraits = originTraits.filter((t) =>
+        cTraits.some(
+          (ct) =>
+            ct.toLowerCase().includes(t.toLowerCase()) ||
+            t.toLowerCase().includes(ct.toLowerCase())
+        )
+      );
+      if (sharedTraits.length > 0) {
+        score += Math.min(sharedTraits.length * 5, 15);
+        reasons.push('matching trait');
+      }
+
+      const confidence = Math.min(Math.round((score / 95) * 100), 95);
+      if (confidence < 15) continue;
+
+      results.push({
+        caseId: c.id,
+        confidence,
+        reasons: reasons.slice(0, 3),
+        location: c.location ?? '',
+        time: formatTimeAgo(Number(c.created_at)),
+        timeLabel: c.time_label ?? '',
+        description: c.description ?? '',
+        size: c.size ?? '',
+        colors: c.colors ?? [],
+        candidateType: c.type,
+        caution: CAUTION,
+        nextAction: nextActionForType(c.type),
+      });
+    }
+
+    // Sort by confidence desc, return top 20
+    const sorted = (results as { confidence: number }[])
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 20);
+
+    res.json(sorted);
+  } catch (err: any) {
+    console.error('[matching] GET /matching/cases/:id error:', err.message);
+    res.status(500).json({ error: 'matching_failed', message: err.message });
+  }
+});
+
+export default router;
+
+```
+
+
+=== FILE: server/routes/images.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\server\routes\images.ts
+STATUS: OK
+MAX_CHARS: 16000
+NOTES: Critical media boundary route.
+
+```text
+import { Router, type Response } from 'express';
+import { verifyToken, type AuthenticatedRequest } from '../middleware/verifyToken.js';
+import {
+  isStorageConfigured,
+  generateUploadSasUrl,
+  generateReadSasUrl,
+  deleteBlob,
+} from '../blobStorage.js';
+import { query } from '../db.js';
+
+const router = Router();
+
+function storageMissingResponse(res: Response) {
+  res.status(503).json({
+    error: 'storage_not_configured',
+    message:
+      'Azure Blob Storage credentials are not configured. Set AZURE_STORAGE_ACCOUNT_NAME, AZURE_STORAGE_ACCOUNT_KEY and AZURE_STORAGE_CONTAINER_NAME.',
+  });
+}
+
+function safeName(filename: string): string {
+  return filename.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+}
+
+function blobExt(filename: string, mime: string): string {
+  const fromName = filename.split('.').pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName;
+  if (mime.includes('jpeg') || mime.includes('jpg')) return 'jpg';
+  if (mime.includes('png')) return 'png';
+  if (mime.includes('webp')) return 'webp';
+  if (mime.includes('pdf')) return 'pdf';
+  return 'bin';
+}
+
+function generateId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+// ─── POST /api/storage/upload-url ────────────────────────────────────────────
+// Returns a SAS write URL + a SAS read URL for a blob that is about to be
+// uploaded directly from the browser.
+// entityType/entityId are optional; when provided ownership is verified.
+router.post('/storage/upload-url', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  if (!isStorageConfigured()) { storageMissingResponse(res); return; }
+
+  const uid = req.user!.uid;
+  const { filename, mimeType, entityType, entityId } = req.body as {
+    filename?: string;
+    mimeType?: string;
+    entityType?: 'pet' | 'case';
+    entityId?: string;
+  };
+
+  if (!filename) {
+    res.status(400).json({ error: 'validation', message: 'filename is required' });
+    return;
+  }
+
+  if (entityType && entityId) {
+    try {
+      if (entityType === 'pet') {
+        const r = await query('SELECT id FROM pets WHERE id = $1 AND owner_uid = $2', [entityId, uid]);
+        if (r.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+      } else if (entityType === 'case') {
+        const r = await query('SELECT id FROM cases WHERE id = $1 AND created_by = $2', [entityId, uid]);
+        if (r.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+      }
+    } catch {
+      res.status(500).json({ error: 'db_error' }); return;
+    }
+  }
+
+  const ext = blobExt(filename, mimeType ?? '');
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2, 7);
+  const prefix = entityType && entityId
+    ? `${entityType}s/${entityId}`
+    : `temp/${uid}`;
+  const blobPath = `${prefix}/${ts}-${rand}.${ext}`;
+
+  try {
+    const uploadUrl = generateUploadSasUrl(blobPath, 15);
+    const readUrl = generateReadSasUrl(blobPath, 60);
+    res.json({ uploadUrl, blobPath, readUrl });
+  } catch (err: any) {
+    res.status(500).json({ error: 'sas_error', message: err.message });
+  }
+});
+
+// ─── Pet image references ─────────────────────────────────────────────────────
+
+// POST /api/pets/:id/images
+router.post('/pets/:id/images', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const petId = req.params.id;
+
+  try {
+    const pet = await query('SELECT id FROM pets WHERE id = $1 AND owner_uid = $2', [petId, uid]);
+    if (pet.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+  } catch { res.status(500).json({ error: 'db_error' }); return; }
+
+  const { blobPath, mimeType, originalFilename, sizeBytes, isPrimary } = req.body as {
+    blobPath?: string;
+    mimeType?: string;
+    originalFilename?: string;
+    sizeBytes?: number;
+    isPrimary?: boolean;
+  };
+
+  if (!blobPath) {
+    res.status(400).json({ error: 'validation', message: 'blobPath is required' });
+    return;
+  }
+
+  const id = generateId('pimg');
+  const now = Date.now();
+
+  try {
+    if (isPrimary) {
+      await query('UPDATE pet_images SET is_primary = FALSE WHERE pet_id = $1', [petId]);
+    }
+    const sortRes = await query('SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM pet_images WHERE pet_id = $1', [petId]);
+    const sortOrder = sortRes.rows[0].next ?? 0;
+
+    await query(
+      `INSERT INTO pet_images (id, pet_id, owner_uid, blob_path, mime_type, original_filename, size_bytes, is_primary, sort_order, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [id, petId, uid, blobPath, mimeType ?? 'image/jpeg', originalFilename ?? safeName(blobPath), sizeBytes ?? 0, isPrimary ?? false, sortOrder, now],
+    );
+
+    const url = isStorageConfigured() ? generateReadSasUrl(blobPath, 60) : '';
+    res.status(201).json({ id, petId, blobPath, url, isPrimary: isPrimary ?? false, sortOrder, createdAt: now });
+  } catch (err: any) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+// GET /api/pets/:id/images
+router.get('/pets/:id/images', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const petId = req.params.id;
+
+  try {
+    const pet = await query('SELECT id FROM pets WHERE id = $1 AND owner_uid = $2', [petId, uid]);
+    if (pet.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+
+    const imgs = await query(
+      'SELECT id, blob_path, mime_type, original_filename, size_bytes, is_primary, sort_order, created_at FROM pet_images WHERE pet_id = $1 ORDER BY sort_order ASC, created_at ASC',
+      [petId],
+    );
+
+    const rows = imgs.rows.map((r: any) => ({
+      id: r.id,
+      blobPath: r.blob_path,
+      mimeType: r.mime_type,
+      originalFilename: r.original_filename,
+      sizeBytes: r.size_bytes,
+      isPrimary: r.is_primary,
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      url: isStorageConfigured() ? generateReadSasUrl(r.blob_path, 60) : '',
+    }));
+
+    res.json(rows);
+  } catch { res.status(500).json({ error: 'db_error' }); }
+});
+
+// DELETE /api/pets/:id/images/:imageId
+router.delete('/pets/:id/images/:imageId', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const { id: petId, imageId } = req.params;
+
+  try {
+    const row = await query(
+      'SELECT id, blob_path FROM pet_images WHERE id = $1 AND pet_id = $2 AND owner_uid = $3',
+      [imageId, petId, uid],
+    );
+    if (row.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+
+    const { blob_path } = row.rows[0];
+    await query('DELETE FROM pet_images WHERE id = $1', [imageId]);
+
+    if (isStorageConfigured()) {
+      await deleteBlob(blob_path).catch(() => {});
+    }
+
+    res.json({ deleted: true });
+  } catch { res.status(500).json({ error: 'db_error' }); }
+});
+
+// ─── Case image references ────────────────────────────────────────────────────
+
+// POST /api/cases/:id/images
+router.post('/cases/:id/images', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const caseId = req.params.id;
+
+  try {
+    const c = await query('SELECT id FROM cases WHERE id = $1 AND created_by = $2', [caseId, uid]);
+    if (c.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+  } catch { res.status(500).json({ error: 'db_error' }); return; }
+
+  const { blobPath, mimeType, originalFilename, sizeBytes, isPrimary } = req.body as {
+    blobPath?: string;
+    mimeType?: string;
+    originalFilename?: string;
+    sizeBytes?: number;
+    isPrimary?: boolean;
+  };
+
+  if (!blobPath) {
+    res.status(400).json({ error: 'validation', message: 'blobPath is required' });
+    return;
+  }
+
+  const id = generateId('cimg');
+  const now = Date.now();
+
+  try {
+    if (isPrimary) {
+      await query('UPDATE case_images SET is_primary = FALSE WHERE case_id = $1', [caseId]);
+    }
+    const sortRes = await query('SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM case_images WHERE case_id = $1', [caseId]);
+    const sortOrder = sortRes.rows[0].next ?? 0;
+
+    await query(
+      `INSERT INTO case_images (id, case_id, owner_uid, blob_path, mime_type, original_filename, size_bytes, is_primary, sort_order, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [id, caseId, uid, blobPath, mimeType ?? 'image/jpeg', originalFilename ?? safeName(blobPath), sizeBytes ?? 0, isPrimary ?? false, sortOrder, now],
+    );
+
+    const url = isStorageConfigured() ? generateReadSasUrl(blobPath, 60) : '';
+    res.status(201).json({ id, caseId, blobPath, url, isPrimary: isPrimary ?? false, sortOrder, createdAt: now });
+  } catch (err: any) {
+    res.status(500).json({ error: 'db_error', message: err.message });
+  }
+});
+
+// GET /api/cases/:id/images
+router.get('/cases/:id/images', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const caseId = req.params.id;
+
+  try {
+    const c = await query('SELECT id FROM cases WHERE id = $1 AND created_by = $2', [caseId, uid]);
+    if (c.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+
+    const imgs = await query(
+      'SELECT id, blob_path, mime_type, original_filename, size_bytes, is_primary, sort_order, created_at FROM case_images WHERE case_id = $1 ORDER BY sort_order ASC, created_at ASC',
+      [caseId],
+    );
+
+    const rows = imgs.rows.map((r: any) => ({
+      id: r.id,
+      blobPath: r.blob_path,
+      mimeType: r.mime_type,
+      originalFilename: r.original_filename,
+      sizeBytes: r.size_bytes,
+      isPrimary: r.is_primary,
+      sortOrder: r.sort_order,
+      createdAt: r.created_at,
+      url: isStorageConfigured() ? generateReadSasUrl(r.blob_path, 60) : '',
+    }));
+
+    res.json(rows);
+  } catch { res.status(500).json({ error: 'db_error' }); }
+});
+
+// DELETE /api/cases/:id/images/:imageId
+router.delete('/cases/:id/images/:imageId', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  const uid = req.user!.uid;
+  const { id: caseId, imageId } = req.params;
+
+  try {
+    const row = await query(
+      'SELECT id, blob_path FROM case_images WHERE id = $1 AND case_id = $2 AND owner_uid = $3',
+      [imageId, caseId, uid],
+    );
+    if (row.rows.length === 0) { res.status(404).json({ error: 'not_found' }); return; }
+
+    const { blob_path } = row.rows[0];
+    await query('DELETE FROM case_images WHERE id = $1', [imageId]);
+
+    if (isStorageConfigured()) {
+      await deleteBlob(blob_path).catch(() => {});
+    }
+
+    res.json({ deleted: true });
+  } catch { res.status(500).json({ error: 'db_error' }); }
+});
+
+export default router;
+
+```
+
+
+=== FILE: tests/auth.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\auth.test.ts
+STATUS: OK
+MAX_CHARS: 16000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: vi.fn(),
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+describe('GET /api/auth/me', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 401 when no Authorization header is present', async () => {
+    const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
+    expect(res.body).toMatchObject({ error: 'unauthorized' });
+  });
+
+  it('returns 401 when Authorization header is malformed', async () => {
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Token bad-token');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 when token verification fails', async () => {
+    mockVerifyIdToken.mockRejectedValueOnce(new Error('invalid token'));
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Bearer bad-token');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 200 with user shape when token is valid', async () => {
+    mockVerifyIdToken.mockResolvedValueOnce({
+      uid: 'user-123',
+      email: 'test@example.com',
+      name: 'Test User',
+      picture: 'https://example.com/photo.jpg',
+      email_verified: true,
+    });
+
+    const res = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      uid: 'user-123',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      photoURL: 'https://example.com/photo.jpg',
+    });
+    expect(Object.keys(res.body)).toEqual(
+      expect.arrayContaining(['uid', 'email', 'displayName', 'photoURL'])
+    );
+  });
+});
+
+```
+
+
+=== FILE: tests/cases.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\cases.test.ts
+STATUS: OK
+MAX_CHARS: 20000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-abc',
+  email: 'reporter@example.com',
+  name: 'Reporter',
+  picture: null,
+  email_verified: true,
+};
+
+const FAKE_CASE_ROW = {
+  id: 'case_001',
+  type: 'lost',
+  status: 'active',
+  pet_id: null,
+  location: 'Central Park',
+  approx_lat: 40.78,
+  approx_lng: -73.97,
+  time_label: 'this morning',
+  description: 'Small dog, brown collar',
+  size: 'Small',
+  colors: ['brown'],
+  traits: ['friendly'],
+  direction: 'north',
+  created_at: 1700000000000,
+  updated_at: 1700000000000,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Cases API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+  });
+
+  describe('POST /api/cases', () => {
+    it('returns 400 for invalid type', async () => {
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({ type: 'invalid' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'invalid_type' });
+    });
+
+    it('returns 201 on valid lost case', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({
+          type: 'lost',
+          location: 'Central Park',
+          description: 'Small dog, brown collar',
+          size: 'Small',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ type: 'lost', status: 'active' });
+    });
+
+    it('returns 201 on valid found case', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...FAKE_CASE_ROW, type: 'found' }] });
+
+      const res = await request(app)
+        .post('/api/cases')
+        .set(authHeader())
+        .send({ type: 'found', location: 'Main Street' });
+
+      expect(res.status).toBe(201);
+    });
+  });
+
+  describe('GET /api/cases', () => {
+    it('returns an array of cases', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .get('/api/cases')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toMatchObject({ id: 'case_001', type: 'lost' });
+    });
+
+    it('returns empty array when no cases exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/cases')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('GET /api/cases/:id', () => {
+    it('returns 200 for an existing case', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_CASE_ROW] });
+
+      const res = await request(app)
+        .get('/api/cases/case_001')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ id: 'case_001', type: 'lost' });
+    });
+
+    it('returns 404 for a missing case', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/cases/missing-case')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+});
+
+```
+
+
+=== FILE: tests/health.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\health.test.ts
+STATUS: OK
+MAX_CHARS: 16000
+
+```text
+import { describe, it, expect, vi } from 'vitest';
+import request from 'supertest';
+
+vi.mock('../server/db.js', () => ({
+  query: vi.fn(),
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: null,
+}));
+
+import app from '../server/app.js';
+
+describe('GET /api/health', () => {
+  it('returns 200', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.status).toBe(200);
+  });
+
+  it('body is { ok: true }', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.body).toEqual({ ok: true });
+  });
+});
+
+```
+
+
+=== FILE: tests/images.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\images.test.ts
+STATUS: OK
+MAX_CHARS: 22000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+const mockIsStorageConfigured = vi.hoisted(() => vi.fn());
+const mockGenerateUploadSasUrl = vi.hoisted(() => vi.fn());
+const mockGenerateReadSasUrl = vi.hoisted(() => vi.fn());
+const mockDeleteBlob = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+vi.mock('../server/blobStorage.js', () => ({
+  isStorageConfigured: mockIsStorageConfigured,
+  generateUploadSasUrl: mockGenerateUploadSasUrl,
+  generateReadSasUrl: mockGenerateReadSasUrl,
+  deleteBlob: mockDeleteBlob,
+  ensureContainer: vi.fn().mockResolvedValue(undefined),
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-abc',
+  email: 'owner@example.com',
+  name: 'Owner',
+  picture: null,
+  email_verified: true,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Storage API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+  });
+
+  describe('POST /api/storage/upload-url', () => {
+    it('returns 503 when storage is not configured', async () => {
+      mockIsStorageConfigured.mockReturnValue(false);
+
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .set(authHeader())
+        .send({ filename: 'photo.jpg', mimeType: 'image/jpeg' });
+
+      expect(res.status).toBe(503);
+      expect(res.body).toMatchObject({ error: 'storage_not_configured' });
+    });
+
+    it('returns 400 when filename is missing', async () => {
+      mockIsStorageConfigured.mockReturnValue(true);
+
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .set(authHeader())
+        .send({ mimeType: 'image/jpeg' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns upload and read URLs when configured and no entity provided', async () => {
+      mockIsStorageConfigured.mockReturnValue(true);
+      mockGenerateUploadSasUrl.mockReturnValue('https://blob.example.com/upload?sas=...');
+      mockGenerateReadSasUrl.mockReturnValue('https://blob.example.com/read?sas=...');
+
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .set(authHeader())
+        .send({ filename: 'photo.jpg', mimeType: 'image/jpeg' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        uploadUrl: expect.stringContaining('https://'),
+        readUrl: expect.stringContaining('https://'),
+        blobPath: expect.stringContaining('temp/user-abc/'),
+      });
+    });
+
+    it('validates pet ownership when entityType=pet is provided', async () => {
+      mockIsStorageConfigured.mockReturnValue(true);
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .set(authHeader())
+        .send({ filename: 'photo.jpg', mimeType: 'image/jpeg', entityType: 'pet', entityId: 'not-my-pet' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+
+    it('returns URLs for owned pet entity', async () => {
+      mockIsStorageConfigured.mockReturnValue(true);
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] });
+      mockGenerateUploadSasUrl.mockReturnValue('https://blob.example.com/upload?sas=...');
+      mockGenerateReadSasUrl.mockReturnValue('https://blob.example.com/read?sas=...');
+
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .set(authHeader())
+        .send({ filename: 'dog.jpg', mimeType: 'image/jpeg', entityType: 'pet', entityId: 'pet-001' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.blobPath).toContain('pets/pet-001/');
+    });
+
+    it('returns 401 when auth token is missing', async () => {
+      const res = await request(app)
+        .post('/api/storage/upload-url')
+        .send({ filename: 'photo.jpg' });
+
+      expect(res.status).toBe(401);
+    });
+  });
+});
+
+describe('Pet Images API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+    mockIsStorageConfigured.mockReturnValue(true);
+    mockGenerateReadSasUrl.mockReturnValue('https://blob.example.com/pets/pet-001/img.jpg?sas=...');
+    mockDeleteBlob.mockResolvedValue(undefined);
+  });
+
+  describe('POST /api/pets/:id/images', () => {
+    it('returns 404 when pet is not owned by caller', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/pets/foreign-pet/images')
+        .set(authHeader())
+        .send({ blobPath: 'pets/foreign-pet/img.jpg', mimeType: 'image/jpeg', originalFilename: 'img.jpg', sizeBytes: 100 });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 400 when blobPath is missing', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] });
+
+      const res = await request(app)
+        .post('/api/pets/pet-001/images')
+        .set(authHeader())
+        .send({ mimeType: 'image/jpeg', originalFilename: 'img.jpg', sizeBytes: 100 });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns 201 with image reference on success', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ next: 0 }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/pets/pet-001/images')
+        .set(authHeader())
+        .send({ blobPath: 'pets/pet-001/img.jpg', mimeType: 'image/jpeg', originalFilename: 'img.jpg', sizeBytes: 50000, isPrimary: true });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        blobPath: 'pets/pet-001/img.jpg',
+        isPrimary: true,
+        url: expect.stringContaining('https://'),
+      });
+    });
+  });
+
+  describe('GET /api/pets/:id/images', () => {
+    it('returns 404 when pet is not owned', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/pets/foreign-pet/images')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+    });
+
+    it('returns image list with read URLs', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'pimg-001',
+            blob_path: 'pets/pet-001/img.jpg',
+            mime_type: 'image/jpeg',
+            original_filename: 'img.jpg',
+            size_bytes: 50000,
+            is_primary: true,
+            sort_order: 0,
+            created_at: 1700000000000,
+          }],
+        });
+
+      const res = await request(app)
+        .get('/api/pets/pet-001/images')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toMatchObject({
+        id: 'pimg-001',
+        blobPath: 'pets/pet-001/img.jpg',
+        isPrimary: true,
+        url: expect.stringContaining('https://'),
+      });
+    });
+  });
+
+  describe('DELETE /api/pets/:id/images/:imageId', () => {
+    it('returns 404 when image does not belong to caller', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .delete('/api/pets/pet-001/images/foreign-img')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+    });
+
+    it('deletes image and returns deleted:true', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pimg-001', blob_path: 'pets/pet-001/img.jpg' }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .delete('/api/pets/pet-001/images/pimg-001')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ deleted: true });
+      expect(mockDeleteBlob).toHaveBeenCalledWith('pets/pet-001/img.jpg');
+    });
+  });
+});
+
+describe('Case Images API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+    mockIsStorageConfigured.mockReturnValue(true);
+    mockGenerateReadSasUrl.mockReturnValue('https://blob.example.com/cases/case-001/img.jpg?sas=...');
+    mockDeleteBlob.mockResolvedValue(undefined);
+  });
+
+  describe('POST /api/cases/:id/images', () => {
+    it('returns 404 when case is not owned', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/cases/foreign-case/images')
+        .set(authHeader())
+        .send({ blobPath: 'cases/foreign-case/img.jpg', mimeType: 'image/jpeg', originalFilename: 'img.jpg', sizeBytes: 100 });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 201 on success', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'case-001' }] })
+        .mockResolvedValueOnce({ rows: [{ next: 0 }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/cases/case-001/images')
+        .set(authHeader())
+        .send({ blobPath: 'cases/case-001/img.jpg', mimeType: 'image/jpeg', originalFilename: 'img.jpg', sizeBytes: 80000 });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ blobPath: 'cases/case-001/img.jpg' });
+    });
+  });
+
+  describe('GET /api/cases/:id/images', () => {
+    it('returns image list for owned case', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'case-001' }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'cimg-001',
+            blob_path: 'cases/case-001/img.jpg',
+            mime_type: 'image/jpeg',
+            original_filename: 'img.jpg',
+            size_bytes: 80000,
+            is_primary: true,
+            sort_order: 0,
+            created_at: 1700000000000,
+          }],
+        });
+
+      const res = await request(app)
+        .get('/api/cases/case-001/images')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body[0]).toMatchObject({ id: 'cimg-001', isPrimary: true });
+    });
+  });
+});
+
+```
+
+
+=== FILE: tests/import.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\import.test.ts
+STATUS: OK
+MAX_CHARS: 20000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+
+const mockClient = vi.hoisted(() => ({
+  query: vi.fn(),
+  release: vi.fn(),
+}));
+
+const mockPool = vi.hoisted(() => ({
+  query: vi.fn(),
+  connect: vi.fn(),
+  on: vi.fn(),
+}));
+
+vi.mock('../server/db.js', () => ({
+  query: vi.fn(),
+  pool: mockPool,
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-import',
+  email: 'importer@example.com',
+  name: 'Importer',
+  picture: null,
+  email_verified: true,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Import API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+    mockPool.connect.mockResolvedValue(mockClient);
+    mockClient.release.mockResolvedValue(undefined);
+  });
+
+  describe('GET /api/import/status', () => {
+    it('returns { imported: false } when nothing has been imported', async () => {
+      mockPool.query.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/import/status')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ imported: false });
+    });
+
+    it('returns import metadata when import exists', async () => {
+      mockPool.query.mockResolvedValueOnce({
+        rows: [{ pet_count: 3, imported_at: 1700000000000 }],
+      });
+
+      const res = await request(app)
+        .get('/api/import/status')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ imported: true, petCount: 3 });
+    });
+  });
+
+  describe('POST /api/import/pets', () => {
+    it('returns 400 when pets array is missing', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/import/pets')
+        .set(authHeader())
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns 400 when pets array is empty', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/import/pets')
+        .set(authHeader())
+        .send({ pets: [] });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns 409 when user has already imported', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'imp-existing' }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/import/pets')
+        .set(authHeader())
+        .send({ pets: [{ name: 'Buddy' }] });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({ error: 'already_imported' });
+    });
+
+    it('returns success on valid import payload', async () => {
+      mockClient.query.mockResolvedValue({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/import/pets')
+        .set(authHeader())
+        .send({
+          pets: [
+            { name: 'Buddy', breed: 'Labrador', size: 'Large' },
+            { name: 'Luna', breed: 'Mixed', size: 'Medium' },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ imported: 2, total: 2 });
+    });
+
+    it('skips pets without a name but still succeeds', async () => {
+      mockClient.query.mockResolvedValue({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/import/pets')
+        .set(authHeader())
+        .send({
+          pets: [
+            { name: 'Buddy' },
+            { breed: 'Unknown' },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ imported: 1, total: 2 });
+    });
+  });
+});
+
+```
+
+
+=== FILE: tests/pets.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\pets.test.ts
+STATUS: OK
+MAX_CHARS: 20000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockVerifyIdToken = vi.hoisted(() => vi.fn());
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: { verifyIdToken: mockVerifyIdToken },
+}));
+
+import app from '../server/app.js';
+
+const FAKE_USER = {
+  uid: 'user-abc',
+  email: 'owner@example.com',
+  name: 'Owner',
+  picture: null,
+  email_verified: true,
+};
+
+const FAKE_PET_ROW = {
+  id: 'pet-001',
+  name: 'Buddy',
+  breed: 'Labrador',
+  size: 'Large',
+  colors: ['brown'],
+  marks: '',
+  collar: '',
+  temperament: 'friendly',
+  age: '3',
+  weight: '30kg',
+  microchip: '',
+  vaccines: '',
+  last_vaccine: '',
+  next_vaccine: '',
+  created_at: 1700000000000,
+};
+
+function authHeader() {
+  return { Authorization: 'Bearer valid-token' };
+}
+
+describe('Pets API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyIdToken.mockResolvedValue(FAKE_USER);
+  });
+
+  describe('GET /api/pets', () => {
+    it('returns an array of pets', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+      const res = await request(app)
+        .get('/api/pets')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toMatchObject({ id: 'pet-001', name: 'Buddy' });
+    });
+
+    it('returns empty array when no pets exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .get('/api/pets')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('POST /api/pets', () => {
+    it('returns 400 when name is missing', async () => {
+      const res = await request(app)
+        .post('/api/pets')
+        .set(authHeader())
+        .send({ breed: 'Poodle' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({ error: 'validation' });
+    });
+
+    it('returns 201 with created pet on valid payload', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+      const res = await request(app)
+        .post('/api/pets')
+        .set(authHeader())
+        .send({ name: 'Buddy', breed: 'Labrador', size: 'Large' });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ name: 'Buddy' });
+    });
+  });
+
+  describe('PUT /api/pets/:id', () => {
+    it('returns 200 when updating an existing pet', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ ...FAKE_PET_ROW, name: 'Buddy Updated' }] });
+
+      const res = await request(app)
+        .put('/api/pets/pet-001')
+        .set(authHeader())
+        .send({ name: 'Buddy Updated' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ name: 'Buddy Updated' });
+    });
+
+    it('returns 404 when pet does not exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .put('/api/pets/missing-pet')
+        .set(authHeader())
+        .send({ name: 'Ghost' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+
+  describe('DELETE /api/pets/:id', () => {
+    it('returns 200 when deleting an existing pet', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'pet-001' }] });
+
+      const res = await request(app)
+        .delete('/api/pets/pet-001')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ deleted: true });
+    });
+
+    it('returns 404 when pet does not exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .delete('/api/pets/missing-pet')
+        .set(authHeader());
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({ error: 'not_found' });
+    });
+  });
+});
+
+```
+
+
+=== FILE: tests/public.test.ts ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\tests\public.test.ts
+STATUS: OK
+MAX_CHARS: 20000
+
+```text
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+
+const mockQuery = vi.hoisted(() => vi.fn());
+
+vi.mock('../server/db.js', () => ({
+  query: mockQuery,
+  pool: { query: vi.fn(), connect: vi.fn(), on: vi.fn() },
+}));
+
+vi.mock('../server/firebaseAdmin.js', () => ({
+  adminAuth: null,
+}));
+
+import app from '../server/app.js';
+
+const FAKE_PET_ROW = {
+  id: 'pet-public-001',
+  name: 'Luna',
+  breed: 'Mixed',
+  size: 'Medium',
+  colors: ['black', 'white'],
+  marks: 'white chest',
+  collar: 'red collar',
+  temperament: 'gentle',
+  age: '2',
+  weight: '15kg',
+  microchip: 'MC12345',
+  vaccines: 'Rabies',
+  last_vaccine: '2025-01-01',
+  next_vaccine: '2026-01-01',
+  created_at: 1700000000000,
+  owner_uid: 'owner-secret-uid',
+  owner_email: 'owner@example.com',
+  owner_phone: '+15551234567',
+};
+
+describe('GET /api/public/pet/:petId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 404 when pet does not exist', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app).get('/api/public/pet/no-such-pet');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toMatchObject({ error: 'not_found' });
+  });
+
+  it('returns 200 with pet data when pet exists', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: 'pet-public-001',
+      name: 'Luna',
+    });
+  });
+
+  it('does not expose owner_uid in public response', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body).not.toHaveProperty('owner_uid');
+    expect(res.body).not.toHaveProperty('owner_email');
+    expect(res.body).not.toHaveProperty('owner_phone');
+  });
+
+  it('includes hasOwner field but no owner identity fields', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body).toHaveProperty('hasOwner', true);
+    expect(res.body).not.toHaveProperty('owner_uid');
+  });
+
+  it('microchip is redacted to Yes/empty string not the real value', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [FAKE_PET_ROW] });
+
+    const res = await request(app).get('/api/public/pet/pet-public-001');
+
+    expect(res.body.microchip).not.toBe('MC12345');
+    expect(['Yes', '']).toContain(res.body.microchip);
+  });
+});
+
+```
+
+
+=== FILE: docs/02_build/AI_MATCHING.md ===
+ABSOLUTE_PATH: D:\proyectos\PETTODO\PETTODO VS\Pettodo\docs\02_build\AI_MATCHING.md
+STATUS: OK
+MAX_CHARS: 18000
+NOTES: Used to contrast documented matching expectations with present test coverage.
+
+```text
+# AI_MATCHING
+
+Purpose:
+Define the official MVP direction for PETTODO’s AI-assisted matching system so image quality checks, similarity workflows, duplicate detection, match ranking, caution framing, and review logic are implemented in a practical, trust-safe, pilot-usable way without pretending that matching is a universal identity oracle.
+
+What belongs here:
+- role of AI matching inside PETTODO
+- matching scope in the MVP
+- inputs, outputs, and stages of the matching pipeline
+- quality-gate and image-readiness rules
+- match-result logic and user-facing framing
+- duplicate-detection logic
+- review and trust-safety boundaries
+- relationship between matching, cases, profiles, and Community Dogs
+- release-critical baseline for matching
+- what remains intentionally not finalized
+
+Update rule:
+Update when PETTODO’s matching scope, provider strategy, match-result framing, trust-safety boundaries, or release expectations for AI-assisted matching materially change.
+
+---
+
+## 1. Why this document exists
+
+Matching is one of PETTODO’s most distinctive and high-value product capabilities.
+
+It matters because PETTODO should help users and helpers answer questions such as:
+
+- does this animal look like one already registered?
+- is this sighted or found animal probably linked to an existing lost case?
+- is this a likely duplicate profile?
+- should the user create a new record, open a case, or review existing candidates first?
+
+At the same time, matching is one of the easiest areas to overclaim.
+
+If implemented badly, matching can make PETTODO look like:
+
+- a fake-AI product with cosmetic results
+- a system that confuses similarity with identity
+- a product that exposes risky public claims too early
+- a product that misclassifies owned pets, Community Dogs, and unknown animals
+- a trust-sensitive workflow driven by false certainty
+
+This document exists to stop that.
+
+It defines the official MVP matching direction before heavier Replit implementation.
+
+It is not the full future computer-vision roadmap.
+It is the official operational baseline for the current MVP phase.
+
+---
+
+## 2. Core matching rule
+
+PETTODO matching is a **suggestion-and-review system**, not an automatic identity oracle.
+
+This is the most important rule in the entire document.
+
+Matching may support:
+
+- recovery assistance
+- duplicate suspicion
+- next-step guidance
+- case prioritization
+- record-quality improvement
+- Community Dog creation safety
+- user decision support
+
+Matching must not be treated as:
+
+- universal proof of identity
+- automatic proof of ownership
+- final dispute resolution
+- automatic truth for public/shared records
+- replacement for evidence, review, or human judgment in trust-sensitive situations
+
+---
+
+## 3. Role of matching inside PETTODO
+
+Matching is part of PETTODO’s broader product direction, but it is not the only product identity.
+
+It should support both:
+
+- **Emergency workflows**
+- **Daily / identity workflows**
+
+### Emergency support examples
+- a user creates a lost case and receives possible matches
+- a helper reports a found or sighted animal and sees likely existing profiles/cases
+- a QR/public flow can route the user away from unnecessary duplicate creation
+
+### Daily / identity support examples
+- a user creating a new profile is warned about likely duplicates
+- a Community Dog creation flow checks whether a similar record already exists
+- a record can be made more reliable over time through structured comparison and review
+
+---
+
+## 4. What matching is allowed to do in the MVP
+
+The MVP matching system should support these practical capabilities:
+
+- image quality assessment
+- usable vs poor photo gating
+- similarity-based candidate ranking
+- profile-to-profile matching
+- case-to-profile matching where relevant
+- duplicate suspicion
+- likely-candidate checks before creation
+- user-facing score + reasons + caution + next action
+- controlled support for Community Dog creation and shared-record review
+
+The MVP does not need:
+
+- perfect identity resolution
+- advanced behavioral biometrics
+- universal multi-animal recognition maturity
+- forensic-level breed/species modeling
+- fully mature trust/reputation weighting
+- automatic final adjudication of all conflicts
+
+---
+
+## 5. Matching scope in MVP
+
+## 5.1 Operational animal scope
+
+PETTODO is multi-animal in structure, but MVP matching should follow PETTODO’s broader operational emphasis:
+
+- strongest practical depth for dogs
+- meaningful support for cats where possible
+- extensible structure for other animals later
+
+The system must not behave as if only dogs exist, but it is acceptable for dog matching depth to be stronger in the first phase.
+
+---
+
+## 5.2 Matching surfaces in MVP
+
+Matching may appear in these product surfaces:
+
+- lost case flow
+- found case flow
+- sighted case flow
+- new profile creation flow
+- Community Dog creation flow
+- duplicate-review flow
+- match detail view
+- map/list-assisted candidate review
+- public/profile/case next-step guidance when appropriate
+
+It should not appear everywhere just because it exists.
+
+---
+
+## 6. Matching inputs
+
+The matching system may use a combination of these signals:
+
+- animal photos
+- visible traits
+- species
+- broad breed/type hints
+- sex if known
+- size/age band where useful
+- broad area / approximate location
+- case type context
+- recency or timing context
+- profile category context
+- record quality signals
+- structured extracted attributes
+- similarity embeddings
+- duplicate/perceptual-hash signals
+
+Important:
+Image similarity is central, but not the only possible signal.
+
+---
+
+## 7. Matching output model
+
+## 7.1 User-facing output rule
+
+Match output should include:
+
+- score
+- reasons
+- caution framing
+- next action
+
+That is a confirmed product rule.
+
+### Minimum user-facing behavior
+Users should be able to understand:
+
+- why this candidate appeared
+- how strong or weak the signal is
+- what they should do next
+- that the result is still a suggestion, not absolute truth
+
+---
+
+## 7.2 Official match-result language
+
+PETTODO’s approved user-facing match bands are:
+
+- **Probable Match**
+- **Strong Match**
+- **No Match**
+
+These are output types, not profile identity.
+
+Internal ranking may be more granular, but PETTODO should map it back to these approved user-facing concepts.
+
+---
+
+## 7.3 Match-result meaning
+
+### Strong Match
+A stronger similarity signal that deserves serious review and next-step action, but still does not automatically finalize identity truth.
+
+### Probable Match
+A meaningful candidate that should be reviewed, but with more uncertainty and more caution.
+
+### No Match
+No sufficiently useful candidate under the current conditions and thresholds.
+
+Important:
+No Match does not mean “this animal definitely has no existing related record.”
+It means no candidate was strong enough under the current search and evidence conditions.
+
+---
+
+## 8. Matching pipeline direction
+
+The recommended matching pipeline for MVP is multi-stage.
+
+This keeps matching practical, cost-aware, and more trustworthy.
+
+---
+
+## 8.1 Stage A — Input and context intake
+
+At intake, the system should capture:
+
+- the source entity
+- task context
+- image set
+- animal type/category context
+- flow type
+- broad location context where appropriate
+- whether the user is creating, searching, reporting, or reviewing
+
+Examples of trigger contexts:
+- new lost case
+- new found case
+- new sighted report
+- new animal profile creation
+- Community Dog creation proposal
+- manual match refresh
+
+---
+
+## 8.2 Stage B — Cheap quality gate
+
+The system should not send every image directly to the expensive AI path.
+
+Start with a practical quality gate using low-cost checks where possible, such as:
+
+- blur detection
+- brightness/exposure check
+- framing/usability check
+- minimum usable subject size
+- single-animal vs multi-animal warning where feasible
+- near-duplicate/perceptual-hash screening
+
+Suggested result states:
+- usable
+- questionable
+- poor
+
+### Operational rule
+Poor images should not automatically enter the full matching path as if they were equally reliable.
+
+Instead, the system should:
+
+- warn the user
+- request a better photo when helpful
+- allow limited continuation only when product logic really requires it
+- preserve honest confidence framing
+
+---
+
+## 8.3 Stage C — AI-assisted quality fallback
+
+If the cheap quality gate is inconclusive, the system may use AI-assisted quality review.
+
+AI may help with:
+
+- subject visibility
+- framing quality
+- whether the image is useful enough for matching
+- identifying likely unusable or misleading photos
+
+This is a bounded area where AI may be more operationally decisive.
+
+---
+
+## 8.4 Stage D — Normalization and preparation
+
+For usable images, the system should support:
+
+- normalization
+- thumbnail generation
+- derived image versions
+- optional subject-focused crops where practical
+- metadata extraction
+- embedding preparation
+
+This stage is important for stability, storage discipline, and repeatable matching quality.
+
+---
+
+## 8.5 Stage E — Feature and embedding generation
+
+The system may generate structured signals such as:
+
+- visual attributes
+- extracted visible traits
+- embeddings or vector representations
+- duplicate signals
+- provider/model metadata
+
+Important:
+Provider metadata matters because PETTODO must remain AI-capable but not AI-locked.
+
+---
+
+## 8.6 Stage F — Candidate retrieval
+
+Once usable matching inputs exist, PETTODO should retrieve likely candidates from relevant record pools.
+
+Candidate pools may include:
+
+- owned-pet animal profiles
+- Community Dog profiles
+- unknown-animal records
+- active lost cases
+- active found/sighted-related records where useful
+
+Candidate retrieval should be context-aware.
+
+Examples:
+- a lost case should prioritize likely animal/profile/case candidates relevant to recovery
+- a new Community Dog creation should prioritize likely duplicate profiles first
+- a found/sighted flow should prioritize existing profiles and active cases before encouraging new record creation
+
+---
+
+## 8.7 Stage G — Ranking
+
+Candidates should be ranked using a practical combination of signals such as:
+
+- image similarity
+- quality confidence
+- broad location relevance
+- timing relevance
+- visible trait alignment
+- category compatibility
+- duplicate risk signals
+- record completeness or reliability where appropriate
+
+This stage may be strongly AI-assisted, but PETTODO should still keep the result as ranked suggestion output, not identity certainty.
+
+---
+
+## 8.8 Stage H — User-facing result shaping
+
+Before showing results, PETTODO should convert internal ranking into user-appropriate output that includes:
+
+- candidate list
+- match band
+- reasons
+- caution framing
+- next steps
+
+This is where PETTODO turns technical ranking into safe, understandable product behavior.
+
+---
+
+## 9. Match reasons and caution framing
+
+## 9.1 Reasons should be human-readable
+
+The user-facing reasons should be practical and understandable.
+
+Examples:
+- similar coat/pattern
+- similar visible traits
+- similar size/build
+- similar approximate area
+- similar recent report context
+- likely duplicate of an existing profile
+
+Avoid unexplained black-box outputs like:
+- “confidence 0.81”
+without any useful interpretation.
+
+---
+
+## 9.2 Caution framing is mandatory
+
+Every meaningful match surface should preserve the message that:
+
+- this is a suggestion
+- review is still needed
+- public/shared truth is not automatically finalized by AI
+- more evidence may still be required
+
+This is especially important for:
+
+- owned-pet recovery
+- Community Dog creation
+- duplicate handling
+- disputed identity
+- public/shared record changes
+
+---
+
+## 9.3 Unsafe certainty is prohibited
+
+The product must not present AI output as universal certainty for:
+
+- ownership
+- profile identity
+- public/shared record truth
+- final case resolution
+- trust-sensitive disputes
+
+If the UI implies certainty where the docs do not allow it, the implementation is wrong.
+
+---
+
+## 10. Matching and duplicate detection
+
+## 10.1 Duplicate detection is part of the matching system
+
+Matching is not only for recovery.
+It is also for duplicate suspicion.
+
+This matters especially in:
+
+- new profile creation
+- Community Dog creation
+- found/sighted flows
+- case creation around animals that may already exist in the system
+
+---
+
+## 10.2 Duplicate warning rule
+
+Before encouraging a user to create a new record, PETTODO should show likely existing candidates where possible.
+
+This is especially important for:
+
+- Community Dog creation
+- found/sighted reports
+- unknown-animal flows
+- public/community-visible animal records
+
+The purpose is to reduce:
+
+- duplicate profiles
+- confusion
+- data fragmentation
+- accidental misclassification
+- unnecessary parallel records
+
+---
+
+## 10.3 Duplicate suspicion is not forced merge
+
+A likely duplicate should not automatically merge records.
+
+Instead, it may trigger:
+
+- user review
+- operator review
+- stronger caution
+- additional evidence requirement
+- duplicate-handling workflow later
+
+PETTODO should not silently rewrite identity truth.
+
+---
+
+## 11. Matching and Community Dogs
+
+## 11.1 Community Dog creation must use matching carefully
+
+Community Dog creation is one of the most important matching use cases.
+
+Before allowing or finalizing a new Community Dog record, the system should try to answer:
+
+- does this dog likely already exist in PETTODO?
+- is this likely an existing Community Dog?
+- could this actually be an owned pet or existing profile?
+- is the user about to create a duplicate?
+
+---
+
+## 11.2 Community Dog matching is not fully auto-finalizing
+
+Even if a likely candidate appears, the system should still allow controlled review logic.
+
+Examples:
+- suggest reviewing the existing record
+- suggest contributing to an existing record instead of creating a new one
+- trigger higher review if the candidate may be an owned pet
+- require stronger caution where confidence is weak
+
+---
+
+## 11.3 Community Dog trust boundary
+
+Matching may support Community Dog governance, but it must not bypass:
+
+- evidence requirements
+- review-aware state
+- operator moderation in sensitive conflicts
+- public-data controls
+
+---
+
+## 12. Matching and cases
+
+## 12.1 Case-aware matching
+
+Matching should understand that cases are event contexts, not identity by themselves.
+
+A match may relate:
+
+- an active case to an animal profile
+- a sighted/found report to a likely existing animal
+- a lost case to a likely found/sighted-related candidate
+
+But the system must preserve:
+
+- profile
+- case
+- match
+
+as separate layers.
+
+---
+
+## 12.2 Case next-step guidance
+
+When matching is shown inside case flows, PETTODO should guide users toward safe next steps.
+
+Examples:
+- review likely profile
+- open protected contact
+- compare details
+- add more images
+- report sighting
+- avoid creating a duplicate case or duplicate profile
+
+---
+
+## 13. Matching and public flows
+
+## 13.1 Public-safe behavior rule
+
+Matching is trust-sensitive and should not become an uncontrolled public identity engine.
+
+The public product may expose limited low-risk matching-related guidance where appropriate, but meaningful matching actions should generally require account or controlled flow context.
+
+---
+
+## 13.2 Public profile / QR implication
+
+Public/QR flows may support smart next-step behavior such as:
+
+- report sighting
+- review current visible status
+- initiate safe contact path
+- avoid unnecessary duplicate creation
+
+But they must not expose raw internal trust signals, moderation state, or risky identity inference details.
+
+---
+
+## 14. Matching and trust/safety boundaries
+
+## 14.1 More risk = more caution
+
+The higher the public or trust impact of a match result, the stronger the caution and review should be.
+
+Examples of higher-risk contexts:
+- owned-pet vs Community Dog conflict
+- public/shared record changes
+- disputed identity
+- high-impact recovery decisions
+- possible fraud/manipulation
+- health-sensitive or trust-sensitive record changes
+
+---
+
+## 14.2 AI is more decisive only in bounded tasks
+
+PETTODO allows AI to be more operationally decisive in bounded tasks such as:
+
+- photo quality classification
+- similarity analysis
+- match ranking support
+
+But not in fully trust-sensitive truth-finalization tasks.
+
+---
+
+## 14.3 Human/operator review role
+
+Human or operator review becomes more important when:
+
+- a match affects public/shared record truth
+- a Community Dog may actually be an owned pet
+- users disagree about identity
+- evidence conflicts
+- abuse or suspicious behavior appears
+- multiple records are in tension
+
+---
+
+## 15. User experience rules for matching
+
+## 15.1 Matching should feel useful, not magical
+
+The UX should make users feel that PETTODO is helping them practically, not performing theatrical AI.
+
+That means:
+
+- explain enough
+- avoid gimmick language
+- avoid certainty inflation
+- show what to do next
+
+---
+
+## 15.2 Matching should reduce confusion
+
+A good match flow helps users answer:
+
+- should I use this existing record?
+- should I contact someone?
+- should I report a sighting?
+- should I create a new record?
+- should this go to review?
+
+If the flow only shows candidates without helping decisions, it is incomplete.
+
+---
+
+## 15.3 Poor-photo experience matters
+
+When image quality is weak, PETTODO should handle that honestly.
+
+The system may say, in effect:
+
+- this photo may be too weak for strong matching
+- upload a clearer image for better results
+- you can still continue, but confidence may be lower
+
+This is better than pretending the system is equally reliable on poor inputs.
+
+---
+
+## 16. Data-model and architecture implications
+
+Matching implementation should remain aligned with PETTODO’s build docs.
+
+### Core entity implications
+Matching should rely on:
+
+- match runs
+- match candidates
+- media assets
+- media analysis results
+- embeddings
+- provider metadata
+- reasons bundles
+- review state where applicable
+
+### Architecture implications
+Matching should use:
+
+- a provider-agnostic internal AI service layer
+- replaceable provider adapters
+- bounded AI con
+
+[TRUNCATED by ai-war-room/build_surface_bundle.py after 18000 characters]
+
+```
+

@@ -1,0 +1,46 @@
+{
+  "surface": "matching",
+  "model": "gemini-2.5-pro",
+  "transport": "vertex_ai_rest_express_mode",
+  "request_url": "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-pro:generateContent?key=***",
+  "prompt_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\prompts\\patch_plan.md",
+  "bundle_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\bundles\\matching.txt",
+  "response": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Claro, aquí tienes el plan de parche para la superficie `matching`.\n\n---\n\n### 1. Objetivo del Parche\n\nEl objetivo principal es eliminar la lógica de emparejamiento (matching) duplicada y divergente del frontend, consolidando `server/routes/matching.ts` como la única fuente de verdad. Esto reducirá la deuda técnica, eliminará inconsistencias en los resultados de emparejamiento y alineará la implementación completamente con la lógica del backend, que ya cumple con los requisitos canónicos definidos en `docs/02_build/AI_MATCHING.md`.\n\n### 2. Cambios Propuestos\n\nEl cambio principal es la eliminación del archivo de utilidad de emparejamiento del frontend y la refactorización de cualquier componente que lo utilice para que llame al servicio de API del backend.\n\n-   **Cambio Obligatorio (Must-Fix)**: Eliminar el archivo `src/app/utils/matching.ts`. Este archivo contiene una reimplementación de la lógica de puntuación que es redundante y no está sincronizada con el backend. Su existencia es un riesgo de mantenimiento y puede causar una experiencia de usuario inconsistente.\n\n-   **Cambio Obligatorio (Must-Fix)**: Identificar y refactorizar todos los componentes del frontend que actualmente importan y utilizan la función `rankMatches` de `src/app/utils/matching.ts`. Estos componentes deben ser modificados para utilizar el adaptador de servicio `matchingRealAdapter`, que consume el endpoint de la API del backend.\n\n-   **Sin Cambios (No-Change)**: No se proponen cambios en la ruta del backend `server/routes/matching.ts`. Esta implementación es la fuente de verdad, está más completa y se alinea correctamente con los requisitos del documento `AI_MATCHING.md`, proveyendo `confidence`, `reasons`, `caution` y `nextAction`.\n\n-   **Sin Cambios (No-Change)**: El documento canónico `docs/02_build/AI_MATCHING.md` no debe ser modificado. Los cambios propuestos buscan alinear la implementación con este documento, no alterarlo.\n\n### 3. Plan a Nivel de Archivo\n\n1.  **`src/app/utils/matching.ts`**\n    -   **Acción**: **Eliminar**.\n    -   **Justificación**: Este archivo es una fuente de lógica duplicada y obsoleta. La lógica de emparejamiento debe residir únicamente en el servidor para garantizar consistencia.\n\n2.  **Componentes del Frontend (No incluidos en el bundle, pero inferidos)**\n    -   **Acción**: **Investigar y Refactorizar**.\n    -   **Justificación**: Se debe realizar una búsqueda global en el código fuente para encontrar cualquier uso de `import { rankMatches } from '.../utils/matching'`. Los componentes encontrados deben ser actualizados para:\n        a. Inyectar y utilizar el servicio de emparejamiento (`matchingRealAdapter`).\n        b. Llamar al método `rankMatches(caseId)` del servicio.\n        c. Adaptar la renderización de la UI para que consuma la estructura de datos devuelta por la API del backend, que es un objeto plano por cada resultado (e.g., `{ caseId, confidence, reasons, ... }`) en lugar de un objeto anidado (`{ case: Case, ... }`).\n\n3.  **`server/routes/matching.ts`**\n    -   **Acción**: **No tocar**.\n    -   **Justificación**: Es la implementación de referencia y funciona correctamente.\n\n4.  **`src/app/services/integration/matchingReal.ts` y `src/app/services/api.ts`**\n    -   **Acción**: **No tocar**.\n    -   **Justificación**: Estos archivos ya implementan correctamente el cliente de API para consumir el endpoint del backend. Son la pieza clave para la refactorización.\n\n### 4. Riesgos y Salvaguardas\n\n-   **Riesgo 1**: Un componente desconocido del frontend depende de la lógica de `utils/matching.ts` y su eliminación podría romper una funcionalidad.\n    -   **Salvaguarda**: La refactorización es un prerrequisito para la eliminación. Se debe realizar una búsqueda exhaustiva en todo el código base para identificar todos los puntos de uso. La eliminación del archivo solo se realizará después de que todos los componentes hayan sido migrados para usar el servicio del backend.\n\n-   **Riesgo 2**: La estructura de datos esperada por los componentes del frontend (que usan la lógica antigua) es diferente a la que devuelve la API del backend.\n    -   **Salvaguarda**: Durante la refactorización, los componentes deben ser adaptados para manejar la nueva estructura de datos. Esto representa una mejora, ya que la respuesta del backend es más rica e incluye `caution` y `nextAction`, campos requeridos por los documentos canónicos y ausentes en la implementación del frontend.\n\n-   **Riesgo 3**: Las pruebas de extremo a extremo (E2E) podrían fallar si dependían del comportamiento específico (y divergente) de la lógica del frontend.\n    -   **Salvaguarda**: Las pruebas E2E deben ser revisadas y, si es necesario, actualizadas para reflejar que la lógica de emparejamiento ahora proviene del backend. Se debe verificar que los datos mostrados en la UI coinciden con lo que se esperaría de la API.\n\n### 5. Impacto en las Pruebas\n\n-   **Pruebas Unitarias**:\n    -   Los tests asociados a `src/app/utils/matching.ts` deben ser eliminados junto con el archivo.\n    -   Los tests unitarios para los componentes refactorizados deben ser actualizados. Se deberán simular (mock) las llamadas a `matchingRealAdapter.rankMatches` y su respuesta, en lugar de invocar la función local `rankMatches`.\n\n-   **Pruebas de Integración**:\n    -   Es crucial verificar (o crear) pruebas de integración que confirmen que, al solicitar emparejamientos desde la UI, se realiza una llamada `GET /api/matching/cases/:id` al backend y que la respuesta se procesa y renderiza correctamente.\n\n-   **Pruebas de Extremo a Extremo (E2E)**:\n    -   Se debe ejecutar el conjunto completo de pruebas E2E. Un escenario clave a validar es el flujo completo de un usuario que ve las coincidencias para un caso, asegurando que la lista de candidatos y sus detalles (razones, nivel de confianza) se muestren correctamente desde el backend.\n\n### 6. Recomendación de Despliegue\n\nEl despliegue debe ser secuencial y cuidadoso, centrado en el frontend.\n\n1.  **Fase 1: Investigación y Refactorización (Desarrollo)**\n    -   Identificar todos los archivos que importan `rankMatches` desde `src/app/utils/matching.ts`.\n    -   En una rama de desarrollo, refactorizar cada uno de estos usos para que dependan del servicio `matchingRealAdapter`.\n    -   Actualizar las pruebas unitarias y de integración correspondientes.\n\n2.  **Fase 2: Eliminación y Verificación (Desarrollo)**\n    -   Una vez que no queden importaciones, eliminar el archivo `src/app/utils/matching.ts`.\n    -   Ejecutar todas las pruebas (unitarias, integración, E2E) en el entorno de CI para asegurar que no hay regresiones.\n\n3.  **Fase 3: Despliegue (Producción)**\n    -   Realizar el merge de la rama a la principal.\n    -   Desplegar los cambios del frontend. No se requieren cambios en el backend ni en la base de datos.\n\n**Consideraciones para el Rollback:**\n-   El plan de rollback es sencillo, ya que los cambios se limitan al código del frontend. Consistiría en revertir el commit que contiene la refactorización y la eliminación del archivo.\n-   Dado que no hay cambios en la API del backend ni en el esquema de la base de datos, el rollback no presenta dependencias complejas y puede realizarse de forma segura e inmediata si se detecta un problema crítico en producción."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "avgLogprobs": -0.5737063937717014
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 12518,
+      "candidatesTokenCount": 1800,
+      "totalTokenCount": 17977,
+      "trafficType": "ON_DEMAND",
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 12518
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1800
+        }
+      ],
+      "thoughtsTokenCount": 3659
+    },
+    "modelVersion": "gemini-2.5-pro",
+    "createTime": "2026-03-18T03:48:56.877925Z",
+    "responseId": "qCC6aeXKNbLc7bEPnonO6Q4"
+  }
+}

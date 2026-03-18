@@ -1,0 +1,119 @@
+﻿{
+  "version": 1,
+  "surfaces": [
+    {
+      "name": "matching",
+      "description": "Backend matching route, frontend matching client, and canonical matching docs.",
+      "files": [
+        {
+          "path": "server/routes/matching.ts",
+          "notes": "Primary backend ranking route."
+        },
+        {
+          "path": "server/app.ts",
+          "notes": "Route registration and app wiring."
+        },
+        {
+          "path": "src/app/utils/matching.ts",
+          "notes": "Frontend-side ranking helper logic."
+        },
+        {
+          "path": "src/app/services/integration/matchingReal.ts",
+          "notes": "Real service adapter for matching."
+        },
+        {
+          "path": "src/app/services/api.ts",
+          "max_chars": 22000,
+          "notes": "Contains matching API client and adjacent surface contracts."
+        },
+        {
+          "path": "docs/02_build/AI_MATCHING.md",
+          "max_chars": 26000,
+          "notes": "Canonical product and trust boundary doc for matching."
+        }
+      ]
+    },
+    {
+      "name": "media_boundary",
+      "description": "Storage URL issuance, image reference persistence, and image API test coverage.",
+      "files": [
+        {
+          "path": "server/routes/images.ts",
+          "max_chars": 26000,
+          "notes": "Upload URL and pet/case image boundary routes."
+        },
+        {
+          "path": "server/blobStorage.ts",
+          "notes": "Azure Blob helper boundary."
+        },
+        {
+          "path": "server/app.ts",
+          "notes": "Express route mounting."
+        },
+        {
+          "path": "src/app/services/api.ts",
+          "max_chars": 22000,
+          "notes": "Frontend image API contracts."
+        },
+        {
+          "path": "tests/images.test.ts",
+          "max_chars": 26000,
+          "notes": "Current image/storage route coverage."
+        }
+      ]
+    },
+    {
+      "name": "tests_gap",
+      "description": "Current backend route tests vs uncovered critical surfaces.",
+      "files": [
+        {
+          "path": "package.json",
+          "notes": "Test runner and repo scripts."
+        },
+        {
+          "path": "server/app.ts",
+          "notes": "Mounted API surface map."
+        },
+        {
+          "path": "server/routes/matching.ts",
+          "notes": "Critical route with no dedicated test file found."
+        },
+        {
+          "path": "server/routes/images.ts",
+          "notes": "Critical media boundary route."
+        },
+        {
+          "path": "tests/auth.test.ts"
+        },
+        {
+          "path": "tests/cases.test.ts",
+          "max_chars": 20000
+        },
+        {
+          "path": "tests/health.test.ts"
+        },
+        {
+          "path": "tests/images.test.ts",
+          "max_chars": 22000
+        },
+        {
+          "path": "tests/import.test.ts",
+          "max_chars": 20000
+        },
+        {
+          "path": "tests/pets.test.ts",
+          "max_chars": 20000
+        },
+        {
+          "path": "tests/public.test.ts",
+          "max_chars": 20000
+        },
+        {
+          "path": "docs/02_build/AI_MATCHING.md",
+          "max_chars": 18000,
+          "notes": "Used to contrast documented matching expectations with present test coverage."
+        }
+      ]
+    }
+  ]
+}

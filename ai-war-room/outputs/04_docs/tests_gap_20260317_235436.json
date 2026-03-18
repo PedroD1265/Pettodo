@@ -1,0 +1,46 @@
+{
+  "surface": "tests_gap",
+  "model": "gemini-2.5-pro",
+  "transport": "vertex_ai_rest_express_mode",
+  "request_url": "https://aiplatform.googleapis.com/v1/publishers/google/models/gemini-2.5-pro:generateContent?key=***",
+  "prompt_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\prompts\\docs_vs_code.md",
+  "bundle_path": "D:\\proyectos\\PETTODO\\PETTODO VS\\Pettodo\\ai-war-room\\bundles\\tests_gap.txt",
+  "response": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Claro, aquí tienes la auditoría de la superficie `tests_gap` para PETTODO, comparando la documentación con la implementación y las pruebas.\n\n### 1. Resumen de Alineación\n\nLa implementación del endpoint de matching (`GET /api/matching/cases/:id`) en `server/routes/matching.ts` está parcialmente alineada con los principios del documento `AI_MATCHING.md`. El código actual implementa correctamente el concepto de \"sugerencia y revisión\" en lugar de un oráculo de identidad, devolviendo una puntuación de confianza, razones legibles, una advertencia y una acción sugerida.\n\nSin embargo, existe una desviación crítica: la implementación actual es un sistema puramente heurístico basado en metadatos (ubicación, fecha, tamaño, color, rasgos) y **no utiliza análisis de imágenes**, lo cual es el pilar central del documento de diseño de `AI_MATCHING`.\n\nLa brecha más significativa y de mayor riesgo es la **ausencia total de pruebas automatizadas** para esta ruta crítica. No existe un archivo `tests/matching.test.ts`, lo que significa que la lógica de puntuación y la funcionalidad principal no están protegidas contra regresiones o errores.\n\n### 2. Coincidencias Confirmadas\n\nLa implementación actual se alinea con la documentación en los siguientes aspectos clave:\n\n*   **Sistema de Sugerencia:** El sistema evita proclamar una certeza del 100% al limitar la confianza (`confidence`) a un máximo de 95 e incluir un campo `caution` obligatorio en cada resultado, cumpliendo la regla central del documento.\n*   **Modelo de Salida para el Usuario:** La respuesta de la API coincide con el modelo definido en la sección 7.1 de la documentación, proporcionando `confidence` (puntuación), `reasons` (razones), `caution` (marco de advertencia) y `nextAction` (siguiente acción).\n*   **Razones Legibles:** El array `reasons` se construye a partir de frases comprensibles para el humano como `\"very recent sighting\"` o `\"similar size\"`, en lugar de métricas opacas, lo cual se alinea con la sección 9.1.\n*   **Recuperación de Candidatos Consciente del Contexto:** La lógica filtra correctamente los casos candidatos basándose en el tipo opuesto (p. ej., un caso `lost` busca candidatos `found` y `sighted`), como se describe en la sección 8.6.\n*   **Clasificación Multi-Señal:** El algoritmo de puntuación combina múltiples señales heurísticas (distancia, actualidad, tamaño, colores, rasgos), lo que es consistente con la estrategia de clasificación de la sección 8.7, aunque carece del componente de imagen.\n\n### 3. Desviaciones o Brechas\n\nSe han identificado las siguientes desviaciones y brechas significativas:\n\n*   **Brecha Crítica de Pruebas:** No existe **ningún archivo de pruebas** para la ruta `/api/matching/cases/:id`. El paquete de superficie confirma que el archivo `tests/matching.test.ts` está ausente. Esto expone una funcionalidad central a un alto riesgo de fallos no detectados durante el desarrollo o refactorización.\n*   **Promesa No Implementada: Matching Basado en Imágenes:** El documento `AI_MATCHING.md` se centra en el matching asistido por IA, con la \"similitud de imagen\" como una señal \"central\". La implementación actual **omite por completo el análisis de imágenes** y depende exclusivamente de metadatos estructurados. Esto representa una desviación fundamental de la visión documentada.\n*   **Promesa No Implementada: Pipeline de Matching:** La documentación describe un pipeline de varios pasos (Sección 8), que incluye validación de calidad de imagen (`Stage B/C`), normalización y generación de embeddings (`Stage D/E`). Nada de esto está implementado.\n*   **Promesa No Implementada: Detección de Duplicados:** La documentación (Sección 10) establece que el matching debe usarse para prevenir la creación de perfiles y casos duplicados. La implementación actual solo compara casos ya existentes y no ofrece un mecanismo para verificar duplicados potenciales *antes* de la creación de una nueva entidad.\n*   **Desviación en el Contrato de la API:** La API devuelve una puntuación numérica de `confidence`, pero la documentación (Sección 7.2) especifica que los resultados deben mapearse a categorías orientadas al usuario como `\"Probable Match\"` o `\"Strong Match\"`. La implementación actual delega esta lógica de mapeo al cliente, lo que podría generar inconsistencias.\n\n### 4. Riesgos Creados por la Desviación\n\n*   **Regresiones y Errores Ocultos:** Sin pruebas, cualquier cambio en la lógica de puntuación, las consultas a la base de datos o el modelo de datos puede romper el matching de forma silenciosa. Es imposible refactorizar o evolucionar esta funcionalidad con confianza.\n*   **Falsas Expectativas sobre el Producto:** La documentación promete un \"matching asistido por IA\" basado en imágenes, pero la realidad es un sistema heurístico más simple. Esto puede llevar a que los equipos de producto, marketing y liderazgo sobrevaloren las capacidades actuales del sistema y hagan promesas incorrectas a los usuarios.\n*   **Dificultad para Evolucionar:** Añadir las capacidades de análisis de imagen documentadas será mucho más arriesgado y costoso sobre una base de código frágil y sin pruebas.\n*   **Fragmentación de Datos:** Al no implementar la detección de duplicados durante la creación, el sistema no previene activamente la creación de registros redundantes, lo que socava uno de los objetivos clave del sistema de matching y perjudica la calidad de los datos a largo plazo.\n\n### 5. Seguimientos Recomendados\n\n1.  **Prioridad Inmediata: Añadir Cobertura de Pruebas.**\n    *   Crear el archivo `tests/matching.test.ts`.\n    *   Probar el \"camino feliz\": un caso `lost` que encuentra coincidencias `found` de alta confianza.\n    *   Probar casos límite: un ID de caso que no existe (esperando un 404), un caso sin coincidencias (esperando un array vacío), y acceso sin token de autenticación (esperando un 401).\n    *   Probar la lógica de puntuación: simular casos con características superpuestas específicas (p. ej., solo coincide el color, solo la ubicación) y verificar que `confidence` y `reasons` sean los esperados.\n\n2.  **Aclarar la Hoja de Ruta para el Matching por IA.**\n    *   Organizar una reunión con el equipo técnico y de producto para determinar si la implementación actual, puramente heurística, es un marcador de posición temporal o un cambio de estrategia.\n    *   El documento `AI_MATCHING.md` debe actualizarse para reflejar la realidad actual, o se debe crear un plan de trabajo para implementar la visión documentada.\n\n3.  **Planificar la Implementación del Matching por Similitud de Imagen.**\n    *   Definir las tareas necesarias para incorporar el análisis de imágenes en el algoritmo de puntuación. Esto incluye seleccionar un proveedor de IA, implementar el pipeline (puerta de calidad, generación de embeddings) e integrar la puntuación de similitud visual en el ranking final.\n\n4.  **Implementar la Detección de Duplicados.**\n    *   Diseñar y construir la lógica para ejecutar una verificación de matching *antes* de crear nuevos casos o perfiles de mascotas, como se describe en la sección 10 del documento. Esto podría implicar un nuevo endpoint o modificar los existentes (`POST /api/cases`, `POST /api/pets`).\n\n5.  **Refinar el Contrato de la API.**\n    *   Modificar el endpoint de matching para que devuelva la categoría de coincidencia legible por el usuario (p. ej., `\"matchBand\": \"Strong Match\"`) directamente en la respuesta, asegurando una experiencia de usuario consistente y alineada con la sección 7.2 de la documentación."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "avgLogprobs": -0.5206657327164556
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 21784,
+      "candidatesTokenCount": 1757,
+      "totalTokenCount": 26700,
+      "trafficType": "ON_DEMAND",
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 21784
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 1757
+        }
+      ],
+      "thoughtsTokenCount": 3159
+    },
+    "modelVersion": "gemini-2.5-pro",
+    "createTime": "2026-03-18T03:57:36.878291Z",
+    "responseId": "sCK6adPNNc3xmecP7M6E0Qk"
+  }
+}
