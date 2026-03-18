@@ -27,7 +27,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           FIREBASE_PROJECT_ID: ci-project
           FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY: '-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4J0CYXL8G1dQHZdGnF7kTZdlMhW\n-----END RSA PRIVATE KEY-----\n'
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
 
       - name: Test
         run: npm test
@@ -35,6 +35,4 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           FIREBASE_PROJECT_ID: ci-project
           FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY: '-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4J0CYXL8G1dQHZdGnF7kTZdlMhW\n-----END RSA PRIVATE KEY-----\n'
-
-#test
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
