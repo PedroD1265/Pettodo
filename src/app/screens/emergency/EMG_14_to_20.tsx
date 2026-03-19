@@ -265,7 +265,13 @@ export function EMG_16() {
             <div className="pt-2 border-t border-gray-200">
               <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
               <div className="flex gap-2">
-                <Btn variant="secondary" className="flex-1" onClick={() => nav('/emg/share-flyer')}>Share Flyer</Btn>
+                <Btn
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => nav(`/emg/share-flyer?caseId=${encodeURIComponent(selectedCase.id)}`, { state: { caseSummary: selectedCase } })}
+                >
+                  Share Flyer
+                </Btn>
                 <Btn variant="secondary" className="flex-1" onClick={() => nav('/emg/lost-published')}>Report Published</Btn>
               </div>
             </div>
@@ -397,7 +403,13 @@ export function EMG_17() {
           <div className="pt-3 mt-1 border-t border-gray-200">
             <p className="text-[11px] mb-2 font-medium text-gray-500">Case Actions</p>
             <div className="flex gap-2">
-              <Btn variant="ghost" className="flex-1" onClick={() => nav('/emg/share-flyer')}>Share Flyer</Btn>
+              <Btn
+                variant="ghost"
+                className="flex-1"
+                onClick={() => nav(queryCaseId ? `/emg/share-flyer?caseId=${encodeURIComponent(queryCaseId)}` : '/emg/share-flyer', selectedCase ? { state: { caseSummary: selectedCase } } : undefined)}
+              >
+                Share Flyer
+              </Btn>
               <Btn variant="ghost" className="flex-1" onClick={() => nav('/emg/lost-published')}>Report Published</Btn>
             </div>
           </div>
