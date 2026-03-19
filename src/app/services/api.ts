@@ -296,6 +296,19 @@ export const publicApi = {
     hasOwner: boolean;
     protectedContactEnabled: boolean;
     contactEntryPoint: string;
+    photoUrl: string | null;
+    emergencyCase: {
+      id: string;
+      type: "lost" | "found" | "sighted";
+      status: string;
+      location: string;
+      timeLabel: string;
+      description: string;
+      colors: string[];
+      traits: string[];
+      direction: string;
+      createdAt: number;
+    } | null;
   }> =>
     fetch(`/api/public/pet/${petId}`).then((r) => {
       if (!r.ok) throw new Error(`Not found`);
