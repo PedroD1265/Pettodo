@@ -142,11 +142,11 @@ describe('Change Requests API', () => {
         .set(authHeader())
         .send(maliciousPayload);
 
-      expect(res.status).toBe(201);
-
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
-      expect(insertParams[4]).toBe(JSON.stringify(maliciousPayload.proposedChanges));
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('bad_request');
+      expect(res.body.message).toContain('review_state');
+      expect(res.body.message).toContain('created_by');
+      expect(mockQuery).not.toHaveBeenCalled();
     });
   });
 });
