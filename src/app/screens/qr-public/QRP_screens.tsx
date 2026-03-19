@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
-import { Banner } from '../../components/pettodo/Banners';
 import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate, useParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
@@ -10,7 +9,7 @@ import { checkRevealRateLimit, recordReveal } from '../../utils/rateLimit';
 import { publicApi, protectedContactApi, type ContactThreadRecord } from '../../services/api';
 import { appConfig } from '../../config/appConfig';
 import { toast } from 'sonner';
-import { Shield, MapPin, Camera, CheckCircle, AlertTriangle, Eye, Lock } from 'lucide-react';
+import { Shield, MapPin, Camera, CheckCircle, AlertTriangle, Eye, Lock, Clock3, Search } from 'lucide-react';
 
 const isIntegration = appConfig.mode === 'integration';
 
@@ -29,6 +28,19 @@ interface PublicPetData {
   hasOwner: boolean;
   protectedContactEnabled: boolean;
   contactEntryPoint: string;
+  photoUrl: string | null;
+  emergencyCase: {
+    id: string;
+    type: 'lost' | 'found' | 'sighted';
+    status: string;
+    location: string;
+    timeLabel: string;
+    description: string;
+    colors: string[];
+    traits: string[];
+    direction: string;
+    createdAt: number;
+  } | null;
 }
 
 function usePublicPet(): { pet: PublicPetData | null; loading: boolean; error: boolean } {
@@ -53,34 +65,97 @@ function getPetDisplay(dbPet: PublicPetData | null) {
   if (dbPet) {
     return {
       name: dbPet.name,
-      description: [dbPet.breed, dbPet.size, dbPet.colors.join(', ')].filter(Boolean).join(' · '),
+      description: [dbPet.breed, dbPet.size, dbPet.colors.join(', ')].filter(Boolean).join(' / '),
       microchip: dbPet.microchip || 'Unknown',
       vaccines: dbPet.vaccines || 'Unknown',
       hasOwner: dbPet.hasOwner,
       protectedContactEnabled: dbPet.protectedContactEnabled ?? true,
+      photoUrl: dbPet.photoUrl,
+      emergencyCase: dbPet.emergencyCase,
+      marks: dbPet.marks || 'No distinctive marks shared yet',
+      collar: dbPet.collar || 'Not specified',
+      temperament: dbPet.temperament || 'Not specified',
+      age: dbPet.age || 'Unknown',
     };
   }
   return {
-    name: LUNA.name,
-    description: LUNA.description,
-    microchip: 'Yes',
-    vaccines: 'Up to date',
+    name: '',
+    description: '',
+    microchip: 'Unknown',
+    vaccines: 'Unknown',
     hasOwner: true,
-    protectedContactEnabled: false,
+    protectedContactEnabled: true,
+    photoUrl: null,
+    emergencyCase: null,
+    marks: '',
+    collar: 'Not specified',
+    temperament: 'Not specified',
+    age: 'Unknown',
   };
 }
 
-// ─── QRP_01 — Public pet landing ─────────────────────────────────────────────
+function getEmergencyHeading(type: 'lost' | 'found' | 'sighted' | null | undefined): string {
+  switch (type) {
+    case 'lost':
+      return 'Active lost pet report';
+    case 'found':
+      return 'Active found pet report';
+    case 'sighted':
+      return 'Recent sighting report';
+    default:
+      return 'Public pet page';
+  }
+}
+
+function getEmergencySummary(type: 'lost' | 'found' | 'sighted' | null | undefined, petName: string): string {
+  switch (type) {
+    case 'lost':
+      return `${petName} is being actively searched for. If you saw this pet, report the area and time below.`;
+    case 'found':
+      return `There is an active report connected to ${petName}. Secure relay keeps owner contact protected while people coordinate safely.`;
+    case 'sighted':
+      return `Someone recently reported seeing ${petName}. Extra sightings help narrow the search area.`;
+    default:
+      return `This is the shared public page for ${petName}. Owner contact stays protected through PETTODO relay.`;
+  }
+}
+
 export function QRP_01() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { pet: dbPet, loading, error } = usePublicPet();
   const display = getPetDisplay(dbPet);
+  const emergencyCase = display.emergencyCase;
+  const facts = [
+    { label: 'Reported area', value: emergencyCase?.location || 'Public pet page only' },
+    { label: 'Reported when', value: emergencyCase?.timeLabel || 'Not shared yet' },
+    { label: 'Collar', value: display.collar },
+    { label: 'Temperament', value: display.temperament },
+    { label: 'Microchip', value: display.microchip },
+    { label: 'Vaccines', value: display.vaccines },
+  ];
+  const traits = Array.from(new Set([
+    ...(emergencyCase?.traits ?? []),
+    ...(emergencyCase?.colors ?? []),
+    display.age !== 'Unknown' ? display.age : '',
+  ].filter(Boolean)));
 
   if (loading) {
     return (
       <div className="flex flex-col min-h-full items-center justify-center" style={{ background: 'var(--white)' }}>
         <p className="text-[14px]" style={{ color: 'var(--gray-500)' }}>Loading pet info...</p>
+      </div>
+    );
+  }
+
+  if (!petId) {
+    return (
+      <div className="flex flex-col min-h-full items-center justify-center p-4 text-center" style={{ background: 'var(--white)' }}>
+        <Search size={48} style={{ color: 'var(--gray-400)' }} />
+        <h3 className="text-[17px] mt-3" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>No public case selected</h3>
+        <p className="text-[13px] mt-1 max-w-[280px]" style={{ color: 'var(--gray-500)' }}>
+          This share surface needs a valid QR or public link with a pet reference.
+        </p>
       </div>
     );
   }
@@ -95,73 +170,131 @@ export function QRP_01() {
     );
   }
 
-  const captchaPath = petId ? `/public/qr-captcha/${petId}` : '/public/qr-captcha';
-  const reportPath = petId ? `/public/qr-report/${petId}` : '/public/qr-report';
+  const captchaPath = `/public/qr-captcha/${petId}`;
+  const reportPath = `/public/qr-report/${petId}`;
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
       <ScreenLabel name="QRP_01_QRPublic_LandingPetCard" />
-      <div className="px-4 py-3 text-center" style={{ background: 'var(--green-bg)' }}>
-        <p className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>PETTODO — Pet Identity</p>
+      <div className="px-4 py-3 text-center" style={{ background: emergencyCase ? 'var(--warning-bg)' : 'var(--green-bg)' }}>
+        <p className="text-[11px]" style={{ color: emergencyCase ? 'var(--warning-dark)' : 'var(--green-dark)', fontWeight: 600 }}>
+          PETTODO - Shared public pet page
+        </p>
       </div>
 
-      <div className="flex-1 p-4 flex flex-col gap-4 items-center">
-        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
-          <span className="text-5xl">&#x1F415;</span>
-        </div>
-
-        <h2 className="text-[22px] text-center" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{display.name}</h2>
-        <p className="text-[14px] text-center" style={{ color: 'var(--gray-500)' }}>{display.description}</p>
-
-        <div className="w-full p-4 rounded-xl" style={{ background: 'var(--green-bg)', border: '1px solid var(--green-soft)' }}>
-          <p className="text-[15px] text-center" style={{ fontWeight: 600, color: 'var(--green-dark)' }}>
-            This dog has an owner. Help them get home.
-          </p>
-        </div>
-
-        <div className="w-full p-3 rounded-xl" style={{ background: 'var(--gray-100)' }}>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Description</span>
-              <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{display.description || '—'}</span>
+      <div className="flex-1 p-4 flex flex-col gap-4">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(180deg, #fff7ed 0%, #ffffff 100%)', border: '1px solid var(--gray-200)' }}>
+          <div className="p-4 flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="px-2.5 py-1 rounded-full text-[11px]" style={{ background: emergencyCase ? 'var(--warning-soft)' : 'var(--green-soft)', color: emergencyCase ? 'var(--warning-dark)' : 'var(--green-dark)', fontWeight: 600 }}>
+                {getEmergencyHeading(emergencyCase?.type)}
+              </div>
+              {emergencyCase?.timeLabel && (
+                <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--gray-500)' }}>
+                  <Clock3 size={12} />
+                  <span>{emergencyCase.timeLabel}</span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Microchip</span>
-              <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{display.microchip}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Vaccines</span>
-              <span className="text-[13px]" style={{ fontWeight: 500, color: 'var(--green-primary)' }}>{display.vaccines}</span>
+
+            <div className="flex flex-col items-center gap-3 text-center">
+              {display.photoUrl ? (
+                <img
+                  src={display.photoUrl}
+                  alt={display.name}
+                  className="w-full max-w-[260px] h-[220px] rounded-2xl object-cover"
+                />
+              ) : (
+                <div className="w-28 h-28 rounded-full flex items-center justify-center" style={{ background: 'var(--green-soft)' }}>
+                  <span className="text-5xl">&#x1F415;</span>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <h2 className="text-[24px]" style={{ fontWeight: 700, color: 'var(--gray-900)' }}>{display.name}</h2>
+                <p className="text-[14px]" style={{ color: 'var(--gray-500)' }}>{display.description || 'Public pet profile'}</p>
+              </div>
+
+              <p className="text-[13px] max-w-[320px]" style={{ color: 'var(--gray-700)' }}>
+                {getEmergencySummary(emergencyCase?.type, display.name)}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Relay notice — always shown, never reveals direct contact */}
-        <div className="w-full p-3 rounded-xl flex items-center gap-2" style={{ background: 'var(--gray-100)' }}>
-          <Lock size={14} style={{ color: 'var(--gray-500)' }} />
-          <p className="text-[12px]" style={{ color: 'var(--gray-600)' }}>
-            Owner contact is protected. Messages are relayed through PETTODO.
+        <div className="w-full p-4 rounded-2xl" style={{ background: emergencyCase ? 'var(--warning-bg)' : 'var(--green-bg)', border: emergencyCase ? '1px solid var(--warning-soft)' : '1px solid var(--green-soft)' }}>
+          <p className="text-[15px]" style={{ fontWeight: 700, color: emergencyCase ? 'var(--warning-dark)' : 'var(--green-dark)' }}>
+            {emergencyCase?.type === 'lost' ? 'Help this pet get home.' : 'This pet has an owner.'}
+          </p>
+          <p className="text-[13px] mt-1" style={{ color: emergencyCase ? 'var(--warning-dark)' : 'var(--green-dark)' }}>
+            {emergencyCase?.description || 'Use the actions below to securely report a sighting or contact the owner through relay.'}
           </p>
         </div>
 
-        <div className="w-full flex flex-col gap-2">
-          <Btn variant="primary" fullWidth onClick={() => nav(captchaPath)}>
-            <Shield size={16} /> Contact Owner (Secure Relay)
-          </Btn>
-          <Btn variant="secondary" fullWidth onClick={() => nav(reportPath)}>
-            <MapPin size={16} /> I found/spotted this dog
-          </Btn>
+        <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
+          <div className="flex flex-col gap-3">
+            {facts.map((fact) => (
+              <div key={fact.label} className="flex items-start justify-between gap-3">
+                <span className="text-[13px]" style={{ color: 'var(--gray-500)' }}>{fact.label}</span>
+                <span className="text-[13px] text-right" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{fact.value || '-'}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <p className="text-[11px] text-center" style={{ color: 'var(--gray-400)' }}>
-          Powered by PETTODO &middot; Owner contact protected by relay
+        {!!traits.length && (
+          <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
+            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Helpful identification notes</p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {traits.map((trait) => (
+                <span
+                  key={trait}
+                  className="px-2.5 py-1 rounded-full text-[12px]"
+                  style={{ background: 'var(--white)', color: 'var(--gray-700)', border: '1px solid var(--gray-200)' }}
+                >
+                  {trait}
+                </span>
+              ))}
+            </div>
+            <p className="text-[12px] mt-3" style={{ color: 'var(--gray-500)' }}>
+              Marks: {display.marks}
+            </p>
+          </div>
+        )}
+
+        <div className="w-full p-4 rounded-2xl flex items-start gap-3" style={{ background: 'var(--gray-100)' }}>
+          <Lock size={16} style={{ color: 'var(--gray-500)', marginTop: 2 }} />
+          <div>
+            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Owner contact stays protected</p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--gray-600)' }}>
+              PETTODO relays messages without exposing direct owner phone, email, or exact home address.
+            </p>
+          </div>
+        </div>
+
+        <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
+          <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>What you can do now</p>
+          <div className="mt-3 flex flex-col gap-2">
+            <Btn variant="primary" fullWidth onClick={() => nav(reportPath)}>
+              <MapPin size={16} /> I found or spotted this pet
+            </Btn>
+            <Btn variant="secondary" fullWidth onClick={() => nav(captchaPath)}>
+              <Shield size={16} /> Contact Owner (Secure Relay)
+            </Btn>
+          </div>
+          <p className="text-[12px] mt-3" style={{ color: 'var(--gray-500)' }}>
+            Share only approximate public location details. Use relay or a safe public handoff point for direct coordination.
+          </p>
+        </div>
+
+        <p className="text-[11px] text-center pb-4" style={{ color: 'var(--gray-400)' }}>
+          Powered by PETTODO - Public share surface with protected owner relay
         </p>
       </div>
     </div>
   );
 }
 
-// ─── QRP_02 — Captcha (bot check before relay contact) ───────────────────────
 export function QRP_02() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
