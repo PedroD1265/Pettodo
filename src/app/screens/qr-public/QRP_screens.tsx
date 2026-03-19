@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenLabel } from '../../components/pettodo/ScreenLabel';
 import { Btn } from '../../components/pettodo/Buttons';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { LUNA } from '../../data/demoData';
@@ -165,12 +165,77 @@ function getLandingActionCopy(type: 'lost' | 'found' | 'sighted' | null | undefi
   }
 }
 
+type PublicCaseType = 'lost' | 'found' | 'sighted' | 'none';
+type PublicReportType = 'found' | 'sighted';
+
+function getPublicCaseType(value: string | null): PublicCaseType {
+  if (value === 'lost' || value === 'found' || value === 'sighted') return value;
+  return 'none';
+}
+
+function getReportTypePrefill(caseType: PublicCaseType): PublicReportType | undefined {
+  if (caseType === 'found') return 'found';
+  if (caseType === 'lost' || caseType === 'sighted') return 'sighted';
+  return undefined;
+}
+
+function getCaseTypeLabel(caseType: PublicCaseType): string {
+  switch (caseType) {
+    case 'lost':
+      return 'active lost pet report';
+    case 'found':
+      return 'active found pet report';
+    case 'sighted':
+      return 'recent sighting report';
+    default:
+      return 'public pet page';
+  }
+}
+
+function buildPublicFlowPath(
+  step: 'qr-landing' | 'qr-report' | 'qr-captcha' | 'qr-contact',
+  petId?: string,
+  params?: Record<string, string | undefined>,
+): string {
+  const base = petId ? `/public/${step}/${petId}` : `/public/${step}`;
+  if (!params) return base;
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) search.set(key, value);
+  });
+  const query = search.toString();
+  return query ? `${base}?${query}` : base;
+}
+
+function FlowContextCard({
+  title,
+  detail,
+  tone = 'neutral',
+}: {
+  title: string;
+  detail: string;
+  tone?: 'neutral' | 'warning';
+}) {
+  const background = tone === 'warning' ? 'var(--warning-bg)' : 'var(--gray-100)';
+  const border = tone === 'warning' ? '1px solid var(--warning-soft)' : '1px solid var(--gray-200)';
+  const titleColor = tone === 'warning' ? 'var(--warning-dark)' : 'var(--gray-900)';
+  const detailColor = tone === 'warning' ? 'var(--warning-dark)' : 'var(--gray-600)';
+
+  return (
+    <div className="w-full p-3 rounded-xl" style={{ background, border }}>
+      <p className="text-[13px]" style={{ fontWeight: 600, color: titleColor }}>{title}</p>
+      <p className="text-[12px] mt-1" style={{ color: detailColor }}>{detail}</p>
+    </div>
+  );
+}
+
 export function QRP_01() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { pet: dbPet, loading, error } = usePublicPet();
   const display = getPetDisplay(dbPet);
   const emergencyCase = display.emergencyCase;
+  const caseType = emergencyCase?.type ?? 'none';
   const actionCopy = getLandingActionCopy(emergencyCase?.type);
   const facts = [
     { label: 'Reported area', value: emergencyCase?.location || 'Public pet page only' },
@@ -216,8 +281,16 @@ export function QRP_01() {
     );
   }
 
-  const captchaPath = `/public/qr-captcha/${petId}`;
-  const reportPath = `/public/qr-report/${petId}`;
+  const captchaPath = buildPublicFlowPath('qr-captcha', petId, {
+    from: 'landing',
+    caseType,
+    intent: 'relay',
+  });
+  const reportPath = buildPublicFlowPath('qr-report', petId, {
+    from: 'landing',
+    caseType,
+    reportType: getReportTypePrefill(caseType),
+  });
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
@@ -371,8 +444,14 @@ export function QRP_01() {
 }
 
 export function QRP_02() {
+  const location = useLocation();
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
+  const { pet: dbPet } = usePublicPet();
+  const petName = dbPet?.name ?? 'this pet';
+  const search = new URLSearchParams(location.search);
+  const caseType = getPublicCaseType(search.get('caseType'));
+  const fromLanding = search.get('from') === 'landing';
   const [captchaInput, setCaptchaInput] = useState('');
   const [captchaNumbers] = useState(() => {
     const a = Math.floor(Math.random() * 10) + 1;
@@ -390,7 +469,11 @@ export function QRP_02() {
     if (parseInt(captchaInput) === captchaNumbers.answer) {
       setVerified(true);
       recordReveal();
-      const contactPath = petId ? `/public/qr-contact/${petId}` : '/public/qr-contact';
+      const contactPath = buildPublicFlowPath('qr-contact', petId, {
+        from: 'captcha',
+        caseType: caseType !== 'none' ? caseType : undefined,
+        intent: 'relay',
+      });
       setTimeout(() => nav(contactPath), 1200);
     } else {
       setError(true);
@@ -398,7 +481,7 @@ export function QRP_02() {
     }
   };
 
-  const landingPath = petId ? `/public/qr-landing/${petId}` : '/public/qr-landing';
+  const landingPath = buildPublicFlowPath('qr-landing', petId);
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: 'var(--white)' }}>
@@ -410,12 +493,24 @@ export function QRP_02() {
       <div className="flex-1 p-4 flex flex-col gap-4 items-center justify-center">
         {verified ? (
           <>
+            {fromLanding && (
+              <FlowContextCard
+                title={`Continuing secure relay for ${petName}`}
+                detail={`You are still in the same ${getCaseTypeLabel(caseType)}. Verification is the last step before PETTODO opens the protected chat.`}
+              />
+            )}
             <CheckCircle size={48} style={{ color: 'var(--green-primary)' }} />
             <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Verified!</h3>
             <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Opening secure contact...</p>
           </>
         ) : (
           <>
+            {fromLanding && (
+              <FlowContextCard
+                title={`Secure relay for ${petName}`}
+                detail={`You chose secure contact from the public landing for the same ${getCaseTypeLabel(caseType)}.`}
+              />
+            )}
             <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--green-bg)' }}>
               <Shield size={32} style={{ color: 'var(--green-primary)' }} />
             </div>
@@ -464,12 +559,17 @@ export function QRP_02() {
 
 // ─── QRP_03 — Report sighting/found via QR ───────────────────────────────────
 export function QRP_03() {
+  const routeLocation = useLocation();
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { addSighting } = useApp();
   const { user } = useAuth();
   const { pet: dbPet } = usePublicPet();
   const petName = dbPet?.name ?? LUNA.name;
+  const search = new URLSearchParams(routeLocation.search);
+  const caseType = getPublicCaseType(search.get('caseType'));
+  const fromLanding = search.get('from') === 'landing';
+  const prefilledReportType = search.get('reportType') === 'found' ? 'found' : search.get('reportType') === 'sighted' ? 'sighted' : null;
   const [reportType, setReportType] = useState<'found' | 'sighted' | null>(null);
   const [location, setLocation] = useState('');
   const [phone, setPhone] = useState('');
@@ -477,6 +577,12 @@ export function QRP_03() {
   const [submitting, setSubmitting] = useState(false);
   const [showSignInGate, setShowSignInGate] = useState(false);
   const [errors, setErrors] = useState<{ location?: string; phone?: string }>({});
+
+  useEffect(() => {
+    if (prefilledReportType && !reportType) {
+      setReportType(prefilledReportType);
+    }
+  }, [prefilledReportType, reportType]);
 
   const handleSelectType = (type: 'found' | 'sighted') => {
     setReportType(type);
@@ -529,8 +635,12 @@ export function QRP_03() {
           initiatorPhone: phone.trim() || undefined,
         });
         setSubmitted(true);
-        // Navigate to the protected contact thread so the owner can be notified
-        setTimeout(() => nav(`/public/qr-contact/${petId}`), 1200);
+        const contactPath = buildPublicFlowPath('qr-contact', petId, {
+          from: 'report',
+          caseType: caseType !== 'none' ? caseType : undefined,
+          intent: reportType === 'found' ? 'report_found' : 'report_sighted',
+        });
+        setTimeout(() => nav(contactPath), 1200);
         void thread; // thread is now the active thread (idempotent)
       } catch (err: any) {
         toast.error(err?.message || 'Failed to submit report. Please try again.');
@@ -550,7 +660,7 @@ export function QRP_03() {
       note: reportType === 'found' ? 'Finder has the dog — via QR scan' : 'Sighting reported via QR scan',
     });
     setSubmitted(true);
-    const landingPath = petId ? `/public/qr-landing/${petId}` : '/public/qr-landing';
+    const landingPath = buildPublicFlowPath('qr-landing', petId);
     setTimeout(() => nav(landingPath), 1500);
   };
 
@@ -578,8 +688,24 @@ export function QRP_03() {
       </div>
 
       <div className="flex-1 p-4 flex flex-col gap-4">
-        <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Help {petName} get home</h3>
-        <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>Thank you for scanning the QR code. Please tell us what you saw.</p>
+        {fromLanding && (
+          <FlowContextCard
+            title={`Reporting for ${petName}`}
+            detail={`You are continuing from the public landing for the same ${getCaseTypeLabel(caseType)}.`}
+            tone={caseType === 'lost' ? 'warning' : 'neutral'}
+          />
+        )}
+
+        <h3 className="text-[17px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
+          {prefilledReportType === 'found' ? `Tell us you have ${petName}` : prefilledReportType === 'sighted' ? `Report a sighting for ${petName}` : `Help ${petName} get home`}
+        </h3>
+        <p className="text-[13px]" style={{ color: 'var(--gray-500)' }}>
+          {prefilledReportType === 'found'
+            ? 'You chose the action for having the pet with you. Confirm the area and how the owner can reach you.'
+            : prefilledReportType === 'sighted'
+              ? 'You chose the action for reporting a sighting. Share the approximate area and when you saw the pet.'
+              : 'Thank you for scanning the QR code. Please tell us what you saw.'}
+        </p>
 
         <div className="flex flex-col gap-3">
           <button
@@ -680,9 +806,15 @@ export function QRP_03() {
 
 // ─── QRP_04 — Protected contact relay chat ───────────────────────────────────
 export function QRP_04() {
+  const location = useLocation();
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { user, isDemo } = useAuth();
+  const { pet: dbPet } = usePublicPet();
+  const petName = dbPet?.name ?? 'this pet';
+  const search = new URLSearchParams(location.search);
+  const caseType = getPublicCaseType(search.get('caseType'));
+  const intent = search.get('intent');
   const [threadId, setThreadId] = useState<string | null>(null);
   const [thread, setThread] = useState<ContactThreadRecord | null>(null);
   const [message, setMessage] = useState('');
@@ -690,7 +822,17 @@ export function QRP_04() {
   const [creating, setCreating] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  const landingPath = petId ? `/public/qr-landing/${petId}` : '/public/qr-landing';
+  const landingPath = buildPublicFlowPath('qr-landing', petId);
+  const flowContextTitle = intent === 'report_found'
+    ? `Continuing report for ${petName}`
+    : intent === 'report_sighted'
+      ? `Continuing sighting for ${petName}`
+      : `Secure relay for ${petName}`;
+  const flowContextDetail = intent === 'report_found'
+    ? `You are still in the same ${getCaseTypeLabel(caseType)}. PETTODO opened the protected chat after your report.`
+    : intent === 'report_sighted'
+      ? `You are still in the same ${getCaseTypeLabel(caseType)}. PETTODO opened the protected chat after your sighting report.`
+      : `You are still in the same ${getCaseTypeLabel(caseType)}. This is the protected relay requested from the public landing.`;
 
   // Create thread on mount (integration mode, user logged in)
   useEffect(() => {
@@ -747,6 +889,10 @@ export function QRP_04() {
           <p className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>PETTODO — Secure Contact</p>
         </div>
         <div className="flex-1 p-4 flex flex-col gap-4 items-center justify-center">
+          <FlowContextCard
+            title={flowContextTitle}
+            detail={flowContextDetail}
+          />
           <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--green-bg)' }}>
             <Lock size={32} style={{ color: 'var(--green-primary)' }} />
           </div>
@@ -787,6 +933,11 @@ export function QRP_04() {
           <p className="text-[11px]" style={{ color: 'var(--warning-dark)', fontWeight: 500 }}>PETTODO — Secure Contact</p>
         </div>
         <div className="flex-1 p-4 flex flex-col gap-4 items-center justify-center">
+          <FlowContextCard
+            title={flowContextTitle}
+            detail={flowContextDetail}
+            tone="warning"
+          />
           <AlertTriangle size={48} style={{ color: 'var(--warning)' }} />
           <h3 className="text-[17px] text-center" style={{ fontWeight: 600 }}>Unable to start contact</h3>
           <p className="text-[13px] text-center" style={{ color: 'var(--gray-500)' }}>{initError}</p>
@@ -804,6 +955,13 @@ export function QRP_04() {
       <ScreenLabel name="QRP_04_ProtectedContact_Thread" />
       <div className="px-4 py-3 text-center" style={{ background: 'var(--green-bg)' }}>
         <p className="text-[11px]" style={{ color: 'var(--green-dark)', fontWeight: 500 }}>PETTODO — Secure Relay Chat</p>
+      </div>
+
+      <div className="px-4 pt-3">
+        <FlowContextCard
+          title={flowContextTitle}
+          detail={flowContextDetail}
+        />
       </div>
 
       {/* Relay status notice */}
