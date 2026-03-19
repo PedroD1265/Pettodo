@@ -42,7 +42,9 @@ function authHeader(user = FAKE_MODERATOR) {
 
 describe('Reviews API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockQuery.mockReset();
+    mockVerifyIdToken.mockReset();
+    mockWriteAuditLog.mockReset();
     mockVerifyIdToken.mockResolvedValue(FAKE_MODERATOR);
   });
 
@@ -158,6 +160,7 @@ describe('Reviews API', () => {
     it('returns 404 when the target entity does not exist', async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ role: 'moderator' }] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
         .mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
@@ -173,7 +176,11 @@ describe('Reviews API', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ role: 'moderator' }] })
         .mockResolvedValueOnce({
-          rows: [{ id: 'cd_1', review_state: 'approved' }],
+          rows: [],
+          rowCount: 0,
+        })
+        .mockResolvedValueOnce({
+          rows: [{ review_state: 'approved' }],
         });
 
       const res = await request(app)
@@ -190,9 +197,9 @@ describe('Reviews API', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ role: 'moderator' }] })
         .mockResolvedValueOnce({
-          rows: [{ id: 'cd_1', review_state: 'pending_review' }],
+          rows: [{ id: 'cd_1', review_state: 'approved' }],
+          rowCount: 1,
         })
-        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
@@ -206,8 +213,9 @@ describe('Reviews API', () => {
       expect(res.body.entityId).toBe('cd_1');
       expect(res.body.decision).toBe('approved');
       expect(res.body.reviewDecisionId).toMatch(/^rd_/);
-      expect(mockQuery.mock.calls[2][0]).toContain('UPDATE community_dogs');
-      expect(mockQuery.mock.calls[2][1][0]).toBe('approved');
+      expect(mockQuery.mock.calls[1][0]).toContain('UPDATE community_dogs');
+      expect(mockQuery.mock.calls[1][0]).toContain("WHERE id = $2 AND review_state = 'pending_review'");
+      expect(mockQuery.mock.calls[1][1][0]).toBe('approved');
       expect(mockWriteAuditLog).toHaveBeenCalledWith({
         actionType: 'review_approved',
         actorUid: FAKE_MODERATOR.uid,
@@ -223,9 +231,9 @@ describe('Reviews API', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ role: 'operator' }] })
         .mockResolvedValueOnce({
-          rows: [{ id: 'ei_1', review_state: 'pending_review' }],
+          rows: [{ id: 'ei_1', review_state: 'rejected' }],
+          rowCount: 1,
         })
-        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
@@ -235,8 +243,9 @@ describe('Reviews API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.decision).toBe('rejected');
-      expect(mockQuery.mock.calls[2][0]).toContain('UPDATE evidence_items');
-      expect(mockQuery.mock.calls[2][1]).toEqual(['rejected', 'ei_1']);
+      expect(mockQuery.mock.calls[1][0]).toContain('UPDATE evidence_items');
+      expect(mockQuery.mock.calls[1][0]).toContain("WHERE id = $2 AND review_state = 'pending_review'");
+      expect(mockQuery.mock.calls[1][1]).toEqual(['rejected', 'ei_1']);
       expect(mockWriteAuditLog).toHaveBeenCalledWith({
         actionType: 'review_rejected',
         actorUid: FAKE_OPERATOR.uid,
