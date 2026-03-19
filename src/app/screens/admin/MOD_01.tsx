@@ -106,7 +106,7 @@ function removePendingItem(
 
 export default function MOD_01() {
   const nav = useNavigate();
-  const { user, isDemo } = useAuth();
+  const { user, isDemo, role, accessSource } = useAuth();
   const [data, setData] = useState<PendingReviewResponse | null>(null);
   const [screenState, setScreenState] = useState<ScreenState>('loading');
   const [authErrorCode, setAuthErrorCode] = useState<AuthErrorCode>(null);
@@ -160,6 +160,13 @@ export default function MOD_01() {
     changeRequests: data?.changeRequests.length ?? 0,
     evidenceItems: data?.evidenceItems.length ?? 0,
   }), [data]);
+  const accessLabel = role === 'operator'
+    ? 'Operator'
+    : role === 'moderator'
+    ? 'Moderator'
+    : accessSource === 'review_probe'
+    ? 'Reviewer'
+    : 'Authorized';
 
   const updateNotes = (itemKey: string, value: string) => {
     setDraftNotes((current) => ({ ...current, [itemKey]: value }));
@@ -331,6 +338,9 @@ export default function MOD_01() {
               </div>
               <p className="text-[12px] mt-3" style={{ color: 'var(--gray-500)' }}>
                 {user?.email ? `Signed in as ${user.email}` : 'Signed in'}
+              </p>
+              <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+                Access: {accessLabel}
               </p>
               <p className="text-[12px]" style={{ color: 'var(--gray-400)' }}>
                 {formatRelativeSectionUpdate(lastUpdatedAt)}{isDemo ? ' - demo mode may return unauthorized' : ''}

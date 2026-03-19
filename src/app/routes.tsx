@@ -4,6 +4,7 @@ import { PublicShell } from './layout/PublicShell';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import { AuthGuard } from './components/pettodo/AuthGuard';
+import { ModerationGuard } from './components/pettodo/ModerationGuard';
 import { Toaster } from 'sonner';
 
 function GlobalLayout() {
@@ -220,7 +221,12 @@ export const router = createBrowserRouter([
           { path: '/profile/safety', Component: PRF_05 },
 
           // Admin / Moderation
-          { path: '/admin/review', Component: MOD_01 },
+          {
+            Component: ModerationGuard,
+            children: [
+              { path: '/admin/review', Component: MOD_01 },
+            ],
+          },
         ],
       }],
       },

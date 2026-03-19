@@ -1,4 +1,4 @@
-import type { IAuthService, AuthUser } from '../interfaces';
+import type { AuthAccessProfile, IAuthService, AuthUser } from '../interfaces';
 
 const DEMO_USER: AuthUser = {
   uid: 'demo-user',
@@ -10,6 +10,11 @@ const DEMO_USER: AuthUser = {
 export const authDemoAdapter: IAuthService = {
   getCurrentUser: () => DEMO_USER,
   getIdToken: async () => null,
+  getAccessProfile: async (): Promise<AuthAccessProfile> => ({
+    role: null,
+    canAccessModeration: false,
+    source: 'demo',
+  }),
   signInWithGoogle: async () => DEMO_USER,
   signOut: async () => {},
   onAuthStateChanged: (callback) => {
