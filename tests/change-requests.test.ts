@@ -31,9 +31,11 @@ function authHeader() {
 
 describe('Change Requests API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockQuery.mockReset();
+    mockVerifyIdToken.mockReset();
+    mockWriteAuditLog.mockReset();
     mockVerifyIdToken.mockResolvedValue(FAKE_USER);
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
+    mockQuery.mockResolvedValue({ rows: [{ id: 'cd_abc' }], rowCount: 1 });
   });
 
   describe('POST /api/change-requests', () => {
@@ -79,8 +81,8 @@ describe('Change Requests API', () => {
       expect(res.body.id).toMatch(/^cr_/);
       expect(res.body.reviewState).toBe('pending_review');
 
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertParams = mockQuery.mock.calls[1][1];
       expect(insertParams).toEqual([
         expect.stringMatching(/^cr_/),
         'community_dog',
@@ -116,15 +118,17 @@ describe('Change Requests API', () => {
         targetEntityId: 'cd_this_is_fake',
       };
 
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       const res = await request(app)
         .post('/api/change-requests')
         .set(authHeader())
         .send(payloadWithFakeId);
 
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'not_found' });
       expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
-      expect(insertParams[2]).toBe('cd_this_is_fake');
+      expect(mockWriteAuditLog).not.toHaveBeenCalled();
     });
 
     it('accepts proposedChanges with internal fields like review_state (CR-01 regression)', async () => {

@@ -21,6 +21,26 @@ function newId(prefix: string): string {
 
 const ALLOWED_ENTITY_TYPES = ['community_dog', 'case', 'pet', 'protected_contact_thread', 'evidence_item'];
 
+async function findTargetEntity(
+  targetEntityType: string,
+  targetEntityId: string
+) {
+  switch (targetEntityType) {
+    case 'community_dog':
+      return query('SELECT id FROM community_dogs WHERE id = $1', [targetEntityId]);
+    case 'case':
+      return query('SELECT id FROM cases WHERE id = $1', [targetEntityId]);
+    case 'pet':
+      return query('SELECT id FROM pets WHERE id = $1', [targetEntityId]);
+    case 'protected_contact_thread':
+      return query('SELECT id FROM protected_contact_threads WHERE id = $1', [targetEntityId]);
+    case 'evidence_item':
+      return query('SELECT id FROM evidence_items WHERE id = $1', [targetEntityId]);
+    default:
+      return { rows: [], rowCount: 0 };
+  }
+}
+
 async function findOpenAbuseFlag(
   reportedBy: string,
   targetEntityType: string,
@@ -58,6 +78,12 @@ router.post('/abuse-flags', verifyToken, async (req: AuthenticatedRequest, res: 
     }
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
       res.status(400).json({ error: 'bad_request', message: 'reason is required' });
+      return;
+    }
+
+    const targetEntityResult = await findTargetEntity(targetEntityType, targetEntityId);
+    if (targetEntityResult.rows.length === 0) {
+      res.status(404).json({ error: 'not_found' });
       return;
     }
 

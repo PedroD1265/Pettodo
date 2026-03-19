@@ -88,6 +88,20 @@ function findInvalidChangeKeys(
   );
 }
 
+async function findTargetEntity(
+  targetEntityType: AllowedEntityType,
+  targetEntityId: string
+) {
+  switch (targetEntityType) {
+    case 'community_dog':
+      return query('SELECT id FROM community_dogs WHERE id = $1', [targetEntityId]);
+    case 'case':
+      return query('SELECT id FROM cases WHERE id = $1', [targetEntityId]);
+    case 'pet':
+      return query('SELECT id FROM pets WHERE id = $1', [targetEntityId]);
+  }
+}
+
 // ─── POST /change-requests ───────────────────────────────────────────────────
 router.post('/change-requests', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -116,6 +130,12 @@ router.post('/change-requests', verifyToken, async (req: AuthenticatedRequest, r
         error: 'bad_request',
         message: `proposedChanges contains unsupported or protected fields: ${invalidChangeKeys.join(', ')}`,
       });
+      return;
+    }
+
+    const targetEntityResult = await findTargetEntity(targetEntityType, targetEntityId);
+    if (targetEntityResult.rows.length === 0) {
+      res.status(404).json({ error: 'not_found' });
       return;
     }
 
