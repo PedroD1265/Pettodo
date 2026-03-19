@@ -18,17 +18,62 @@ import { query } from '../db.js';
 import { writeAuditLog } from '../utils/audit.js';
 
 const router = Router();
+const REVIEWABLE_ENTITY_TYPES = ['community_dog', 'change_request', 'evidence_item'] as const;
+type ReviewableEntityType = (typeof REVIEWABLE_ENTITY_TYPES)[number];
 
 function newId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Map entity type → table name and state column
-const ENTITY_MAP: Record<string, { table: string; stateCol: string }> = {
-  community_dog: { table: 'community_dogs', stateCol: 'review_state' },
-  change_request: { table: 'change_requests', stateCol: 'review_state' },
-  evidence_item: { table: 'evidence_items', stateCol: 'review_state' },
-};
+// Fixed per-entity helpers keep SQL static and review-state transitions explicit.
+function isReviewableEntityType(value: string): value is ReviewableEntityType {
+  return REVIEWABLE_ENTITY_TYPES.includes(value as ReviewableEntityType);
+}
+
+async function updatePendingEntityState(
+  entityType: ReviewableEntityType,
+  entityId: string,
+  decision: 'approved' | 'rejected',
+  now: number
+) {
+  switch (entityType) {
+    case 'community_dog':
+      return query(
+        `UPDATE community_dogs
+         SET review_state = $1, updated_at = $3
+         WHERE id = $2 AND review_state = 'pending_review'
+         RETURNING id, review_state`,
+        [decision, entityId, now]
+      );
+    case 'change_request':
+      return query(
+        `UPDATE change_requests
+         SET review_state = $1, updated_at = $3
+         WHERE id = $2 AND review_state = 'pending_review'
+         RETURNING id, review_state`,
+        [decision, entityId, now]
+      );
+    case 'evidence_item':
+      return query(
+        `UPDATE evidence_items
+         SET review_state = $1
+         WHERE id = $2 AND review_state = 'pending_review'
+         RETURNING id, review_state`,
+        [decision, entityId]
+      );
+  }
+}
+
+async function fetchEntityReviewState(entityType: ReviewableEntityType, entityId: string) {
+  switch (entityType) {
+    case 'community_dog':
+      return query(`SELECT review_state FROM community_dogs WHERE id = $1`, [entityId]);
+    case 'change_request':
+      return query(`SELECT review_state FROM change_requests WHERE id = $1`, [entityId]);
+    case 'evidence_item':
+      return query(`SELECT review_state FROM evidence_items WHERE id = $1`, [entityId]);
+  }
+}
 
 // ─── GET /reviews/pending ────────────────────────────────────────────────────
 // Returns all items pending review across reviewable entity types.
@@ -103,45 +148,31 @@ async function applyDecision(
     const reviewerUid = req.user!.uid;
     const { notes } = req.body;
 
-    const entityDef = ENTITY_MAP[entityType];
-    if (!entityDef) {
+    if (!isReviewableEntityType(entityType)) {
       res.status(400).json({
         error: 'bad_request',
-        message: `entityType must be one of: ${Object.keys(ENTITY_MAP).join(', ')}`,
-      });
-      return;
-    }
-
-    // Verify the entity exists and is pending
-    const checkResult = await query(
-      `SELECT id, ${entityDef.stateCol} FROM ${entityDef.table} WHERE id = $1`,
-      [entityId]
-    );
-    if (checkResult.rows.length === 0) {
-      res.status(404).json({ error: 'not_found' });
-      return;
-    }
-    if (checkResult.rows[0][entityDef.stateCol] !== 'pending_review') {
-      res.status(400).json({
-        error: 'not_pending',
-        message: 'Entity is not in pending_review state',
-        currentState: checkResult.rows[0][entityDef.stateCol],
+        message: `entityType must be one of: ${REVIEWABLE_ENTITY_TYPES.join(', ')}`,
       });
       return;
     }
 
     const now = Date.now();
 
-    // Apply the decision to the entity
-    const updateCol = entityDef.stateCol;
-    await query(
-      `UPDATE ${entityDef.table}
-       SET ${updateCol} = $1${entityDef.table === 'community_dogs' || entityDef.table === 'change_requests' ? ', updated_at = $3' : ''}
-       WHERE id = $2`,
-      entityDef.table === 'community_dogs' || entityDef.table === 'change_requests'
-        ? [decision, entityId, now]
-        : [decision, entityId]
-    );
+    const updateResult = await updatePendingEntityState(entityType, entityId, decision, now);
+    if (updateResult.rowCount === 0) {
+      const stateResult = await fetchEntityReviewState(entityType, entityId);
+      if (stateResult.rows.length === 0) {
+        res.status(404).json({ error: 'not_found' });
+        return;
+      }
+
+      res.status(400).json({
+        error: 'not_pending',
+        message: 'Entity is not in pending_review state',
+        currentState: stateResult.rows[0].review_state,
+      });
+      return;
+    }
 
     // Record the review decision
     const rdId = newId('rd');
