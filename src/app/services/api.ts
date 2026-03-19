@@ -156,6 +156,57 @@ export interface AbuseFlagPayload {
   details?: string;
 }
 
+export type ReviewEntityType = "community_dog" | "change_request" | "evidence_item";
+
+export interface ReviewPendingCommunityDog {
+  id: string;
+  nickname: string | null;
+  size: string | null;
+  breed: string | null;
+  colors: string[] | null;
+  approximate_area: string | null;
+  review_state: string;
+  created_by: string | null;
+  created_at: number;
+}
+
+export interface ReviewPendingChangeRequest {
+  id: string;
+  target_entity_type: string | null;
+  target_entity_id: string | null;
+  requested_by: string | null;
+  proposed_changes: Record<string, unknown> | null;
+  reason: string | null;
+  review_state: string;
+  created_at: number;
+}
+
+export interface ReviewPendingEvidenceItem {
+  id: string;
+  target_entity_type: string | null;
+  target_entity_id: string | null;
+  submitted_by: string | null;
+  evidence_type: string | null;
+  description: string | null;
+  review_state: string;
+  created_at: number;
+}
+
+export interface PendingReviewResponse {
+  communityDogs: ReviewPendingCommunityDog[];
+  changeRequests: ReviewPendingChangeRequest[];
+  evidenceItems: ReviewPendingEvidenceItem[];
+  totalPending: number;
+}
+
+export interface ReviewDecisionResponse {
+  ok: boolean;
+  entityType: ReviewEntityType;
+  entityId: string;
+  decision: "approved" | "rejected";
+  reviewDecisionId: string;
+}
+
 // ─── Auth token management ───────────────────────────────────────────────────
 
 type GetToken = () => Promise<string | null>;
@@ -446,20 +497,15 @@ export const evidenceApi = {
 // ─── Review API ──────────────────────────────────────────────────────────────
 
 export const reviewApi = {
-  getPending: (): Promise<{
-    communityDogs: unknown[];
-    changeRequests: unknown[];
-    evidenceItems: unknown[];
-    totalPending: number;
-  }> => apiFetch("/reviews/pending"),
+  getPending: (): Promise<PendingReviewResponse> => apiFetch("/reviews/pending"),
 
-  approve: (entityType: string, entityId: string, notes?: string) =>
+  approve: (entityType: ReviewEntityType, entityId: string, notes?: string): Promise<ReviewDecisionResponse> =>
     apiFetch(`/reviews/${entityType}/${entityId}/approve`, {
       method: "POST",
       body: JSON.stringify({ notes }),
     }),
 
-  reject: (entityType: string, entityId: string, notes?: string) =>
+  reject: (entityType: ReviewEntityType, entityId: string, notes?: string): Promise<ReviewDecisionResponse> =>
     apiFetch(`/reviews/${entityType}/${entityId}/reject`, {
       method: "POST",
       body: JSON.stringify({ notes }),
