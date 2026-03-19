@@ -53,7 +53,6 @@ export default function EMG_CASES_LIST() {
       <AppBar title="My Reports" showBack backTo="/emg/entry" />
 
       <div className="flex-1 flex flex-col">
-        {/* Filter chips */}
         <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto shrink-0">
           {(['all', 'lost', 'found', 'sighted'] as const).map((f) => {
             const isActive = filter === f;
@@ -119,7 +118,7 @@ export default function EMG_CASES_LIST() {
           {!loading && !error && filtered.map((c) => {
             const cfg = TYPE_CONFIG[c.type] ?? TYPE_CONFIG.lost;
             const statusLabel = STATUS_LABELS[c.status] ?? c.status;
-            const createdDate = c.createdAt ? new Date(Number(c.createdAt)).toLocaleDateString() : '—';
+            const createdDate = c.createdAt ? new Date(Number(c.createdAt)).toLocaleDateString() : '-';
             return (
               <div
                 key={c.id}
@@ -147,12 +146,23 @@ export default function EMG_CASES_LIST() {
                   <p className="text-[12px] line-clamp-2" style={{ color: cfg.color, opacity: 0.8 }}>{c.description}</p>
                 )}
                 <p className="text-[10px] font-mono" style={{ color: cfg.color, opacity: 0.5 }}>{c.id}</p>
+
+                {c.status === 'active' && (
+                  <div className="pt-2 mt-1 border-t" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
+                    <Btn
+                      variant="secondary"
+                      fullWidth
+                      onClick={() => nav(`/emg/matching-top10?caseId=${encodeURIComponent(c.id)}`, { state: { caseSummary: c } })}
+                    >
+                      <Search size={16} /> View Matches
+                    </Btn>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Bottom CTA */}
         <div className="p-4 pt-0 shrink-0">
           <Btn variant="emergency" fullWidth icon={<Plus size={16} />} onClick={() => nav('/emg/entry')}>
             New Report

@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { StatusChip, FreshnessBadge, ConfidenceBadge, VerificationBadge, EventTrustBadge, MatchReasonTag, NewAccountBadge } from './Badges';
-import { MapPin, Camera, Clock, Users, QrCode, Syringe, Shield, Star, AlertTriangle } from 'lucide-react';
-import { getMatchPhoto, getCommunityDogPhoto } from '../../data/dogPhotos';
+import { MapPin, Camera, Clock, Users, QrCode, Syringe, Shield, Star, AlertTriangle, Eye, Search } from 'lucide-react';
+import { getCommunityDogPhoto } from '../../data/dogPhotos';
 
 function CardShell({ children, onClick, className = '' }: { children: ReactNode; onClick?: () => void; className?: string }) {
   return (
@@ -241,19 +241,27 @@ export function SafePointCard({ name, hours, distance, trusted, onClick }: {
   );
 }
 
-export function MatchCard({ confidence, reasons, location, time, onClick, photoIndex = 0 }: {
+export function MatchCard({ confidence, reasons, location, time, onClick, candidateType = 'found', description }: {
   confidence: number;
   reasons: string[];
   location: string;
   time: string;
   onClick?: () => void | Promise<void>;
-  photoIndex?: number;
+  candidateType?: 'found' | 'sighted' | 'lost';
+  description?: string;
 }) {
-  const photoUrl = getMatchPhoto(photoIndex);
+  const candidateVisual = candidateType === 'sighted'
+    ? { icon: <Eye size={24} style={{ color: 'var(--warning-dark)' }} />, bg: 'var(--warning-bg)' }
+    : candidateType === 'lost'
+      ? { icon: <AlertTriangle size={24} style={{ color: 'var(--red-dark)' }} />, bg: 'var(--red-bg)' }
+      : { icon: <Search size={24} style={{ color: 'var(--green-dark)' }} />, bg: 'var(--green-bg)' };
+
   return (
     <CardShell onClick={onClick}>
       <div className="flex items-start gap-3">
-        <img src={photoUrl} alt="Dog" className="w-16 h-16 rounded-xl object-cover shrink-0" style={{ background: 'var(--gray-100)' }} />
+        <div className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0" style={{ background: candidateVisual.bg }}>
+          {candidateVisual.icon}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ConfidenceBadge value={confidence} />
@@ -263,6 +271,9 @@ export function MatchCard({ confidence, reasons, location, time, onClick, photoI
             <MapPin size={12} style={{ color: 'var(--gray-400)' }} />
             <span className="text-[12px]" style={{ color: 'var(--gray-500)' }}>{location}</span>
           </div>
+          {description && (
+            <p className="text-[12px] mt-1 line-clamp-2" style={{ color: 'var(--gray-600)' }}>{description}</p>
+          )}
           <div className="flex flex-wrap gap-1 mt-1.5">
             {reasons.map((r) => <MatchReasonTag key={r} reason={r} />)}
           </div>

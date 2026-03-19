@@ -82,7 +82,11 @@ export default function EMG_06() {
           <Btn variant="emergency" fullWidth onClick={() => nav('/emg/share-flyer')} icon={<Share2 size={18} />}>
             Create and Share Flyer
           </Btn>
-          <Btn variant="ghost" fullWidth onClick={() => nav('/emg/matching-top10')}>
+          <Btn
+            variant="ghost"
+            fullWidth
+            onClick={() => nav(caseId ? `/emg/matching-top10?caseId=${encodeURIComponent(caseId)}` : '/emg/matching-top10')}
+          >
             View Possible Matches
           </Btn>
         </div>
