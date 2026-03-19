@@ -27,7 +27,13 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           FIREBASE_PROJECT_ID: ci-project
           FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          # CI-only dummy secret — NOT a real Firebase credential.
+          # Set CI_FIREBASE_PRIVATE_KEY_DUMMY in GitHub Actions secrets to any
+          # non-PEM placeholder string (e.g. "ci-dummy-not-a-real-key").
+          # server/firebaseAdmin.ts reads this at module load time but the
+          # hasCredentials guard prevents actual Firebase Admin SDK initialisation
+          # when the value is absent or not a real PEM key.
+          FIREBASE_PRIVATE_KEY: ${{ secrets.CI_FIREBASE_PRIVATE_KEY_DUMMY }}
 
       - name: Test
         run: npm test
@@ -35,4 +41,7 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
           FIREBASE_PROJECT_ID: ci-project
           FIREBASE_CLIENT_EMAIL: ci@ci.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          # CI-only dummy secret — NOT a real Firebase credential.
+          # All tests mock server/firebaseAdmin.js via vi.mock(), so this value
+          # is never passed to the Firebase Admin SDK.
+          FIREBASE_PRIVATE_KEY: ${{ secrets.CI_FIREBASE_PRIVATE_KEY_DUMMY }}
