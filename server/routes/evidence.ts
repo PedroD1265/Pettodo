@@ -14,6 +14,7 @@ import { query } from '../db.js';
 import { writeAuditLog } from '../utils/audit.js';
 
 const router = Router();
+const MAX_DESCRIPTION_LENGTH = 1000;
 
 function newId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -67,6 +68,15 @@ router.post('/evidence-items', verifyToken, async (req: AuthenticatedRequest, re
       return;
     }
 
+    const normalizedDescription = description.trim();
+    if (normalizedDescription.length > MAX_DESCRIPTION_LENGTH) {
+      res.status(400).json({
+        error: 'bad_request',
+        message: `description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`,
+      });
+      return;
+    }
+
     const targetEntityResult = await findTargetEntity(targetEntityType, targetEntityId);
     if (targetEntityResult.rows.length === 0) {
       res.status(404).json({ error: 'not_found' });
@@ -87,7 +97,7 @@ router.post('/evidence-items', verifyToken, async (req: AuthenticatedRequest, re
         targetEntityId,
         uid,
         evidenceType,
-        description.trim(),
+        normalizedDescription,
         JSON.stringify(metadata && typeof metadata === 'object' ? metadata : {}),
         now,
       ]
@@ -106,7 +116,7 @@ router.post('/evidence-items', verifyToken, async (req: AuthenticatedRequest, re
       targetEntityType,
       targetEntityId,
       evidenceType,
-      description: description.trim(),
+      description: normalizedDescription,
       reviewState: 'pending_review',
       createdAt: now,
     });

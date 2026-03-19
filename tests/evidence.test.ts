@@ -134,7 +134,7 @@ describe('Evidence Items API', () => {
       expect(mockWriteAuditLog).not.toHaveBeenCalled();
     });
 
-    it('accepts a very long description string (EV-01 regression)', async () => {
+    it('returns 400 when description is too long (EV-01 regression)', async () => {
       const longDescription = 'a'.repeat(10000);
       const payloadWithLongDesc = {
         ...validPayload,
@@ -146,12 +146,11 @@ describe('Evidence Items API', () => {
         .set(authHeader())
         .send(payloadWithLongDesc);
 
-      expect(res.status).toBe(201);
-      expect(res.body.description).toBe(longDescription);
-
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      const insertParams = mockQuery.mock.calls[1][1];
-      expect(insertParams[5]).toBe(longDescription);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('bad_request');
+      expect(res.body.message).toContain('1000');
+      expect(mockQuery).not.toHaveBeenCalled();
+      expect(mockWriteAuditLog).not.toHaveBeenCalled();
     });
   });
 });
