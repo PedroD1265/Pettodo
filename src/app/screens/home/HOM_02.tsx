@@ -7,7 +7,7 @@ import { Btn } from '../../components/pettodo/Buttons';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { caseApi, type CaseRecord } from '../../services/api';
-import { MapPin, Eye, Users, Plus } from 'lucide-react';
+import { MapPin, Eye, Users, Plus, Search } from 'lucide-react';
 
 export default function HOM_02() {
   const nav = useNavigate();
@@ -50,7 +50,7 @@ export default function HOM_02() {
 
             <CaseCard
               type="lost"
-              name={firstActive.description ? `Lost — ${firstActive.description.slice(0, 30)}` : 'Lost Dog'}
+              name={firstActive.description ? `Lost - ${firstActive.description.slice(0, 30)}` : 'Lost Dog'}
               location={firstActive.location ?? ''}
               time={firstActive.timeLabel ?? ''}
               matchCount={0}
@@ -65,11 +65,11 @@ export default function HOM_02() {
                   View Report
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); nav('/emg/map-layers'); }}
+                  onClick={(e) => { e.stopPropagation(); nav(`/emg/matching-top10?caseId=${encodeURIComponent(firstActive.id)}`, { state: { caseSummary: firstActive } }); }}
                   className="flex-1 py-2 px-3 rounded-lg text-[12px] font-medium"
                   style={{ background: 'var(--gray-100)', color: 'var(--gray-900)' }}
                 >
-                  Map
+                  Matches
                 </button>
               </div>
             </CaseCard>
@@ -87,7 +87,7 @@ export default function HOM_02() {
               </div>
               <div className="flex flex-col items-center p-3 rounded-xl" style={{ background: 'var(--red-bg)' }}>
                 <Users size={20} style={{ color: 'var(--red-primary)' }} />
-                <span className="text-[18px] mt-1" style={{ fontWeight: 700, color: 'var(--red-dark)' }}>—</span>
+                <span className="text-[18px] mt-1" style={{ fontWeight: 700, color: 'var(--red-dark)' }}>-</span>
                 <span className="text-[10px]" style={{ color: 'var(--red-dark)' }}>Followers</span>
               </div>
             </div>
@@ -95,6 +95,13 @@ export default function HOM_02() {
             <div className="flex flex-col gap-2">
               <Btn variant="emergency" fullWidth onClick={() => nav('/emg/cases')}>
                 <Eye size={18} /> My Reports
+              </Btn>
+              <Btn
+                variant="secondary"
+                fullWidth
+                onClick={() => nav(`/emg/matching-top10?caseId=${encodeURIComponent(firstActive.id)}`, { state: { caseSummary: firstActive } })}
+              >
+                <Search size={18} /> View Matches
               </Btn>
               <Btn variant="secondary" fullWidth onClick={() => nav('/emg/map-layers')}>
                 <MapPin size={18} /> Open Map
