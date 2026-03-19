@@ -1,6 +1,6 @@
 # QA_CURRENT
 
-**Last updated:** 2026-03-19 13:57 UTC-04:00
+**Last updated:** 2026-03-19 15:10 UTC-04:00
 Purpose:
 Provide the official current QA truth for PETTODO’s web app so the team can distinguish what has actually been validated in the current Replit-built product, what remains demo/local-first, what is still untested, and what blocks the first real beta.
 
@@ -101,7 +101,7 @@ This is strong coverage for a prototype-stage product.
 **[confirmed]**
 
 The evidence includes:
-- successful build pass
+- successful build pass (green)
 - no TypeScript errors in the checked build context
 - no console errors on smoke-tested routes
 
@@ -439,7 +439,7 @@ What the baseline does not cover:
 What remains missing or not yet validated:
 - CI/CD deployment pipeline beyond the current minimal CI baseline
 - production-grade deploy fallback confidence
-- operator-facing moderation/review UI completion and broader end-to-end validation beyond the now-green trust-sensitive backend hardening phase
+- broader end-to-end validation beyond the now-green trust-sensitive backend hardening phase
 
 ---
 
@@ -495,7 +495,7 @@ Use these statuses:
 | Trust-sensitive backend test wave | Validated in pilot-baseline | Six dedicated files now exist and pass (60 tests total) for protected contact, Community Dogs, reviews, abuse, change-requests, and evidence — all mocked, no real infra |
 | Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
 | Real public profile backend behavior | Partially validated | Trust-sensitive backend filters exist; full UI polish pending |
-| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed; backend trust-sensitive hardening is green for the current phase, and the next recommended block is moderation/review UI and operator workflow polish |
+| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed; frontend route protection and authorized discoverability are active, and backend trust-sensitive hardening is green for the current phase |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
 | Play Dates mature system | Out of first-beta priority | Prototype exists, maturity not required first |
 | Full communities maturity | Out of first-beta priority | Prototype exists, maturity not required first |
@@ -512,7 +512,7 @@ They are implementation and release-readiness blockers.
 - no real multi-user production data model yet (session-based real, but no multi-party sync validation)
 - no real evidence workflow beyond CMT_07 dispute submission and QRP_03/CMT_03 sightings
 - dedicated trust-sensitive backend hardening for the current phase is now complete and backed by a green 6-file / 60-test suite
-- remaining trust-sensitive route risks are residual/non-blocking for this phase; the next recommended block is moderation/review UI minimum (Block 3)
+- remaining trust-sensitive route risks are residual/non-blocking for this phase; the next recommended large block is post-moderation visible product work (share/flyer real outputs and evidence-backed visible actions)
 - minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
 
@@ -583,12 +583,11 @@ The next QA priorities should follow the real-beta cut line, not prototype aesth
 - real QR/public profile data flow
 - real image pipeline
 
-### Priority 2 — Trust-sensitive core
+### Priority 2 — Post-moderation visible product core
 **[confirmed]**
 - protected contact
 - evidence-backed actions
 - Community Dog controlled creation/review
-- moderation minimum
 - abuse/suspicion handling minimum
 
 ### Priority 3 — Release discipline

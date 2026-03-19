@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Last updated:** 2026-03-19 13:57 UTC-04:00
+**Last updated:** 2026-03-19 15:10 UTC-04:00
 Purpose:
 Brutally clear snapshot of what PETTODO is today: what is implemented, what is simulated, what is decided, and what is still missing.
 
@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting moderation/review UI and operator-workflow completion plus remaining release-engineering gaps.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + operator access/discoverability + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness now primarily awaits the post-moderation visible-product block and remaining release-engineering gaps.
 
 ---
 
@@ -64,10 +64,10 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Trust-Sensitive Block 1 backend: 12 new tables, 17 new API routes, role middleware, audit utility (see Block 1 section in §3)
 - Expanded automated backend test baseline (Vitest + Supertest, mocked infra), now including a dedicated trust-sensitive suite with 6 files / 60 passing tests
 - Trust-sensitive backend hardening wave closed for the current phase across `reviews.ts`, `change-requests.ts`, `abuse.ts`, target-entity existence checks, and `evidence.ts`
-- Minimal GitHub Actions CI (build + test)
+- Minimal GitHub Actions CI (build + test) in green baseline
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
 - **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
-- **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review) and real Logout in Profile.
+- **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review), frontend route guard, visible authorized entry point, and real Logout in Profile.
 - **Case Baseline & Emergency Discovery Fix Pack**: Cerrado y Validado (PASS WITH ISSUES). Lost flow uses real pet selection via `petApi.list()`, state propagation fixed. Discovery list (`/emg/cases`) uses real `caseApi.list()`. Home surfaces use real data. Demo drift removed from case baseline screens. Minor: EMG_12 sighted location still hardcoded, location/time data not yet sent to backend payload, photo upload not yet persisted.
 - **Bloque 5 — Real Matching v1**: Cerrado y Validado (PASS WITH ISSUES). Real backend matching heuristic (distance, traits, recency) implemented on `/api/matching/cases/:id`. Frontend `matchingRealAdapter` active in integration mode. UI in `EMG_16` displays real ranked candidates. `EMG_17` handles comparisons with real data. Caution framing present. Minor: EMG_17 still has demo fallback if accessed without state.
 
@@ -114,7 +114,7 @@ The following are not yet real production capabilities:
 - no formal schema migration system yet (uses runMigrations with IF NOT EXISTS)
 - trust-sensitive backend hardening for the current phase is closed and no longer a primary blocker
 - residual non-blocking trust-sensitive risks remain in `server/routes/community-dogs.ts` (missing audit logs for sighting/action writes) and `server/routes/protected-contact.ts` (duplicate-thread idempotency only on the `petId` path)
-- the next recommended large block is moderation/review UI and operator workflow hardening (Block 3)
+- the next recommended large block is the post-moderation visible-product block (Share/Flyer real outputs + evidence-backed visible actions)
 
 ---
 
