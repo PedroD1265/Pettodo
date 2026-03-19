@@ -120,12 +120,58 @@ function getEmergencySummary(type: 'lost' | 'found' | 'sighted' | null | undefin
   }
 }
 
+function getLandingActionCopy(type: 'lost' | 'found' | 'sighted' | null | undefined) {
+  switch (type) {
+    case 'lost':
+      return {
+        nextStepTitle: 'Best next step',
+        nextStepText: 'If you saw this pet recently, report the approximate area and time first. That gives the owner a faster lead than a generic message.',
+        reportLabel: 'Report where you saw this pet',
+        reportHint: 'You will choose whether you have the pet or only spotted it nearby.',
+        relayLabel: 'Send a secure message to the owner',
+        relayHint: 'You will pass a quick human check before PETTODO opens the protected relay.',
+        shareGuide: 'Share the approximate area, when you saw the pet, and whether the pet is with you. Add your phone only if you have the pet and are ready to coordinate.',
+      };
+    case 'found':
+      return {
+        nextStepTitle: 'Best next step',
+        nextStepText: 'If the pet is with you right now, start with the report flow so the owner gets a structured update with your area and contact option.',
+        reportLabel: 'Tell the owner you have this pet',
+        reportHint: 'The report flow will ask for area details and your phone if the pet is with you.',
+        relayLabel: 'Open secure relay first',
+        relayHint: 'Use relay if you want to coordinate carefully before sharing your phone.',
+        shareGuide: 'Share the area where the pet is safe, whether you can hold the pet for a while, and a callback number only if you want direct coordination.',
+      };
+    case 'sighted':
+      return {
+        nextStepTitle: 'Best next step',
+        nextStepText: 'Another sighting is usually the most helpful next move. Even a short area update can help narrow the search.',
+        reportLabel: 'Add another sighting',
+        reportHint: 'Use this if you saw the pet pass by and do not have them with you.',
+        relayLabel: 'Message through secure relay',
+        relayHint: 'Use relay if you need to explain more context than the quick report allows.',
+        shareGuide: 'Share the approximate area, direction of movement if you noticed it, and the time of the sighting. Keep the location approximate, not private.',
+      };
+    default:
+      return {
+        nextStepTitle: 'What you can do',
+        nextStepText: 'There is no active emergency case attached right now, but you can still contact the owner securely or send a fresh report if you have relevant information.',
+        reportLabel: 'Send a found or sighting report',
+        reportHint: 'Use this if you have a real update about the pet right now.',
+        relayLabel: 'Contact owner securely',
+        relayHint: 'PETTODO relay keeps owner details hidden until they choose to share them.',
+        shareGuide: 'Share only useful current information: approximate area, when you saw the pet, and whether the pet is with you.',
+      };
+  }
+}
+
 export function QRP_01() {
   const nav = useNavigate();
   const { petId } = useParams<{ petId?: string }>();
   const { pet: dbPet, loading, error } = usePublicPet();
   const display = getPetDisplay(dbPet);
   const emergencyCase = display.emergencyCase;
+  const actionCopy = getLandingActionCopy(emergencyCase?.type);
   const facts = [
     { label: 'Reported area', value: emergencyCase?.location || 'Public pet page only' },
     { label: 'Reported when', value: emergencyCase?.timeLabel || 'Not shared yet' },
@@ -242,6 +288,15 @@ export function QRP_01() {
           </div>
         </div>
 
+        {!display.photoUrl && (
+          <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)', border: '1px dashed var(--gray-300)' }}>
+            <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>No public photo available yet</p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--gray-600)' }}>
+              Use the collar, marks, colors, and area details below to confirm whether this is the same pet before you report or message.
+            </p>
+          </div>
+        )}
+
         {!!traits.length && (
           <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
             <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>Helpful identification notes</p>
@@ -273,16 +328,36 @@ export function QRP_01() {
         </div>
 
         <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
+          <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{actionCopy.nextStepTitle}</p>
+          <p className="text-[12px] mt-1" style={{ color: 'var(--gray-600)' }}>
+            {actionCopy.nextStepText}
+          </p>
+        </div>
+
+        <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
           <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>What you can do now</p>
           <div className="mt-3 flex flex-col gap-2">
             <Btn variant="primary" fullWidth onClick={() => nav(reportPath)}>
-              <MapPin size={16} /> I found or spotted this pet
+              <MapPin size={16} /> {actionCopy.reportLabel}
             </Btn>
+            <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+              {actionCopy.reportHint}
+            </p>
             <Btn variant="secondary" fullWidth onClick={() => nav(captchaPath)}>
-              <Shield size={16} /> Contact Owner (Secure Relay)
+              <Shield size={16} /> {actionCopy.relayLabel}
             </Btn>
+            <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+              {actionCopy.relayHint}
+            </p>
           </div>
-          <p className="text-[12px] mt-3" style={{ color: 'var(--gray-500)' }}>
+        </div>
+
+        <div className="w-full p-4 rounded-2xl" style={{ background: 'var(--gray-100)' }}>
+          <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>What information is most useful</p>
+          <p className="text-[12px] mt-1" style={{ color: 'var(--gray-600)' }}>
+            {actionCopy.shareGuide}
+          </p>
+          <p className="text-[12px] mt-2" style={{ color: 'var(--gray-500)' }}>
             Share only approximate public location details. Use relay or a safe public handoff point for direct coordination.
           </p>
         </div>
