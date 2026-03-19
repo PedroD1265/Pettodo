@@ -50,6 +50,9 @@ export interface IMatchingService {
   rankMatches(caseId: string): Promise<MatchResult[]>;
 }
 
+export type AuthRole = 'user' | 'moderator' | 'operator';
+export type AuthAccessSource = 'none' | 'demo' | 'token_claims' | 'review_probe';
+
 export interface AuthUser {
   uid: string;
   email: string | null;
@@ -57,9 +60,16 @@ export interface AuthUser {
   photoURL: string | null;
 }
 
+export interface AuthAccessProfile {
+  role: AuthRole | null;
+  canAccessModeration: boolean;
+  source: AuthAccessSource;
+}
+
 export interface IAuthService {
   getCurrentUser(): AuthUser | null;
   getIdToken(): Promise<string | null>;
+  getAccessProfile(): Promise<AuthAccessProfile>;
   signInWithGoogle(): Promise<AuthUser>;
   signOut(): Promise<void>;
   onAuthStateChanged(callback: (user: AuthUser | null) => void): () => void;

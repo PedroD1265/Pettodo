@@ -15,9 +15,24 @@ import { Shield, Star, CheckCircle, AlertTriangle, Bell, Lock, MapPin, Eye, Phon
 export function PRF_01() {
   const nav = useNavigate();
   const { verificationLevel, strictStatus } = useApp();
-  const { signOut, user } = useAuth();
+  const { signOut, user, authzReady, canAccessModeration, role } = useAuth();
   const badgeLevel = strictStatus === 'approved' ? 'strict' : verificationLevel === 'basic' ? 'sms' : 'sms';
   const showBadge = verificationLevel !== 'none' || strictStatus === 'approved';
+  const moderationRoleLabel = role === 'operator' ? 'Operator' : role === 'moderator' ? 'Moderator' : 'Reviewer';
+  const profileActions = [
+    { label: 'Verification Center', path: '/profile/verification', icon: <Shield size={18} /> },
+    { label: 'Privacy Settings', path: '/profile/privacy', icon: <Lock size={18} /> },
+    { label: 'Notifications', path: '/profile/notifications', icon: <Bell size={18} /> },
+    { label: 'Safety Center', path: '/profile/safety', icon: <Eye size={18} /> },
+    ...(authzReady && canAccessModeration
+      ? [{
+          label: 'Moderation Queue',
+          path: '/admin/review',
+          icon: <FileText size={18} />,
+          badge: moderationRoleLabel,
+        }]
+      : []),
+  ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -62,15 +77,18 @@ export function PRF_01() {
         </div>
 
         <div className="flex flex-col gap-2">
-          {[
-            { label: 'Verification Center', path: '/profile/verification', icon: <Shield size={18} /> },
-            { label: 'Privacy Settings', path: '/profile/privacy', icon: <Lock size={18} /> },
-            { label: 'Notifications', path: '/profile/notifications', icon: <Bell size={18} /> },
-            { label: 'Safety Center', path: '/profile/safety', icon: <Eye size={18} /> },
-          ].map((item) => (
+          {profileActions.map((item) => (
             <button key={item.label} onClick={() => nav(item.path)} className="flex items-center gap-3 p-3 rounded-xl text-left" style={{ background: 'var(--gray-100)', minHeight: 48 }}>
               <span style={{ color: 'var(--gray-500)' }}>{item.icon}</span>
               <span className="text-[14px]" style={{ fontWeight: 500, color: 'var(--gray-900)' }}>{item.label}</span>
+              {'badge' in item && item.badge && (
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px]"
+                  style={{ background: 'var(--info-bg)', color: 'var(--info-dark)', fontWeight: 700 }}
+                >
+                  {item.badge}
+                </span>
+              )}
               <span className="ml-auto text-[14px]" style={{ color: 'var(--gray-400)' }}>→</span>
             </button>
           ))}
