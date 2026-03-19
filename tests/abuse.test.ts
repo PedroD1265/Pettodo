@@ -83,6 +83,11 @@ describe('Abuse Flags API', () => {
     });
 
     it('creates an abuse flag successfully on valid input (201)', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet_123' }], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
+
       const res = await request(app)
         .post('/api/abuse-flags')
         .set(authHeader())
@@ -92,9 +97,9 @@ describe('Abuse Flags API', () => {
       expect(res.body.ok).toBe(true);
       expect(res.body.id).toMatch(/^af_/);
 
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      const insertQuery = mockQuery.mock.calls[1][0];
-      const insertParams = mockQuery.mock.calls[1][1];
+      expect(mockQuery).toHaveBeenCalledTimes(3);
+      const insertQuery = mockQuery.mock.calls[2][0];
+      const insertParams = mockQuery.mock.calls[2][1];
       expect(insertQuery).toContain('INSERT INTO abuse_flags');
       expect(insertParams).toEqual([
         expect.stringMatching(/^af_/),
@@ -108,6 +113,11 @@ describe('Abuse Flags API', () => {
     });
 
     it('calls writeAuditLog with correct parameters on success', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet_123' }], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
+
       await request(app)
         .post('/api/abuse-flags')
         .set(authHeader())
@@ -132,21 +142,25 @@ describe('Abuse Flags API', () => {
         targetEntityId: 'pet_this_does_not_exist',
       };
 
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       const res = await request(app)
         .post('/api/abuse-flags')
         .set(authHeader())
         .send(payloadWithFakeId);
 
-      expect(res.status).toBe(201);
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      const insertParams = mockQuery.mock.calls[1][1];
-      expect(insertParams[2]).toBe('pet_this_does_not_exist');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'not_found' });
+      expect(mockQuery).toHaveBeenCalledOnce();
+      expect(mockWriteAuditLog).not.toHaveBeenCalled();
     });
 
     it('allows multiple identical flags from the same user (AF-01 regression)', async () => {
       mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 'pet_123' }], rowCount: 1 })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: 'pet_123' }], rowCount: 1 })
         .mockResolvedValueOnce({
           rows: [{ id: 'af_existing', created_at: 12345 }],
           rowCount: 1,
@@ -171,7 +185,7 @@ describe('Abuse Flags API', () => {
         duplicate: true,
       });
 
-      expect(mockQuery).toHaveBeenCalledTimes(3);
+      expect(mockQuery).toHaveBeenCalledTimes(5);
       expect(mockWriteAuditLog).toHaveBeenCalledTimes(1);
     });
   });

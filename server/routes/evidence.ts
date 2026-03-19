@@ -22,6 +22,22 @@ function newId(prefix: string): string {
 const VALID_EVIDENCE_TYPES = ['sighting', 'photo_description', 'veterinary_record', 'witness', 'other'];
 const ALLOWED_ENTITY_TYPES = ['community_dog', 'case', 'pet'];
 
+async function findTargetEntity(
+  targetEntityType: string,
+  targetEntityId: string
+) {
+  switch (targetEntityType) {
+    case 'community_dog':
+      return query('SELECT id FROM community_dogs WHERE id = $1', [targetEntityId]);
+    case 'case':
+      return query('SELECT id FROM cases WHERE id = $1', [targetEntityId]);
+    case 'pet':
+      return query('SELECT id FROM pets WHERE id = $1', [targetEntityId]);
+    default:
+      return { rows: [], rowCount: 0 };
+  }
+}
+
 // ─── POST /evidence-items ────────────────────────────────────────────────────
 router.post('/evidence-items', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -48,6 +64,12 @@ router.post('/evidence-items', verifyToken, async (req: AuthenticatedRequest, re
     }
     if (!description || typeof description !== 'string' || !description.trim()) {
       res.status(400).json({ error: 'bad_request', message: 'description is required' });
+      return;
+    }
+
+    const targetEntityResult = await findTargetEntity(targetEntityType, targetEntityId);
+    if (targetEntityResult.rows.length === 0) {
+      res.status(404).json({ error: 'not_found' });
       return;
     }
 

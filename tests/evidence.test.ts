@@ -31,9 +31,11 @@ function authHeader() {
 
 describe('Evidence Items API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockQuery.mockReset();
+    mockVerifyIdToken.mockReset();
+    mockWriteAuditLog.mockReset();
     mockVerifyIdToken.mockResolvedValue(FAKE_USER);
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
+    mockQuery.mockResolvedValue({ rows: [{ id: 'case_xyz' }], rowCount: 1 });
   });
 
   describe('POST /api/evidence-items', () => {
@@ -80,8 +82,8 @@ describe('Evidence Items API', () => {
       expect(res.body.reviewState).toBe('pending_review');
       expect(res.body.description).toBe(validPayload.description);
 
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertParams = mockQuery.mock.calls[1][1];
       expect(insertParams).toEqual([
         expect.stringMatching(/^ei_/),
         'case',
@@ -119,15 +121,17 @@ describe('Evidence Items API', () => {
         targetEntityId: 'case_is_not_real',
       };
 
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       const res = await request(app)
         .post('/api/evidence-items')
         .set(authHeader())
         .send(payloadWithFakeId);
 
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'not_found' });
       expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
-      expect(insertParams[2]).toBe('case_is_not_real');
+      expect(mockWriteAuditLog).not.toHaveBeenCalled();
     });
 
     it('accepts a very long description string (EV-01 regression)', async () => {
@@ -145,8 +149,8 @@ describe('Evidence Items API', () => {
       expect(res.status).toBe(201);
       expect(res.body.description).toBe(longDescription);
 
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertParams = mockQuery.mock.calls[1][1];
       expect(insertParams[5]).toBe(longDescription);
     });
   });
