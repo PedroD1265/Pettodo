@@ -1,6 +1,6 @@
 # QA_CURRENT
 
-**Last updated:** 2026-03-18 16:40 UTC-04:00
+**Last updated:** 2026-03-19 13:57 UTC-04:00
 Purpose:
 Provide the official current QA truth for PETTODO’s web app so the team can distinguish what has actually been validated in the current Replit-built product, what remains demo/local-first, what is still untested, and what blocks the first real beta.
 
@@ -439,7 +439,7 @@ What the baseline does not cover:
 What remains missing or not yet validated:
 - CI/CD deployment pipeline beyond the current minimal CI baseline
 - production-grade deploy fallback confidence
-- closure of trust-sensitive backend blockers already identified in code and adversarial review
+- operator-facing moderation/review UI completion and broader end-to-end validation beyond the now-green trust-sensitive backend hardening phase
 
 ---
 
@@ -484,8 +484,8 @@ Use these statuses:
 | Education module | Validated in prototype | Good prototype coverage |
 | Profile / settings persistence | Validated in prototype | Local-store based |
 | Chat / notifications | Validated in pilot-baseline | QRP_04 real chat + idempotency validated |
-| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 03, 07 real; backend route tests now exist, but contribution-audit hardening is still open |
-| Protected contact | Validated in pilot-baseline | QRP_01, 02, 03, 04 real; backend route tests now exist, but case-only duplicate-thread hardening is still open |
+| Community Dogs UI/module | Validated in pilot-baseline | CMT_01, 02, 03, 07 real; backend route tests exist and residual contribution-audit hardening is non-blocking for the current phase |
+| Protected contact | Validated in pilot-baseline | QRP_01, 02, 03, 04 real; backend route tests exist and residual case-only duplicate-thread hardening is non-blocking for the current phase |
 | Real auth / sign-in | Validated in phase 1 | Firebase Auth integrated, baseline validated |
 | Real database/API | Validated in phase 1 | Azure Postgres & Express API tested |
 | Pet Create persistence | Validated in phase 1.5 | End-to-end DB persistence to PostgreSQL confirmed |
@@ -495,7 +495,7 @@ Use these statuses:
 | Trust-sensitive backend test wave | Validated in pilot-baseline | Six dedicated files now exist and pass (60 tests total) for protected contact, Community Dogs, reviews, abuse, change-requests, and evidence — all mocked, no real infra |
 | Real image upload/storage | Validated in phase 1.5 | Milestone accepted; Azure Blob + DB references working and tested |
 | Real public profile backend behavior | Partially validated | Trust-sensitive backend filters exist; full UI polish pending |
-| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed; backend review tests now exist, but release-hardening blockers remain in `reviews.ts` |
+| Real moderation/admin | Validated in pilot-baseline | MOD_01 real queue and decision flow confirmed; backend trust-sensitive hardening is green for the current phase, and the next recommended block is moderation/review UI and operator workflow polish |
 | Walkers mature marketplace | Out of first-beta priority | Prototype exists, maturity not required first |
 | Play Dates mature system | Out of first-beta priority | Prototype exists, maturity not required first |
 | Full communities maturity | Out of first-beta priority | Prototype exists, maturity not required first |
@@ -511,11 +511,8 @@ They are implementation and release-readiness blockers.
 **[confirmed]**
 - no real multi-user production data model yet (session-based real, but no multi-party sync validation)
 - no real evidence workflow beyond CMT_07 dispute submission and QRP_03/CMT_03 sightings
-- dedicated trust-sensitive backend tests now exist, but release blockers remain open in backend hardening:
-- dynamic SQL identifier interpolation in `reviews.ts`
-- non-atomic moderation decision flow in `reviews.ts`
-- unsanitized `proposedChanges` in `change-requests.ts`
-- missing anti-flood / duplicate-open-report guard in `abuse.ts`
+- dedicated trust-sensitive backend hardening for the current phase is now complete and backed by a green 6-file / 60-test suite
+- remaining trust-sensitive route risks are residual/non-blocking for this phase; the next recommended block is moderation/review UI minimum (Block 3)
 - minimal GitHub Actions CI exists (build+test); CD not yet configured
 - no confirmed stable production routing/deploy fallback yet
 

@@ -1,6 +1,6 @@
 # CURRENT_STATE
 
-**Last updated:** 2026-03-18 16:40 UTC-04:00
+**Last updated:** 2026-03-19 13:57 UTC-04:00
 Purpose:
 Brutally clear snapshot of what PETTODO is today: what is implemented, what is simulated, what is decided, and what is still missing.
 
@@ -20,7 +20,7 @@ Update whenever the real implementation state changes, especially after meaningf
 
 **[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting closure of trust-sensitive backend blockers plus remaining release-engineering gaps.
+It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness is still awaiting moderation/review UI and operator-workflow completion plus remaining release-engineering gaps.
 
 ---
 
@@ -63,6 +63,7 @@ It expresses strong product structure and relies on a real backend. The core pet
 - Owner scoping for protected routes
 - Trust-Sensitive Block 1 backend: 12 new tables, 17 new API routes, role middleware, audit utility (see Block 1 section in §3)
 - Expanded automated backend test baseline (Vitest + Supertest, mocked infra), now including a dedicated trust-sensitive suite with 6 files / 60 passing tests
+- Trust-sensitive backend hardening wave closed for the current phase across `reviews.ts`, `change-requests.ts`, `abuse.ts`, target-entity existence checks, and `evidence.ts`
 - Minimal GitHub Actions CI (build + test)
 - Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
 - **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
@@ -111,15 +112,9 @@ The following are not yet real production capabilities:
 - OTP has been simulated
 - matching is a real backend-backed heuristic (distance, traits, recency), mapped to confidence scores and caution framing
 - no formal schema migration system yet (uses runMigrations with IF NOT EXISTS)
-- trust-sensitive backend blockers remain open in release-hardening:
-- `server/routes/reviews.ts` still uses dynamic SQL identifier interpolation
-- `server/routes/reviews.ts` still performs non-atomic moderation decisions
-- `server/routes/change-requests.ts` still accepts internal/protected fields inside `proposedChanges`
-- `server/routes/abuse.ts` still lacks anti-flood / duplicate-open-report protection
-- `server/routes/abuse.ts`, `server/routes/change-requests.ts`, and `server/routes/evidence.ts` still accept orphan target references
-- `server/routes/evidence.ts` still lacks an endpoint-level description size cap
-- `server/routes/community-dogs.ts` still omits audit logs for sighting/action writes
-- `server/routes/protected-contact.ts` still applies duplicate-thread idempotency only on the `petId` path
+- trust-sensitive backend hardening for the current phase is closed and no longer a primary blocker
+- residual non-blocking trust-sensitive risks remain in `server/routes/community-dogs.ts` (missing audit logs for sighting/action writes) and `server/routes/protected-contact.ts` (duplicate-thread idempotency only on the `petId` path)
+- the next recommended large block is moderation/review UI and operator workflow hardening (Block 3)
 
 ---
 

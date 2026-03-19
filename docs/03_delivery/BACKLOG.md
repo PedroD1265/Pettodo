@@ -768,7 +768,7 @@ Done for current phase when:
 
 ### BL-014A — Trust-sensitive backend hardening wave
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0
@@ -792,7 +792,7 @@ Does not include:
 - broad refactors outside the affected backend routes
 
 Why it matters:
-The trust-sensitive suite is now green, but it also exposed release-relevant backend bugs that remain open.
+The trust-sensitive suite is green, and this packet closed the blocker set that it exposed for the current phase.
 
 Dependencies:
 - BL-010 Minimum moderation and review capability
@@ -803,6 +803,9 @@ Done for current phase when:
 - blocker findings in the trust backend backlog are closed
 - targeted backend tests remain green after fixes
 - QA_CURRENT and CURRENT_STATE reflect the new truth
+
+Follow-on note:
+The next recommended large block after BL-014A is moderation/review UI and operator workflow polish (Block 3), while the remaining route-level trust risks are treated as residual and non-blocking for this phase.
 
 ---
 
@@ -1038,13 +1041,15 @@ The recommended current execution sequence is:
 - BL-015 Evidence-backed actions baseline
 
 ### Wave 5 — Hardening
-- BL-014A Trust-sensitive backend hardening wave
 - BL-014 Automated test baseline and regression discipline
 - BL-016 Settings, privacy controls, and visibility controls baseline
 - BL-017 Notification and operational feedback baseline
 - BL-018 Pilot instrumentation and operational observability minimum
 - BL-019 Documentation and handoff hardening
 - BL-020 Cleanup of demo drift in non-core surfaces
+
+Current note:
+BL-014A is closed for the current phase. The next recommended large block is moderation/review UI and operator workflow polish (Block 3).
 
 This sequence may be adjusted if implementation realities require it, but drift should be explicit, not accidental.
 
