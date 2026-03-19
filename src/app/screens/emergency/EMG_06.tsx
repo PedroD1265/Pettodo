@@ -79,7 +79,12 @@ export default function EMG_06() {
         <div className="w-full h-[1px] my-2" style={{ background: 'var(--gray-200)' }} />
 
         <div className="w-full flex flex-col gap-2 mt-auto pb-4">
-          <Btn variant="emergency" fullWidth onClick={() => nav('/emg/share-flyer')} icon={<Share2 size={18} />}>
+          <Btn
+            variant="emergency"
+            fullWidth
+            onClick={() => nav(caseId ? `/emg/share-flyer?caseId=${encodeURIComponent(caseId)}` : '/emg/share-flyer')}
+            icon={<Share2 size={18} />}
+          >
             Create and Share Flyer
           </Btn>
           <Btn
