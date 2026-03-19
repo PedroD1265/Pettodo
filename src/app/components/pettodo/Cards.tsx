@@ -241,7 +241,7 @@ export function SafePointCard({ name, hours, distance, trusted, onClick }: {
   );
 }
 
-export function MatchCard({ confidence, reasons, location, time, onClick, candidateType = 'found', description }: {
+export function MatchCard({ confidence, reasons, location, time, onClick, candidateType = 'found', description, caseId }: {
   confidence: number;
   reasons: string[];
   location: string;
@@ -249,12 +249,14 @@ export function MatchCard({ confidence, reasons, location, time, onClick, candid
   onClick?: () => void | Promise<void>;
   candidateType?: 'found' | 'sighted' | 'lost';
   description?: string;
+  caseId?: string;
 }) {
   const candidateVisual = candidateType === 'sighted'
     ? { icon: <Eye size={24} style={{ color: 'var(--warning-dark)' }} />, bg: 'var(--warning-bg)' }
     : candidateType === 'lost'
       ? { icon: <AlertTriangle size={24} style={{ color: 'var(--red-dark)' }} />, bg: 'var(--red-bg)' }
       : { icon: <Search size={24} style={{ color: 'var(--green-dark)' }} />, bg: 'var(--green-bg)' };
+  const candidateLabel = candidateType === 'sighted' ? 'Sighting report' : candidateType === 'lost' ? 'Lost report' : 'Found report';
 
   return (
     <CardShell onClick={onClick}>
@@ -266,6 +268,16 @@ export function MatchCard({ confidence, reasons, location, time, onClick, candid
           <div className="flex items-center gap-2 mb-1">
             <ConfidenceBadge value={confidence} />
             <FreshnessBadge text={time} />
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--gray-100)', color: 'var(--gray-700)', fontWeight: 600 }}>
+              {candidateLabel}
+            </span>
+            {caseId && (
+              <span className="text-[10px] font-mono" style={{ color: 'var(--gray-400)' }}>
+                {caseId}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 mt-1">
             <MapPin size={12} style={{ color: 'var(--gray-400)' }} />

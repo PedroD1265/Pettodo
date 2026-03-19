@@ -192,6 +192,30 @@ export function EMG_16() {
               Report {selectedCase.id}{selectedCase.location ? ` - ${selectedCase.location}` : ''}
             </p>
             <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>Tap a result to compare and decide whether to contact the reporter.</p>
+            <div className="p-3 rounded-xl flex flex-col gap-2" style={{ background: 'var(--gray-100)' }}>
+              <div className="flex items-center gap-2">
+                <StatusChip status={selectedCase.type} />
+                <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--white)', color: 'var(--gray-700)', fontWeight: 600 }}>
+                  Origin case
+                </span>
+              </div>
+              <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
+                {selectedCase.description || 'Emergency report'}
+              </p>
+              <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+                {selectedCase.location || 'Approximate area only'} - {selectedCase.timeLabel || selectedCase.time || 'Recently reported'}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {[selectedCase.size, ...(selectedCase.colors ?? []), selectedCase.direction ? `Direction ${selectedCase.direction}` : '']
+                  .filter(Boolean)
+                  .slice(0, 5)
+                  .map((tag) => (
+                    <span key={tag} className="px-2 py-1 rounded-full text-[11px]" style={{ background: 'var(--white)', color: 'var(--gray-700)', fontWeight: 600 }}>
+                      {tag}
+                    </span>
+                  ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -243,9 +267,13 @@ export function EMG_16() {
 
         {!caseLoading && !loading && !error && matches && matches.length > 0 && (
           <div className="flex flex-col gap-2">
+            <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+              {matches.length} candidate{matches.length !== 1 ? 's' : ''} ranked for this report.
+            </p>
             {matches.map((m) => (
               <MatchCard
                 key={m.caseId}
+                caseId={m.caseId}
                 confidence={m.confidence}
                 reasons={m.reasons}
                 location={m.location}
@@ -289,7 +317,37 @@ export function EMG_17() {
   const queryCaseId = new URLSearchParams(location.search).get('caseId');
   const state = location.state as { match?: MatchResult; caseSummary?: CaseRecord } | null;
   const match = state?.match ?? null;
-  const selectedCase = state?.caseSummary ?? null;
+  const [selectedCase, setSelectedCase] = useState<CaseRecord | null>(state?.caseSummary ?? null);
+  const [selectedCaseLoading, setSelectedCaseLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSelectedCase() {
+      if (selectedCase || !queryCaseId) return;
+
+      setSelectedCaseLoading(true);
+      try {
+        const loaded = await caseApi.get(queryCaseId);
+        if (!cancelled) {
+          setSelectedCase(loaded);
+        }
+      } catch {
+        if (!cancelled) {
+          setSelectedCase(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setSelectedCaseLoading(false);
+        }
+      }
+    }
+
+    void loadSelectedCase();
+    return () => {
+      cancelled = true;
+    };
+  }, [queryCaseId, selectedCase]);
 
   if (!match) {
     return (
@@ -319,6 +377,9 @@ export function EMG_17() {
   const caution = match.caution ?? 'Suggestion based on location, size, and traits. Visual confirmation is required before any action.';
   const nextAction = match.nextAction ?? 'contact_finder';
   const matchLabel = candidateType === 'found' ? 'Found report' : candidateType === 'lost' ? 'Lost report' : 'Sighting report';
+  const nextStepCopy = nextAction === 'contact_finder'
+    ? 'Use protected contact first and confirm details before arranging any handoff.'
+    : 'Open the sighting context and verify area, time, and traits before acting.';
 
   return (
     <div className="flex flex-col min-h-full">
@@ -326,6 +387,28 @@ export function EMG_17() {
       <AppBar title="Compare Match" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
         <Banner type="warning" text={caution} />
+        <div className="p-3 rounded-xl flex flex-col gap-2" style={{ background: 'var(--gray-100)' }}>
+          <div className="flex items-center gap-2">
+            {selectedCase ? (
+              <StatusChip status={selectedCase.type} />
+            ) : (
+              <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--white)', color: 'var(--gray-700)', fontWeight: 600 }}>
+                Source case
+              </span>
+            )}
+            {queryCaseId && (
+              <span className="text-[10px] font-mono" style={{ color: 'var(--gray-400)' }}>
+                {queryCaseId}
+              </span>
+            )}
+          </div>
+          <p className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
+            {selectedCase?.description || (selectedCaseLoading ? 'Loading source report...' : 'Source report ready for comparison')}
+          </p>
+          <p className="text-[12px]" style={{ color: 'var(--gray-500)' }}>
+            {selectedCase?.location || 'Approximate area only'} {selectedCase?.timeLabel || selectedCase?.time ? `- ${selectedCase.timeLabel || selectedCase.time}` : ''}
+          </p>
+        </div>
 
         <div className="flex gap-3">
           <div className="flex-1 flex flex-col items-center gap-2">
@@ -352,6 +435,7 @@ export function EMG_17() {
             </div>
             <StatusChip status={candidateType as 'found' | 'sighted' | 'lost'} />
             <span className="text-[13px]" style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{matchLabel}</span>
+            <span className="text-[10px] font-mono" style={{ color: 'var(--gray-400)' }}>{match.caseId}</span>
             <p className="text-[12px] text-center" style={{ color: 'var(--gray-500)' }}>
               {match.description || 'Candidate report'}
             </p>
@@ -380,6 +464,10 @@ export function EMG_17() {
               <strong>Colors:</strong> {match.colors.join(', ')}
             </p>
           )}
+        </div>
+        <div className="p-3 rounded-xl" style={{ background: 'var(--info-bg)' }}>
+          <p className="text-[11px]" style={{ fontWeight: 700, color: 'var(--info-dark)' }}>Recommended next step</p>
+          <p className="text-[12px] mt-1" style={{ color: 'var(--gray-700)' }}>{nextStepCopy}</p>
         </div>
 
         <div className="flex flex-col gap-2 mt-auto pb-4">
