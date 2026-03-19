@@ -31,9 +31,11 @@ function authHeader() {
 
 describe('Abuse Flags API', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockQuery.mockReset();
+    mockVerifyIdToken.mockReset();
+    mockWriteAuditLog.mockReset();
     mockVerifyIdToken.mockResolvedValue(FAKE_USER);
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
+    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
   });
 
   describe('POST /api/abuse-flags', () => {
@@ -90,9 +92,9 @@ describe('Abuse Flags API', () => {
       expect(res.body.ok).toBe(true);
       expect(res.body.id).toMatch(/^af_/);
 
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertQuery = mockQuery.mock.calls[0][0];
-      const insertParams = mockQuery.mock.calls[0][1];
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertQuery = mockQuery.mock.calls[1][0];
+      const insertParams = mockQuery.mock.calls[1][1];
       expect(insertQuery).toContain('INSERT INTO abuse_flags');
       expect(insertParams).toEqual([
         expect.stringMatching(/^af_/),
@@ -136,12 +138,20 @@ describe('Abuse Flags API', () => {
         .send(payloadWithFakeId);
 
       expect(res.status).toBe(201);
-      expect(mockQuery).toHaveBeenCalledOnce();
-      const insertParams = mockQuery.mock.calls[0][1];
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const insertParams = mockQuery.mock.calls[1][1];
       expect(insertParams[2]).toBe('pet_this_does_not_exist');
     });
 
     it('allows multiple identical flags from the same user (AF-01 regression)', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        .mockResolvedValueOnce({
+          rows: [{ id: 'af_existing', created_at: 12345 }],
+          rowCount: 1,
+        });
+
       const res1 = await request(app)
         .post('/api/abuse-flags')
         .set(authHeader())
@@ -152,10 +162,17 @@ describe('Abuse Flags API', () => {
         .post('/api/abuse-flags')
         .set(authHeader())
         .send(validPayload);
-      expect(res2.status).toBe(201);
+      expect(res2.status).toBe(200);
+      expect(res2.body).toEqual({
+        ok: true,
+        id: 'af_existing',
+        createdAt: 12345,
+        status: 'open',
+        duplicate: true,
+      });
 
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      expect(mockWriteAuditLog).toHaveBeenCalledTimes(2);
+      expect(mockQuery).toHaveBeenCalledTimes(3);
+      expect(mockWriteAuditLog).toHaveBeenCalledTimes(1);
     });
   });
 });

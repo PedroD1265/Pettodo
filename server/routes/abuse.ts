@@ -21,6 +21,24 @@ function newId(prefix: string): string {
 
 const ALLOWED_ENTITY_TYPES = ['community_dog', 'case', 'pet', 'protected_contact_thread', 'evidence_item'];
 
+async function findOpenAbuseFlag(
+  reportedBy: string,
+  targetEntityType: string,
+  targetEntityId: string
+) {
+  return query(
+    `SELECT id, created_at
+       FROM abuse_flags
+      WHERE reported_by = $1
+        AND target_entity_type = $2
+        AND target_entity_id = $3
+        AND status = 'open'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [reportedBy, targetEntityType, targetEntityId]
+  );
+}
+
 // ─── POST /abuse-flags ───────────────────────────────────────────────────────
 router.post('/abuse-flags', verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -40,6 +58,19 @@ router.post('/abuse-flags', verifyToken, async (req: AuthenticatedRequest, res: 
     }
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
       res.status(400).json({ error: 'bad_request', message: 'reason is required' });
+      return;
+    }
+
+    const existingFlagResult = await findOpenAbuseFlag(uid, targetEntityType, targetEntityId);
+    if (existingFlagResult.rows.length > 0) {
+      const existingFlag = existingFlagResult.rows[0];
+      res.status(200).json({
+        ok: true,
+        id: existingFlag.id,
+        createdAt: existingFlag.created_at,
+        status: 'open',
+        duplicate: true,
+      });
       return;
     }
 
