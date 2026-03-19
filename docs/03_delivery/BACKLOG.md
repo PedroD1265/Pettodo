@@ -599,7 +599,7 @@ Done for current phase when:
 
 ### BL-011 — Real matching v1
 Status:
-Ready
+Done for current phase
 
 Priority:
 P0
@@ -805,7 +805,7 @@ Done for current phase when:
 - QA_CURRENT and CURRENT_STATE reflect the new truth
 
 Follow-on note:
-The next recommended large block after BL-014A is moderation/review UI and operator workflow polish (Block 3), while the remaining route-level trust risks are treated as residual and non-blocking for this phase.
+The next recommended large block after BL-014A is post-moderation visible product work (BL-012 + BL-015), while the remaining route-level trust risks are treated as residual and non-blocking for this phase.
 
 ---
 
@@ -1049,7 +1049,7 @@ The recommended current execution sequence is:
 - BL-020 Cleanup of demo drift in non-core surfaces
 
 Current note:
-BL-014A is closed for the current phase. The next recommended large block is moderation/review UI and operator workflow polish (Block 3).
+BL-014A and Block 3 are closed for the current phase. The next recommended large block is post-moderation visible product work (BL-012 + BL-015).
 
 This sequence may be adjusted if implementation realities require it, but drift should be explicit, not accidental.
 
