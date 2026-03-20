@@ -1,323 +1,179 @@
 # CURRENT_STATE
 
-**Last updated:** 2026-03-19 15:10 UTC-04:00
-Purpose:
-Brutally clear snapshot of what PETTODO is today: what is implemented, what is simulated, what is decided, and what is still missing.
-
-What belongs here:
-- Current real implementation status
-- Current confirmed strengths
-- Current confirmed gaps
-- Current strategic decisions already taken
-- Known inconsistencies and risks
-
-Update rule:
-Update whenever the real implementation state changes, especially after meaningful product, infra, auth, AI, or deployment progress.
+Last updated: 2026-03-19 20:05 -04:00
+Timezone: America/Santiago (Windows: Pacific SA Standard Time)
+Audit basis: repo audit on branch `docs/state-audit-sync`, commit `920ae86c13dd508aa7071879f889f5f92dbca9ae`
+Detailed audit: `docs/03_delivery/APP_STATE_AUDIT_CURRENT.md`
 
 ---
 
 ## 1. Current classification
 
-**[confirmed]** PETTODO is an application with a **real Phase 1 infrastructure foundation (Auth, API, PostgreSQL)** and substantial frontend breadth, but it is not yet an honestly beta-ready production system due to critical operational blockers.
+[confirmed by code]
+PETTODO is now a hybrid but materially real web app:
 
-It expresses strong product structure and relies on a real backend. The core pet management integration (Create, Read, Update, Delete) is fully server-authoritative. Trust-sensitive Block 1 (schema + API) and Block 2 (Frontend wiring + Fix Pack) are now implemented and validated. Bloque 3 (Moderation UI + operator access/discoverability + Real Logout) is now Cerrado y Validado. Real wiring exists for Community Dogs (create/list/detail/history) and Protected Contact (recovery relay). Beta readiness now primarily awaits the post-moderation visible-product block and remaining release-engineering gaps.
+- real Firebase sign-in path exists for integration mode
+- real Express API and PostgreSQL-backed persistence exist for core entities
+- real trust-sensitive backend surfaces exist for moderation, protected contact, Community Dogs, evidence, change requests, abuse flags, and matching
+- real visible product continuity exists for lost-case creation, public pet page, relay chat, moderation, matching, and share/flyer generation
+
+[confirmed by code + local verification]
+PETTODO is not yet an honest beta-ready release. `npm test` passed with 14 files / 122 tests and `npm run build` passed locally, but verification is still backend-heavy and mocked. Core visible flows still have partial areas.
 
 ---
 
 ## 2. What is real today
 
-### Product/UI coverage
-**[confirmed]**
-- broad route coverage and modular structure
-- approximately 100 screens
-- approximately 10 major flows
-- Daily / Emergency product logic
-- QR flows
-- Daily pet management screens
-- Emergency lost / found / sighted flows
-- Community Dogs module presence
-- services / walkers / play dates / profile / notifications modules
+[confirmed by code]
+Core real surfaces currently present in the repo:
 
-### Frontend behavior already present
-**[confirmed]**
-- many working interactions across the app
-- “zero dead buttons” quality rule was adopted
-- local persistence behavior exists
-- QR generation exists
-- Leaflet / OSM maps exist
-- deterministic or heuristic matching exists
-- flyer/share UI exists
-- scripting or demo chat exists
-- privacy and safety language already exists in the UI
-
-### Real infrastructure already present
-**[confirmed]**
-- Replit web app as current runtime
-- Firebase Auth integration
-- Azure PostgreSQL persistence
-- Express API backend (running with correct proxy and schema integrations)
-- Import flow from demo to DB
-- Full Pet CRUD (Create, Read, Update, Delete) end-to-end to Azure PostgreSQL in integration mode
-- Case creation real (POST /cases) for lost/found/sighted flows, owner-scoped
-- Public route (QR) data isolation without owner PII; returns relay-first contact entry point
-- Owner scoping for protected routes
-- Trust-Sensitive Block 1 backend: 12 new tables, 17 new API routes, role middleware, audit utility (see Block 1 section in §3)
-- Expanded automated backend test baseline (Vitest + Supertest, mocked infra), now including a dedicated trust-sensitive suite with 6 files / 60 passing tests
-- Trust-sensitive backend hardening wave closed for the current phase across `reviews.ts`, `change-requests.ts`, `abuse.ts`, target-entity existence checks, and `evidence.ts`
-- Minimal GitHub Actions CI (build + test) in green baseline
-- Real image upload/storage baseline for pet and case flows (Azure Blob + PostgreSQL references)
-- **Bloque 2 — Trust-Sensitive Core Frontend Wiring**: Cerrado y Validado (Fix Pack PASS). Real wiring for Community Dogs (CMT_01, 02, 03, 07) and Protected Contact (QRP_01, 02, 03, 04).
-- **Bloque 3 — Moderation & Logout**: Cerrado y Validado (PASS). Real Moderation UI (/admin/review), frontend route guard, visible authorized entry point, and real Logout in Profile.
-- **Case Baseline & Emergency Discovery Fix Pack**: Cerrado y Validado (PASS WITH ISSUES). Lost flow uses real pet selection via `petApi.list()`, state propagation fixed. Discovery list (`/emg/cases`) uses real `caseApi.list()`. Home surfaces use real data. Demo drift removed from case baseline screens. Minor: EMG_12 sighted location still hardcoded, location/time data not yet sent to backend payload, photo upload not yet persisted.
-- **Bloque 5 — Real Matching v1**: Cerrado y Validado (PASS WITH ISSUES). Real backend matching heuristic (distance, traits, recency) implemented on `/api/matching/cases/:id`. Frontend `matchingRealAdapter` active in integration mode. UI in `EMG_16` displays real ranked candidates. `EMG_17` handles comparisons with real data. Caution framing present. Minor: EMG_17 still has demo fallback if accessed without state.
-
-### Product thinking already present
-**[confirmed]**
-- PETTODO already contains a strong emergency concept
-- Community Dogs already exist as a meaningful product concept
-- QR identity already exists as a meaningful concept
-- map-based visibility is already part of the product logic
-- trust-sensitive language is already present
+- Auth baseline: Firebase popup sign-in, token propagation to `/api`, guarded app routes, moderator-only route guard
+- Pets baseline: authenticated pet CRUD, import from local store, pet image upload/list/delete
+- Cases baseline: authenticated case create/list/get for lost, found, and sighted reports
+- Public QR/profile baseline: `/api/public/pet/:petId` plus `QRP_01` landing fed from real data and public-safe serialization
+- Protected contact baseline: thread creation, thread read, relay messages, reveal-request endpoint, reveal-decision endpoint
+- Community Dogs baseline: controlled create, public approved list/detail, creator-only internal view, public sightings/actions history, authenticated sighting/action writes
+- Moderation baseline: `/admin/review` queue with real approve/reject actions for community dogs, change requests, and evidence items
+- Matching v1 baseline: backend heuristic ranking plus frontend integration in `EMG_16` and `EMG_17`
+- Share/flyer baseline: `EMG_07` and `FlyerShareKit` generate PNG/PDF/text/link outputs from real case/pet/image data
+- Image storage baseline: Azure Blob SAS upload flow plus DB-backed pet/case image references
+- Minimal CI baseline: `.github/workflows/ci.yml` runs build + test
 
 ---
 
-## 3. What is still simulated or not real
+## 3. What is only partial today
 
-**[confirmed]**
-The following are not yet real production capabilities:
+[confirmed by code]
+Important partial or baseline-only areas:
 
-- real image upload/storage pipeline in production
-- real AI identity / matching pipeline
-- production-grade PDF / PNG flyer generation
-- full UI/regression automated tests (backend route suites now exist, but no UI or real-infra end-to-end validation)
-- CD deployment pipeline (only minimal CI exists)
-- stable production routing / deploy fallback behavior
-
-### What is now real at the backend level (Block 1, 2026-03-16)
-**[confirmed]**
-- `user_roles` table: role assignments (user | moderator | operator), enforced via requireRole middleware
-- `community_dogs` + `community_dog_sightings` + `community_dog_actions` tables: controlled creation starts as pending_review; only approved dogs are visible on public GET
-- `protected_contact_threads` + `protected_contact_messages` + `protected_contact_events` tables: relay-first contact; reveal decision is owner-only
-- `change_requests` + `evidence_items` + `review_decisions` tables: pending_review by default; structured evidence without file upload
-- `abuse_flags` + `audit_logs` tables: audit trail for all sensitive actions
-- API routes: 17 new authenticated endpoints covering all the above domains
-- `requireRole` middleware: checks user_roles table at request time; operator satisfies any lower-tier requirement
-- `writeAuditLog` utility: non-throwing, covers contact_initiated, message_sent, reveal_requested/granted/revoked, community_dog_submitted, sensitive_change_requested, evidence_submitted, review_approved/rejected, abuse_flag_created
-- Public pet route updated: returns `protectedContactEnabled: true` + `contactEntryPoint`; never exposes phone/email/owner_uid/exact coords
-- Frontend API clients: communityDogApi, protectedContactApi, changeRequestApi, evidenceApi, reviewApi, abuseFlagApi added to api.ts
-
-### Current known demo/local limitations & blockers
-**[confirmed]**
-- app data fallback depends heavily on localStorage if integration mode fails
-- OTP has been simulated
-- matching is a real backend-backed heuristic (distance, traits, recency), mapped to confidence scores and caution framing
-- no formal schema migration system yet (uses runMigrations with IF NOT EXISTS)
-- trust-sensitive backend hardening for the current phase is closed and no longer a primary blocker
-- residual non-blocking trust-sensitive risks remain in `server/routes/community-dogs.ts` (missing audit logs for sighting/action writes) and `server/routes/protected-contact.ts` (duplicate-thread idempotency only on the `petId` path)
-- the next recommended large block is the post-moderation visible-product block (Share/Flyer real outputs + evidence-backed visible actions)
+- Lost flow is real, but only the final publish step persists the case; earlier steps do not yet persist photos/location/time as separate real records
+- Found flow publishes a real case, but `EMG_10` currently sends only `{ type: 'found' }`; photos, privacy radius, and QR outcome are not persisted
+- Sighted flow publishes a real case, but `EMG_12` uses a hardcoded location and does not persist photo/time data
+- Public report continuity is usable, but `QRP_03` opens a protected-contact thread with a structured message; it does not create a real case or evidence item
+- Protected-contact reveal endpoints exist in backend, but there is no owner-side frontend to request/grant/revoke reveal
+- `QRP_02` human check and reveal rate limit are client-side only (`localStorage`), not backend-enforced
+- Community Dog sightings/actions are real writes, but they are not yet evidence-backed and do not currently write audit logs
+- Change requests, evidence items, and abuse flags exist in backend, but frontend coverage is still narrow; evidence UI is basically limited to `CMT_07`
+- Case detail screens `EMG_18` to `EMG_20` remain mostly demo/static
+- Many non-core modules remain local-first or demo-first
 
 ---
 
-## 4. What is strong right now
+## 4. Main current blockers
 
-**[confirmed]**
-PETTODO already has unusual strength for a project at this stage in these areas:
+[confirmed by code]
+- visible evidence/review outcomes are not yet integrated into user-facing product flows
+- found/sighted emergency flows are still incomplete as real data flows
+- protected-contact owner controls are backend-only
+- moderation-adjacent surfaces exist, but change-request and abuse UX are still thin
 
-- product breadth
-- product narrative
-- route coverage
-- UX framing
-- emergency flow thinking
-- trust/safety framing
-- Community Dogs concept
-- QR identity concept
-- map-based search concept
-- documentation history
-- visual prototype quality
-
-This means PETTODO is not starting from zero.
-The main gap is not “idea.”
-The main gap is turning demo/frontend depth into a real usable system.
+[confirmed by local verification]
+- automated verification is still mostly mocked backend coverage; no real browser or real-infra E2E baseline
+- production build still emits a large bundle warning (`dist/assets/index-B6a_BYos.js` about 1.54 MB minified)
 
 ---
 
-## 5. What is officially decided now
+## 5. Current strategic read
 
-**[confirmed]**
-- Replit is the main product build track
-- Lovable is mainly for the landing page / public site
-- GitHub and `pettodo-docs` are part of the documentation and execution system
-- AI Studio is no longer the center of execution
-- the next major milestone is a real usable web app
-- the next testing target is real pilot-style web testing, not just demo recording
-- Cochabamba is the pilot city
-- Android/iOS are later stages after web validation
+[confirmed by audit]
+The repo is past the old "post-moderation visible product" baseline in one important sense: real matching, real share/flyer, and real public landing/relay continuity are already present.
 
-### Product-direction decisions now confirmed
-**[confirmed]**
-- PETTODO is not only a lost-pet app
-- PETTODO’s primary loop is management + identity + preparedness
-- Community Dogs are part of the MVP, but in a controlled form
-- not every dog seen in the street is automatically a Community Dog
-- PETTODO separates:
-  - animal profile
-  - case
-  - match result
-- protected contact is the default for owned pets
-- public location must remain approximate
-- public exposure should remain minimal and controlled
-- AI is part of the product direction, but not all trust-sensitive actions can be delegated fully to it
+[confirmed by audit]
+The next best step is no longer "make share/flyer real." The highest-value gap is to finish the visible evidence/review loop so that:
+
+- reported actions become more trustworthy
+- moderation outcomes affect visible product state
+- public/emergency continuity stops depending on thin placeholders in found/sighted/report flows
+
+See `docs/03_delivery/APP_STATE_AUDIT_CURRENT.md` and `docs/03_delivery/BACKLOG.md` for the updated recommendation.
 
 ---
 
-## 6. MVP reality for the current phase
+## 6. MVP reality / current phase target
 
-### Core release target now
-**[confirmed]**
-The current release target is a real web app where users can:
-- register pets
-- build digital identity for animals
-- use QR/public profile flows
-- create lost / found / sighted cases
-- upload images
-- receive match suggestions
-- use protected contact flows
-- share flyer/link outputs
-- create controlled Community Dog records
-- contribute evidence-backed actions in controlled ways
-- use the system on the web for real pilot testing
+[confirmed by audit]
+The current phase target remains a real pilot-usable web app, not a breadth expansion wave.
 
-### Account and access stance
-**[confirmed]**
-The system is not fully public for all actions.
+[confirmed by code]
+For the current phase, PETTODO can already support meaningful slices of:
 
-Expected direction:
-- public browsing and low-risk access may exist without account
-- creation, editing, contribution, and sensitive flows require account
-- some higher-risk flows may require additional verification
+- sign-in and account-gated core flows
+- pet management and pet image storage
+- lost/found/sighted case creation in uneven but real form
+- public pet page and protected relay entry
+- moderation-aware Community Dog records
+- real matching suggestions
+- real share/flyer generation
 
-### Not yet the first release priority
-**[confirmed]**
-- fully mature walkers marketplace
-- fully mature events/community trust system
-- fully mature play dates system
-- full reputation economy maturity
-- sponsor reward ecosystems
-- full mobile-native launch
-- full long-term ecosystem completeness
+[confirmed by audit]
+What still separates the repo from an honest phase target close-out is not "missing concept." It is the remaining gap between backend trust primitives and visible product continuity.
 
 ---
 
-## 7. Current design / brand state
+## 7. Design / brand state
 
-**[confirmed]**
+[confirmed by code]
+The repo still presents PETTODO as one product with Daily + Emergency, public safety framing, and a serious trust-oriented tone.
+
+[confirmed by audit]
+The design/brand layer is directionally stable enough for the current phase:
+
 - PETTODO remains the final product name
-- Daily / Emergency remains a real product capability
-- the Daily / Emergency switch should become less visually dominant than in the current prototype
-- the product should not feel like two separate brands
-- the brand should feel serious, human, community-oriented, and useful
+- Daily + Emergency remains part of the product logic
+- public and emergency surfaces already carry trust/safety language consistently
 
-**[probable]**
-- the current red-emergency framing may be softened or shifted toward a more action-oriented tone later
+[pending / not confirmed]
+Final brand system decisions are still not locked:
 
-**[unknown]**
-- final logo
-- final brand palette
-- final landing visual direction
+- final logo system
+- final palette and visual polish direction
+- final intensity of emergency visual framing
 
 ---
 
-## 8. Current public-data direction
+## 8. Public-data direction
 
-**[confirmed]**
-There is already a meaningful product distinction between:
-- owned pets
-- Community Dogs
-- Stray Dogs
-- Unknown Animals
-- no exact match / probable match situations
+[confirmed by code]
+Current repo behavior already aligns with a controlled public-data stance:
 
-### Owned pet direction
-**[confirmed]**
-Public scan / public lookup should reveal only useful, controlled information:
-- animal identity basics
-- public-facing animal status
-- safe contact path
-- approximate location only
-- no unnecessary owner-data exposure
+- public pet payload is minimal and owner-safe
+- owner PII is not exposed on public pet routes
+- contact is relay-first
+- Community Dog public visibility is approval-gated
 
-### Community Dog direction
-**[confirmed]**
-Community Dog records are intended to be public but controlled.
-They may show broader public-operational information than owned pets, such as:
-- approximate area
-- sightings
-- evidence-backed actions
-- care-related public context
-- visible status
+[confirmed by audit]
+The current direction remains:
 
-### Data-control direction
-**[confirmed]**
-Owned-pet owners should retain strong control over their own published data.
-Shared/public animal records should be more controlled and not directly editable without checks.
-
-### Still pending formalization
-**[confirmed]**
-These rules still need to be formalized in:
-- `PUBLIC_DATA_POLICY.md`
-- `TRUST_AND_SAFETY.md`
+- owned-pet public data should stay minimal and controlled
+- Community Dog public data can be broader, but only inside moderated/shared-record rules
+- approximate area is acceptable; exact private coordination should stay in protected flows
 
 ---
 
-## 9. Current AI direction
+## 9. AI direction
 
-**[confirmed]**
-The product direction expects AI to be used across multiple parts of PETTODO, including:
-- image analysis
-- quality checks
-- similarity / match workflows
-- evidence review
-- moderation assistance
+[confirmed by code]
+The repo now treats matching as a real heuristic product layer, not just a concept, but still frames it with caution rather than certainty.
 
-**[confirmed]**
-AI should not be presented as the universal final authority across all trust-sensitive actions.
+[confirmed by audit]
+The current AI direction remains healthy for this phase:
 
-**[probable]**
-The product may rely more heavily on AI in bounded operational tasks such as match ranking and photo quality classification than in socially sensitive record changes.
+- use AI/heuristics to rank, assist, and guide
+- do not treat AI as final authority for trust-sensitive identity decisions
+- keep caution framing visible in matching-related surfaces
+
+[pending / not confirmed]
+Advanced AI identity, moderation, or evidence pipelines are still not real production capabilities in this repo state.
 
 ---
 
 ## 10. Known structural risks
 
-**[confirmed]**
-- frontend complexity is ahead of infrastructure maturity
-- documentation and product scope can drift if not curated
-- old demo assumptions can conflict with the real-product direction
-- multi-cloud ambition can create fragmentation if not disciplined
-- the app still needs a clear “real beta” cut line
-- Community Dogs can create moderation and trust complexity if not constrained
-- public data and evidence workflows are not yet formally codified
-- the product can still be misunderstood as “just a lost-pet app” if not framed correctly
+[confirmed by audit]
+The most important structural risks right now are:
 
----
-
-## 11. What this file is not
-
-This is not:
-- the full product vision
-- the full backlog
-- the full architecture spec
-- the historical execution log
-
-This file exists only to tell the truth about where PETTODO stands today.
-
----
-
-## 12. Certainty reminders
-
-Use:
-- **[confirmed]** when directly backed by repo evidence or explicit current decisions
-- **[probable]** when strongly inferred but not fully fixed
-- **[unknown]** when still undecided
-
-Avoid mixing these levels.
+- visible product trust can lag behind backend trust if review outcomes stay invisible
+- hybrid real/demo coexistence can still confuse users and future implementation waves
+- found/sighted flows can overstate maturity unless their current limits stay explicit
+- lack of UI/E2E and real-infra validation can hide regressions in the now-real surfaces
+- bundle size and release hardening still need attention before broader pilot exposure
